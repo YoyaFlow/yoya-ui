@@ -111,13 +111,7 @@ export function VUpload() {
     };
 
     const emitChange = () => {
-      if (!node._el) {
-        return;
-      }
-
-      const EventClass = node._el.ownerDocument?.defaultView?.Event || Event;
-
-      node._el.dispatchEvent(new EventClass('change', { bubbles: true }));
+      node.emit('change');
     };
 
     const setDragging = (dragging) => {
@@ -129,7 +123,7 @@ export function VUpload() {
         return;
       }
 
-      input._el?.click();
+      input.invoke('click');
     };
 
     const acceptsFile = (file) => {
@@ -187,12 +181,13 @@ export function VUpload() {
     };
 
     input.on('change', () => {
-      if (input._el?.files) {
-        addFiles(input._el.files);
+      const files = input.prop('files');
+
+      if (files) {
+        addFiles(files);
       }
-      if (input._el) {
-        input._el.value = '';
-      }
+
+      input.prop('value', '');
     });
     dropZone.on('click', () => openPicker());
     dropZone.on('keydown', (event) => {

@@ -286,8 +286,8 @@ export function vTreeRanger(first = null, second = null, third = null) {
       }
 
       const pitch = state.itemHeight + VIRTUAL_GAP;
-      const scrollTop = view.list._el ? Number(view.list._el.scrollTop) || 0 : 0;
-      const clientHeight = view.list._el ? Number(view.list._el.clientHeight) || 0 : 0;
+      const scrollTop = Number(view.list.prop('scrollTop')) || 0;
+      const clientHeight = Number(view.list.prop('clientHeight')) || 0;
       const start = Math.max(0, Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - state.overscan);
       const end = Math.min(
         count,
@@ -507,9 +507,11 @@ export function vTreeRanger(first = null, second = null, third = null) {
     function maybeLoadMore(view) {
       const levelIndex = view.boundLevel;
       const level = levelIndex === null ? null : state.levels[levelIndex];
-      if (!level || level.loading || !level.hasMore || !view.list._el) return;
-      const el = view.list._el;
-      const distance = el.scrollHeight - el.scrollTop - (el.clientHeight || 0);
+      if (!level || level.loading || !level.hasMore || !view.list.isLanded()) return;
+      const distance =
+        view.list.prop('scrollHeight') -
+        view.list.prop('scrollTop') -
+        (view.list.prop('clientHeight') || 0);
       if (distance <= LOAD_MORE_THRESHOLD) {
         loadLevel(levelIndex, 'more');
       }

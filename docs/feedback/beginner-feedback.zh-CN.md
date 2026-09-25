@@ -128,7 +128,7 @@
 ### 14. 为什么组件还分"形态 A / 形态 B"？React 函数组件和 class 组件那套我还没理清，怎么又来两个形态？
 
 - 分类：②
-- 现状：2026-09-21 起口径收敛为**两种写法**——形态 A 薄工厂（没有行为直接返回 ViewNode）与形态 B `vNode((api) => 视图)`（有状态 / 命令 / 钩子）；对象组件（`{ render() }`）已弃用、仅存量（票 03），`class extends HtmlElementNode` 只是引擎内部的节点类型扩展、不是第三种写法。契约冻结在 component-authoring 文档，选择判据也在那里。
+- 现状：2026-09-21 起口径收敛为**两种写法**——形态 A 薄工厂（没有行为直接返回 ViewNode）与形态 B `vNode((api) => 视图)`（有状态 / 命令 / 钩子）；对象组件（`{ render() }`）**0.7 起运行期直接拒收**（票 07 硬删，见 component-authoring §7.4），`class extends HtmlElementNode` 只是引擎内部的节点类型扩展、不是第三种写法。契约冻结在 component-authoring 文档，选择判据也在那里。
 - 文档动作：component-authoring 已有「什么时候用哪个形态」的判据，skill 的 `references/core.md` 同步了同一口径。
 - 优先级：P2 ☐
 

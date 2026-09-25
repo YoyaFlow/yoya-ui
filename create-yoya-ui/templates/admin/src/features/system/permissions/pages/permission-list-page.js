@@ -65,30 +65,24 @@ export function PermissionListPage() {
     }
   }
 
-  return {
-    render() {
-      return vstack({ gap: '16px' }, (stack) => {
-        stack.h2('权限管理');
-        stack.vCard((card) => {
-          card.vCardHeader('权限树');
-          card.vCardBody((body) => {
-            body.vstack({ gap: '12px' }, (content) => {
-              content.hstack({ gap: '10px' }, (toolbar) => {
-                toolbar.vButton('新增根权限', (btn) => {
-                  btn.variant('primary');
-                  btn.on('click', () => dialog.open({}));
-                });
-                toolbar.vButton('刷新', (btn) => btn.on('click', () => load()));
-              });
-              content.child(tree);
+  // 页面也是组件：没有对外命令方法 → 形态 A 薄工厂，直接返回视图节点
+  return vstack({ gap: '16px' }, (stack) => {
+    stack.h2('权限管理');
+    stack.vCard((card) => {
+      card.vCardHeader('权限树');
+      card.vCardBody((body) => {
+        body.vstack({ gap: '12px' }, (content) => {
+          content.hstack({ gap: '10px' }, (toolbar) => {
+            toolbar.vButton('新增根权限', (btn) => {
+              btn.variant('primary');
+              btn.on('click', () => dialog.open({}));
             });
+            toolbar.vButton('刷新', (btn) => btn.on('click', () => load()));
           });
+          content.child(tree);
         });
-        stack.child(dialog);
       });
-    },
-    refresh() {
-      return load();
-    }
-  };
+    });
+    stack.child(dialog);
+  });
 }

@@ -134,7 +134,7 @@ export function VCascader() {
     const bindOutsideClose = (enabled) => {
       if (enabled && !outsideUnbind) {
         outsideUnbind = bindDocumentEvent('mousedown', (event) => {
-          if (!node._el || !node._el.contains(event.target)) {
+          if (!node.owns(event.target)) {
             api.close();
           }
         });
@@ -167,18 +167,12 @@ export function VCascader() {
     };
 
     const positionPanel = () => {
-      if (typeof window === 'undefined' || !node._el || !trigger._el) {
+      if (typeof window === 'undefined' || !trigger.isLanded() || !panel.isLanded()) {
         return;
       }
 
-      const rect = trigger._el.getBoundingClientRect();
-      const panelElement = panel._el;
-
-      if (!panelElement) {
-        return;
-      }
-
-      const panelHeight = panelElement.offsetHeight || 240;
+      const rect = trigger.measure();
+      const panelHeight = panel.prop('offsetHeight') || 240;
       const margin = 8;
       let top = rect.bottom + 6;
 

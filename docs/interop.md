@@ -37,8 +37,9 @@ ECharts' option object, no adapter layer to maintain.
 
 ## Why this is not magic
 
-- `vEchart` is a thin node class with a documented lifecycle (`renderDom` → init, `option()` →
-  update, `destroy()` → `dispose()`);
+- `vEchart` is a shape-B component with a documented lifecycle (a `vNode` closure: `whenMount(host)` →
+  init, `option()` → update, `whenDestroy` → `dispose()`) — defining it yields the component node, the
+  library only ever receives a real DOM container, and nothing extends the base element;
 - the same contract applies to **any** library that mounts into a DOM node: rich-text editors,
   spreadsheets, maps, trees, code editors — you implement the lifecycle bridge once and compose it
   with `child()` like built-ins;

@@ -19,7 +19,7 @@ afterEach(() => {
 describe('SSR standalone demo page', () => {
   it('renders SSR HTML and hydrates buttons, dialog and form', async () => {
     const page = SsrDemoPage();
-    const element = page.render().renderDom();
+    const element = page.renderDom();
     document.body.appendChild(element);
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -65,7 +65,7 @@ describe('SSR standalone demo page', () => {
 
   it('switches the live app language', async () => {
     const page = SsrDemoPage();
-    const element = page.render().renderDom();
+    const element = page.renderDom();
     document.body.appendChild(element);
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -90,7 +90,7 @@ describe('SSR standalone demo page', () => {
 
   it('persists the language choice across page reloads', async () => {
     const first = SsrDemoPage();
-    const firstElement = first.render().renderDom();
+    const firstElement = first.renderDom();
     document.body.appendChild(firstElement);
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -102,7 +102,7 @@ describe('SSR standalone demo page', () => {
     firstElement.remove();
 
     const second = SsrDemoPage();
-    const secondElement = second.render().renderDom();
+    const secondElement = second.renderDom();
     document.body.appendChild(secondElement);
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -113,7 +113,7 @@ describe('SSR standalone demo page', () => {
 
   it('provides theme switching alongside i18n', async () => {
     const page = SsrDemoPage();
-    const element = page.render().renderDom();
+    const element = page.renderDom();
     document.body.appendChild(element);
     await new Promise((resolve) => requestAnimationFrame(() => resolve()));
 

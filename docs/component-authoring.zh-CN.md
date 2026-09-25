@@ -27,8 +27,9 @@ yoya-ui 的核心是一个小而稳定的“组件标准”，而不是庞大运
 ## 3. 两种组件形态
 
 **组件只有两种形态**（2026-09-21 收敛）：**形态 A 薄工厂**（没有行为）与**形态 B `vNode`**（有行为）。
-对象组件（`return { render(), … }`）已弃用——不要新写（仅存量，退场计划见票 03）；`class Xxx extends HtmlElementNode`
-**不是组件形态**——它是引擎的**节点类型扩展**（组件的视图根 / 自定义元素种类），见 §7.3。
+对象组件（`return { render(), … }`）**已退场**——0.7 起运行期直接拒收（`child(对象)` / 页面对象 /
+`vClientOnly(() => 对象)` / 路由页面对象都报错），迁移就是照 A / B 重写（见 §7.4）；
+`class Xxx extends HtmlElementNode` **不是组件形态**——它是引擎的**节点类型扩展**（组件的视图根 / 自定义元素种类），见 §7.3。
 
 ### 形态 A：薄工厂（没有行为）
 
@@ -597,6 +598,70 @@ page.children().map((child) => componentNameOf(child)); // 多值原样返回（
   `children()` 里）；多根组件带内容会报错。
 - **`whenMount` 待评估**：它可能是多余的（很多场景可用 `requestAnimationFrame` 或首次交互惰性初始化替代），
   `whenDestroy` 是必需的清理钩子。
+- **对象组件协议退场（类型面，0.7.0）**：`{ render() }` 不再是子节点 / 页面工厂的合法形状
+  （`ChildInput` / `KeyedRowProduct` / `PageFactory` / `mount` / `hydrate` / `renderToString` 都不收），
+  `ComponentLike` 降级成 `@deprecated` 的"只给老代码点名"类型。组件只有 A / B 两种写法。
+- **对象组件协议退场（运行期，0.7.0 · 票 07）**：运行期**不再接受**对象组件——
+  `child({ render() { … } })`、`renderToString / mount / hydrate(页面对象)`、`vClientOnly(() => ({ render() { … } }))`、
+  路由页面对象、编译器形态 B 分支全部退场（弃用提示随之删除）。迁移就是照 A / B 两种写法重写；
+  另外两条实测教训：**页面壳要缓存"工厂"而不是节点**（节点只能挂一处，缓存节点会让第二次进页面空白），
+  以及**组件上的读值属性（`get x()`）改成读值命令**（`api.x = () => …`，调用点写 `x()`）。
+- **组件定义函数不再有构造签名**：`new VXxx()` 与 `instanceof VXxx` 都不是承诺用法
+  （身份判定走 `componentNameOf` / `hasComponentIdentity`），写下去类型就会红。
+
+## 7.5 类型配套：直接参数、句柄与身份（0.7.0 起）
+
+`types/*.d.ts` 随包发布，是**对外契约**，必须与运行期同口径。每个组件按同一个形状写：
+
+```ts
+// 1) 句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（ComponentNode 已写清"句柄面 = 元素面"）
+export interface VStatusTag extends ComponentNode {
+  status(): string;
+  status(value: string): VStatusTag;
+}
+// 2) props：`VStatusTag({ … })` 的**直接参数**，逐键写值类型；末尾留索引签名给元素级透传
+export interface StatusTagOptions {
+  status?: string | null;
+  children?: ChildInput;
+  [key: string]: unknown;
+}
+// 3) 定义函数收 props；快捷方法按 setup 分派调用方参数
+export const VStatusTag: { (props?: StatusTagOptions): VStatusTag };
+export const vStatusTag: ElementFactory<VStatusTag> & {
+  (
+    first?: StatusTagOptions | SetupInput<VStatusTag> | null,
+    callback?: SetupCallback<VStatusTag>
+  ): VStatusTag;
+};
+```
+
+四条口径：
+
+1. **定义函数收 props，快捷方法管分派**——与运行期 `VXxx` / `vXxx` 这一对一致。`VStatusTag({ status: 'ok' })`
+   逐键检查；`vStatusTag(…)` 的首参是 `StatusTagOptions ∪ SetupInput`（对象 = props、文本 = 内容、
+   函数 = 构建回调、元素选项 = 透传），因此**抓不住"props 取值写错"**。要逐键检查就用定义函数，
+   或先把字面量写成 `const props: StatusTagOptions = { … }` 再传。
+   **运行期定义函数没有 props 参数的组件，类型上也写 `(): VXxx`**：定义函数忽略的实参运行期会被
+   静默丢掉（`VCard({ class })` 不写类名），声明里就不能承诺它；可派发键写进快捷方法首参的
+   `XxxOptions`（`vCard({ class })` 由节点 setupObject 分派）。
+2. **props 接口带 `[key: string]: unknown`**：`...rest` 按键分类透传到视图根，所以 `class` / `style` /
+   `onXxx` / `data-*` / `attrs` 照旧可用；代价是"拼错的键"也不会报错——**结构键除外**，
+   容器组件在运行期直接报错（`assertVTableStructure`），类型上也不收。
+3. **不给构造签名、也没有组件对象协议**：`instanceof VXxx` 不是承诺的用法（身份走
+   `componentNameOf` / `hasComponentIdentity`），声明里不写 `new (…)`；`{ render() }` 这条联合分支
+   同样已从类型退场。`ViewNode` / `ElementNode` / `ComponentNode` / `VTextNode` / `VTreeNode` /
+   `VMessageManager` / `VRouter` 这类引擎基底与真类仍然是 `class`。
+4. **接口合并只在同一模块生效**：给一个组件补类型就改它自己那份 `.d.ts`，不要在别的文件里
+   "再声明一个同名接口"——那样会静默合并，且分不清属于谁。
+
+**给一个新组件补直参类型的步骤**：
+
+1. 读运行期定义，把参数表里解构出来的 props 逐条抄成 `XxxOptions`：值位置写
+   `SignalHandle<T>` / `ChildInput`，命令面的读写签名照抄句柄；
+2. `class VXxx` 改成 `interface VXxx extends ComponentNode`（保留方法签名）；
+3. 加 `const VXxx: { (props?: XxxOptions): VXxx }`，并给 `vXxx` 首参补上 `XxxOptions`；
+4. 在 `types/tests/consumer.ts` 补一条正例 + 一条 `@ts-expect-error` 负例；
+5. `npm run typecheck` 绿。
 
 ## 8. 注册父节点快捷方法
 

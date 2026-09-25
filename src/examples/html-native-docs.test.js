@@ -3,7 +3,7 @@ import { HtmlNativeDocumentationPage } from './html-native-docs.js';
 
 describe('html native documentation page', () => {
   it('lists the node API and spells out the text / textContent difference', () => {
-    const view = HtmlNativeDocumentationPage().render();
+    const view = HtmlNativeDocumentationPage();
     const element = view.renderDom();
     const api = element.querySelector('[data-html-native-api]');
 
@@ -33,7 +33,7 @@ describe('html native documentation page', () => {
   });
 
   it('keeps the live demo source free of direct document access', () => {
-    const view = HtmlNativeDocumentationPage().render();
+    const view = HtmlNativeDocumentationPage();
     const element = view.renderDom();
     const sources = [...element.querySelectorAll('[data-source-example]')].map(
       (node) => node.textContent
@@ -52,7 +52,7 @@ describe('html native documentation page', () => {
   });
 
   it('drives the native live demo from refs', () => {
-    const view = HtmlNativeDocumentationPage().render();
+    const view = HtmlNativeDocumentationPage();
     const element = view.renderDom();
     const field = element.querySelector('#html-native-name');
     const button = element.querySelector('.html-native-button');

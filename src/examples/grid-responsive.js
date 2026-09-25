@@ -29,39 +29,35 @@ export function renderGridResponsive() {
     requestAnimationFrame(refresh);
   }
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('响应式栅格');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (content) => {
-            content.p((text) => {
-              text.className('grid-responsive-status');
-              text.attr('data-grid-responsive-status', 'true');
-              text.child(vText(status));
-            });
-            content.responsiveGrid({ breakpoints, minColumnWidth: 180 }, (cards) => {
-              cards.style('gap', '12px');
-              [
-                ['上线', '稳定'],
-                ['维护', '处理中'],
-                ['告警', '待确认'],
-                ['观察', '跟踪中'],
-                ['扩容', '就绪'],
-                ['回滚', '已完成']
-              ].forEach(([label, value]) => {
-                cards.article((cell) => {
-                  cell.className('detail-grid-cell');
-                  cell.strong(label);
-                  cell.span(value);
-                });
-              });
+  return vCard((card) => {
+    card.vCardHeader('响应式栅格');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (content) => {
+        content.p((text) => {
+          text.className('grid-responsive-status');
+          text.attr('data-grid-responsive-status', 'true');
+          text.child(vText(status));
+        });
+        content.responsiveGrid({ breakpoints, minColumnWidth: 180 }, (cards) => {
+          cards.style('gap', '12px');
+          [
+            ['上线', '稳定'],
+            ['维护', '处理中'],
+            ['告警', '待确认'],
+            ['观察', '跟踪中'],
+            ['扩容', '就绪'],
+            ['回滚', '已完成']
+          ].forEach(([label, value]) => {
+            cards.article((cell) => {
+              cell.className('detail-grid-cell');
+              cell.strong(label);
+              cell.span(value);
             });
           });
         });
       });
-    }
-  };
+    });
+  });
 }
 
-renderGridResponsive().render().bindTo('#app');
+renderGridResponsive().bindTo('#app');

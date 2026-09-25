@@ -52,4 +52,55 @@ describe('元素级操作 API', () => {
     expect(item).not.toBeNull();
     expect(() => item.focus?.()).not.toThrow();
   });
+
+  it('isLanded() 判落地，未落地读不到元素', () => {
+    const box = div((root) => root.child(div({ id: 'inner' })));
+
+    expect(box.isLanded()).toBe(false);
+    expect(box.measure()).toBe(null);
+    expect(box.prop('offsetWidth')).toBe(undefined);
+
+    const element = box.renderDom();
+    document.body.appendChild(element);
+
+    expect(box.isLanded()).toBe(true);
+    expect(box.measure()).not.toBe(null);
+  });
+
+  it('rect() 量自己的元素，emit() 派发原生 / 自定义事件', () => {
+    const box = div('内容');
+    const element = box.renderDom();
+    document.body.appendChild(element);
+
+    const seen = [];
+    element.addEventListener('yoya:probe', (event) => seen.push(event.detail));
+    element.addEventListener('change', () => seen.push('change'));
+
+    box.emit('change');
+    box.emit('yoya:probe', 42);
+
+    expect(seen).toEqual(['change', 42]);
+    expect(box.measure().width).toBe(0);
+  });
+
+  it('invoke() 调原生方法；replaceChildren() 真清空（DOM 立刻换）', () => {
+    let clicked = 0;
+    const box = div((root) => {
+      root.child(div({ id: 'old' }));
+      root.on('click', () => {
+        clicked += 1;
+      });
+    });
+    const element = box.renderDom();
+    document.body.appendChild(element);
+
+    box.invoke('click');
+    expect(clicked).toBe(1);
+
+    box.replaceChildren(div({ id: 'next' }));
+
+    expect(element.querySelector('#old')).toBe(null);
+    expect(element.querySelector('#next')).not.toBe(null);
+    expect(box.children()).toHaveLength(1);
+  });
 });

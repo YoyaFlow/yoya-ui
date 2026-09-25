@@ -68,7 +68,7 @@ export function VTagsInput() {
 
     node.child(chips, input);
 
-    const currentInputValue = () => input._el?.value ?? input.attr('value') ?? '';
+    const currentInputValue = () => input.prop('value') ?? input.attr('value') ?? '';
 
     const renderChips = () => {
       replaceChildren(

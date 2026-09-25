@@ -1,22 +1,23 @@
 import { interopPageFrame } from './interop-section.js';
-import { MarkdownViewerDemoNode, MarkdownViewerExample } from './demos/markdown-viewer.js';
+import { MarkdownViewerExample, vMarkdownViewer } from './demos/markdown-viewer.js';
 
 const MARKDOWN_DEMO = Object.freeze({
   id: 'markdown-viewer',
   description:
     '编辑模式为“左编辑右查看”：左侧 Markdown 源码实时同步到右侧渲染；查看模式隐藏编辑器，只读展示整篇内容。',
   component: MarkdownViewerExample,
-  sourceComponent: MarkdownViewerDemoNode,
-  imports: ['HtmlElementNode'],
+  sourceComponent: vMarkdownViewer,
+  imports: ['div', 'ref', 'vNode'],
   extraSource: [
+    "import { isDarkMode, watchDocsTheme } from './docs-theme.js';",
     "import Editor from '@toast-ui/editor';",
     "import Viewer from '@toast-ui/editor/viewer';",
     "import '@toast-ui/editor/dist/toastui-editor.css';",
     "import '@toast-ui/editor/dist/toastui-editor-viewer.css';",
     "import '@toast-ui/editor/dist/theme/toastui-editor-dark.css';"
   ].join('\n'),
-  sourceTitle: 'Toast UI Viewer 胶水类源码',
-  usageImports: [{ from: './demos/markdown-viewer.js', names: ['MarkdownViewerDemoNode'] }],
+  sourceTitle: 'Toast UI Viewer 胶水组件源码',
+  usageImports: ['vNode', { from: './demos/markdown-viewer.js', names: ['vMarkdownViewer'] }],
   usageTitle: 'Markdown 查看使用案例源码',
   outputText: '当前为编辑模式：左侧编辑 Markdown，右侧实时查看渲染结果。',
   controls: [

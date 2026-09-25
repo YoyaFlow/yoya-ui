@@ -9,7 +9,6 @@
 import type { CodeBlock } from './data-display.js';
 import type { DynamicLoaderNode, DynamicLoaderOptions } from './async.js';
 import type { HtmlElementNode } from './html.js';
-import type { VThemeShell } from './layout.js';
 import type { VRouter } from './router.js';
 import type { VThemeModeSwitch } from './theme.js';
 
@@ -31,6 +30,14 @@ export type ValueReader<T = unknown> = () => T;
 export type AttrValue =
   string | number | boolean | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
 
+/**
+ * A component prop value that may be **live**: the plain value, a signal handle, or a
+ * zero-argument reader (see AGENTS「Component Writing Rules」R9 / R6 — props 给句柄就是活值).
+ * Component definitions keep the handle as-is and normalize while reading, so props stay live;
+ * a plain value is the snapshot form.
+ */
+export type PropValue<T> = T | SignalHandle<T> | ValueReader<T>;
+
 /** Inline style values supported by style()/styles(); handle or reader makes it live. */
 export type StyleValue =
   string | number | null | undefined | SignalHandle<unknown> | ValueReader<unknown>;
@@ -51,7 +58,11 @@ export type EventOptions = boolean | AddEventListenerOptions;
 /** Event handler signature used across the library. */
 export type EventHandler<E extends Event = Event> = (event: E) => void;
 
-/** A component object with a render() method (form B component). */
+/**
+ * @deprecated 对象组件（`{ render(), … }`）已在 0.7.0 退场：组件只有 A 薄工厂 / B `vNode` 两种写法。
+ * 这个接口只为"老代码里点名过它"保留，**不再出现在任何子节点 / 页面 / 产品的联合分支里**
+ * （`ChildInput` / `KeyedRowProduct` / `PageFactory` / `mount` 都不收对象组件）。
+ */
 export interface ComponentLike {
   render(): ViewNode;
   /**
@@ -75,14 +86,7 @@ export interface ComponentLike {
  * A signal handle becomes a bound text node (equivalent to `vText(handle)`).
  */
 export type ChildInput =
-  | ViewNode
-  | string
-  | number
-  | ComponentLike
-  | SignalHandle<unknown>
-  | null
-  | undefined
-  | ChildInput[];
+  ViewNode | string | number | SignalHandle<unknown> | null | undefined | ChildInput[];
 
 /** Declarative setup callback receiving the node. */
 export type SetupCallback<N> = (node: N) => void;
@@ -111,7 +115,7 @@ export interface ElementRowProduct {
 }
 
 /** What a `keyed()` row factory may return. */
-export type KeyedRowProduct = ViewNode | ComponentLike | string | number | ElementRowProduct;
+export type KeyedRowProduct = ViewNode | string | number | ElementRowProduct;
 
 /**
  * Object-form setup accepted by every factory: class/className, attrs, style,
@@ -343,14 +347,14 @@ export class ViewNode {
   /** Inserts a keyed child before another keyed child; null beforeKey appends. */
   insertBefore(
     key: string | number,
-    child: ViewNode | ComponentLike | string | number,
+    child: ViewNode | string | number,
     beforeKey?: string | number | null
   ): this;
 
   /** Inserts a keyed child after another keyed child; null afterKey prepends. */
   insertAfter(
     key: string | number,
-    child: ViewNode | ComponentLike | string | number,
+    child: ViewNode | string | number,
     afterKey?: string | number | null
   ): this;
 
@@ -361,7 +365,7 @@ export class ViewNode {
   moveAfter(key: string | number, afterKey?: string | number | null): this;
 
   /** Replaces the keyed child at the same slot with a fresh node; siblings stay untouched. */
-  replaceChild(key: string | number, child: ViewNode | ComponentLike | string | number): this;
+  replaceChild(key: string | number, child: ViewNode | string | number): this;
 
   /**
    * Signal-driven keyed item binding. Rows whose key and reference are unchanged
@@ -497,15 +501,23 @@ export class VTextNode extends ViewNode {
 }
 
 /**
- * ComponentNode lazily resolves a factory function or a component object with
- * render() and reuses the resolved node.
+ * ComponentNode lazily resolves the component definition (a factory function that
+ * builds the view) and reuses the resolved node. The object-component protocol
+ * (`{ render() }`) retired in 0.7.0 — the constructor takes the **definition function**.
+ *
+ * **组件句柄的对外面 = 元素节点的对外面**（`extends HtmlElementNode` 只是类型层的说法）：
+ * 组件节点不是元素节点，但引擎把元素级方法与**子工厂**都**委托到视图根**
+ * （`src/core/node.js` 的 `DELEGATED_ELEMENT_METHODS` + `registerChildFactories`），
+ * 所以 `card.attr(…)` / `card.vCardBody(…)` / `button.focus()` / `chart.measure()` 在运行期都成立，
+ * 类型上也照元素面写；身份判定仍走 `vn` 对象事实（`componentNameOf` / `hasComponentIdentity`），
+ * 不是 `instanceof`。
  */
-export class ComponentNode extends ViewNode {
-  constructor(component: ComponentLike);
+export class ComponentNode extends HtmlElementNode {
+  constructor(component: () => ViewNode);
 
   children(): ViewNode[];
   textContent(): string;
-  renderDom(): Node | null;
+  renderDom(): HTMLElement | null;
   toHTML(): string;
   destroy(): this;
 }
@@ -539,12 +551,27 @@ export class ElementNode extends ViewNode {
   /**
    * Element-level **operation APIs** — components touch the DOM only through these
    * (no `_el` / no `renderDom()` in component code): focus the element,
-   * test containment, read/write a DOM property (things that have no attribute form).
+   * test containment, read/write a DOM property (things that have no attribute form),
+   * check landing, measure, dispatch events, call native methods, swap children.
    */
   focus(): this;
+  /** Focuses the first focusable descendant (falls back to the element itself). */
+  focusFirst(): this;
   owns(target: unknown): boolean;
   prop(name: string): any;
   prop(name: string, value: unknown): this;
+  /** True once the real element has been created (`renderDom()` / mounting). */
+  isLanded(): boolean;
+  /** `getBoundingClientRect()` — null when not landed yet. */
+  measure(): DOMRect | null;
+  /** Dispatches a bubbling DOM event from the element (CustomEvent when `detail` is given). */
+  emit(type: string, detail?: unknown, options?: EventInit | null): this;
+  /** Calls a native method on the element (`showModal` / `close` / `reset` / `remove` …). */
+  invoke(name: string, ...args: unknown[]): any;
+  /** Replaces all children for real (DOM included, no engine round-trip needed). */
+  replaceChildren(...children: unknown[]): this;
+  /** Moves the landed children to the element's end in the given order. */
+  reorderChildren(ordered: unknown[]): this;
 
   /** Reads an attribute value. */
   attr(name: string): AttrValue | undefined;
@@ -593,12 +620,6 @@ export class ElementNode extends ViewNode {
     options?: ElementOptions,
     callback?: SetupCallback<DynamicLoaderNode>
   ): DynamicLoaderNode;
-  /** vThemeShell shortcut: themed surface container. */
-  vThemeShell(
-    first?: SetupInput<VThemeShell> | null,
-    options?: ElementOptions,
-    callback?: SetupCallback<VThemeShell>
-  ): VThemeShell;
   /** codeBlock shortcut: code block with copy button (inherited by HtmlElementNode). */
   codeBlock(
     first?: SetupInput<CodeBlock> | null,
@@ -665,11 +686,8 @@ export function elementFactoryTagOf(value: unknown): string | null;
 /** Whether the value is a base element factory (html / svg shortcut, or one marked by hand). */
 export function isElementFactory(value: unknown): boolean;
 
-/** Applies { attrs, style } options to a node (component object support). */
-export function applyElementOptions(
-  node: ViewNode | ComponentLike,
-  options: ElementOptions | null
-): ViewNode | ComponentLike;
+/** Applies { attrs, style } options to a node (the component's view root). */
+export function applyElementOptions(node: ViewNode, options: ElementOptions | null): ViewNode;
 
 /** Minimal HTML escaping used by toHTML(). */
 export function escapeHtml(value: unknown): string;
@@ -728,7 +746,7 @@ export function hasComponentIdentity(value: unknown, name: string): boolean;
  */
 
 /** Normalizes any child input into a ViewNode. */
-export function normalizeChild(child: ViewNode | ComponentLike | string | number): ViewNode;
+export function normalizeChild(child: ViewNode | string | number): ViewNode;
 
 /** Normalizes (first, second, third) factory arguments into { first, options, callback }. */
 export function normalizeSetupArguments(

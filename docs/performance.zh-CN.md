@@ -77,7 +77,8 @@
 
 ## 跨口径不可比
 
-本仓库还维护一套自建 harness（`.scratch/perf-1x/`，msedge headless，按 1000 行的 MB 增量取数），
-用于改动前后做同机对照。**两套口径的绝对值不可互换**：官方 runner 用的是 Chrome for Testing 152 +
-playwright、按操作计时；自建 harness 直接读 `performance.measureUserAgentSpecificMemory()` 的行增量。
+开发期还用过一套自建 harness（msedge headless，按 1000 行的 MB 增量取数）做改动前后的同机对照，
+脚本属于一次性的工作现场（`.scratch/`，已随 2026-09-25 的清理删除；需要复跑就照这里的口径重写）。
+**两套口径的绝对值不可互换**：官方 runner 用的是 Chrome for Testing 152 + playwright、按操作计时；
+自建口径直接读 `performance.measureUserAgentSpecificMemory()` 的行增量。
 同一份代码在两套口径下的读数差可达 1.5～3 倍，所以对比只能在口径内纵向进行。

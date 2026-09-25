@@ -1,12 +1,12 @@
 /**
  * 票 10：**组件实例变量** + 编译单元发现的放宽（两件事必须一起做）。
  *
- * 文档页那批（32 个文件）真正卡住的是这个形状：组件体里先把实例存进变量，render 里再当子节点用——
+ * 文档页那批（32 个文件）真正卡住的是这个形状：组件体里先把实例存进变量，视图里再当子节点用——
  *
  * ```js
  * export function Section(demo) {
  *   const liveDemo = demo.component();     // 组件实例（导入 / 同模块组件）
- *   return { render() { return section((box) => box.child(liveDemo)); } };
+ *   return vNode(() => section((box) => box.child(liveDemo)));
  * }
  * ```
  *
@@ -83,7 +83,7 @@ const signature = (node) => {
 };
 
 const panelSource = [
-  "import { div, span, vText } from '../../src/yoya.core.js';",
+  "import { div, span, vNode, vText } from '../../src/yoya.core.js';",
   '',
   'export function Chip(label) {',
   "  return span((box) => box.className('chip').child(vText(label)));",
@@ -91,16 +91,14 @@ const panelSource = [
   '',
   'export function Section(props) {',
   '  const liveDemo = Chip(props.label);',
-  '  return {',
-  '    render() {',
-  '      return div((root) => {',
+  '  return vNode(() =>',
+  '    div((root) => {',
   "        root.className('section');",
   "        root.span((head) => head.className('head').child(vText(props.title)));",
   '        root.child(liveDemo);',
   "        root.span((tail) => tail.className('tail').child('tail'));",
-  '      });',
-  '    }',
-  '  };',
+  '    })',
+  '  );',
   '}',
   ''
 ].join('\n');
@@ -121,9 +119,9 @@ describe('组件实例变量（票 10）', () => {
     expect(sectionModule).toContain('mountRuntimeChildren(');
     expect(sectionModule).toContain('liveDemo');
 
-    // 形态 B：组件函数返回 `{ render() }`，视图在两边的 render() 里
-    const compiledEl = result.compiled.Section(propsOf()).render().renderDom();
-    const genericEl = result.generic.Section(propsOf()).render().renderDom();
+    // 组件定义函数直接返回视图（vNode 组件）
+    const compiledEl = result.compiled.Section(propsOf()).renderDom();
+    const genericEl = result.generic.Section(propsOf()).renderDom();
 
     expect(signature(compiledEl)).toBe(signature(genericEl));
     expect([...compiledEl.children].map((el) => el.className)).toEqual(['head', 'chip', 'tail']);
@@ -138,13 +136,13 @@ describe('组件实例变量（票 10）', () => {
     const first = result.compiled.Section({ title: core.ref('a'), label: core.ref('one') });
     const second = result.compiled.Section({ title: core.ref('b'), label: core.ref('two') });
 
-    expect(first.render().renderDom().querySelector('.chip').textContent).toBe('one');
-    expect(second.render().renderDom().querySelector('.chip').textContent).toBe('two');
+    expect(first.renderDom().querySelector('.chip').textContent).toBe('one');
+    expect(second.renderDom().querySelector('.chip').textContent).toBe('two');
   });
 
   it('多实例 / 同一实例用两次 / 实例与普通局部量混用', async () => {
     const source = [
-      "import { div, span } from '../../src/yoya.core.js';",
+      "import { div, span, vNode } from '../../src/yoya.core.js';",
       '',
       'export function Chip(label) {',
       "  return span((box) => box.className('chip').child(label));",
@@ -154,17 +152,15 @@ describe('组件实例变量（票 10）', () => {
       "  const first = Chip('first');",
       "  const second = Chip('second');",
       "  const label = 'label';",
-      '  return {',
-      '    render() {',
-      '      return div((root) => {',
+      '  return vNode(() =>',
+      '    div((root) => {',
       "        root.className('stack');",
       '        root.child(first);',
       '        root.child(label);',
       '        root.child(second);',
       '        root.child(first);',
-      '      });',
-      '    }',
-      '  };',
+      '    })',
+      '  );',
       '}',
       ''
     ].join('\n');
@@ -172,8 +168,8 @@ describe('组件实例变量（票 10）', () => {
     expect(result.wired, '插件没有编出产物').not.toBeNull();
     expect(moduleOf(result, 'Stack')).toContain('mountRuntimeChildren(');
 
-    const compiledEl = result.compiled.Stack({}).render().renderDom();
-    const genericEl = result.generic.Stack({}).render().renderDom();
+    const compiledEl = result.compiled.Stack({}).renderDom();
+    const genericEl = result.generic.Stack({}).renderDom();
 
     expect(signature(compiledEl)).toBe(signature(genericEl));
     expect([...compiledEl.children].map((el) => el.className)).toEqual(['chip', 'chip']);
@@ -181,26 +177,20 @@ describe('组件实例变量（票 10）', () => {
 
   it('实例的销毁跟着父节点走（与通用路径同一条时序）', async () => {
     const source = [
-      "import { div, span } from '../../src/yoya.core.js';",
+      "import { div, span, vNode } from '../../src/yoya.core.js';",
       '',
       'export function Tracked(props) {',
-      '  return {',
-      '    render() {',
-      "      return span((box) => box.className('tracked').child('tracked'));",
-      '    },',
-      '    whenDestroy() {',
+      '  return vNode((api) => {',
+      '    api.whenDestroy = () => {',
       '      props.onDestroy();',
-      '    }',
-      '  };',
+      '    };',
+      "    return span((box) => box.className('tracked').child('tracked'));",
+      '  });',
       '}',
       '',
       'export function Holder(props) {',
       '  const tracked = Tracked({ onDestroy: props.onDestroy });',
-      '  return {',
-      '    render() {',
-      "      return div((root) => root.className('holder').child(tracked));",
-      '    }',
-      '  };',
+      "  return vNode(() => div((root) => root.className('holder').child(tracked)));",
       '}',
       ''
     ].join('\n');
@@ -209,16 +199,14 @@ describe('组件实例变量（票 10）', () => {
     expect(moduleOf(result, 'Holder')).toContain('mountRuntimeChildren(');
 
     const genericCalls = [];
-    const genericNode = result.generic.Holder({ onDestroy: () => genericCalls.push('generic') });
-    const genericView = genericNode.render();
+    const genericView = result.generic.Holder({ onDestroy: () => genericCalls.push('generic') });
     genericView.renderDom();
     genericView.destroy();
     const compiledProduct = result.compiled.Holder({
       onDestroy: () => genericCalls.push('compiled')
     });
-    const compiledView = compiledProduct.render();
-    compiledView.renderDom();
-    compiledView.destroy();
+    compiledProduct.renderDom();
+    compiledProduct.destroy();
 
     expect(genericCalls).toEqual(['generic', 'compiled']);
   });

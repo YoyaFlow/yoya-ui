@@ -57,17 +57,12 @@ Safari 只是因为更新被系统版本锁住，**受害人群最大、持续�
   `@supports not ((color: light-dark(…)) and (color: color-mix(…)))` 包住一份**纯值** token 表，
   键集与主层里依赖这两个函数的 token **逐个相等**——新增 token 忘了补兜底，`src/theme-tokens.test.js` 会当场红。
   块内三个模式块：浅色、`[data-yoya-mode='dark']`、以及 `system` 的夜间（`@media (prefers-color-scheme: dark)`）。
-- **主题壳背景透明度**：`backgroundOpacity()` 只写两段数据（`--yoya-shell-bg` 基色、`--yoya-shell-alpha` 百分比），
-  合成由皮肤算出的 `--yoya-shell-composed` 完成；不认 `color-mix()` 时同一个变量落成**不透明基色**。
 - **不要把 `var(--token, 兜底)` 当成降级手段**：CSS 变量的 fallback **只在变量未被定义时**生效。
   这里的 token 是被定义了的（只是值在替换时才非法），所以那些 fallback 一次都不会被采用——库内 JS 侧有 140 多处行内样式、
   CSS 侧有 370 多处取值是这个写法，它们的正确性**依赖 token 层本身有兜底**。
 - **品牌色覆写在低基线浏览器里不生效**：兜底层是打包时按**默认调色板**烘焙出来的纯值。
   之所以不跟随 `--yoya-raw-*` 覆写：跟随会让基色跟着改、派生色留在默认品牌，得到「红按钮 + 蓝 hover」这种视觉断裂；
   烘焙默认调色板至少是自洽的。需要品牌色的老浏览器场景见 §5。
-- **已知残差——虚拟模式的外壳透明度**：`vThemeShell(...).virtual()` 把外壳样式投影到唯一子节点，
-  目标节点没有 `VThemeShell` 身份，皮肤的组合规则命中不了它，所以这条路径仍在 JS 侧组合；
-  在缺 `color-mix()` 的浏览器里，该处背景会退成透明（**只影响虚拟模式 + `backgroundOpacity()` 这一个组合**）。
 - **分层现状（记录，不是改动）**：预设皮肤整块放在 `@layer yoya` 里，所以消费方样式不必打特异性战争（§3 的 `@layer` 悬崖也由此而来）。
   但 **`prefers-reduced-motion` 的两个块与 `split-panel` 的规则刻意留在 layer 之外**——它们必须能压过 layer 内的规则；
   改动皮肤时不要顺手把它们挪进 layer。

@@ -108,7 +108,7 @@ export function VButton({
   });
   const selectedAttr = computed(() => (selected.value ? 'true' : null));
 
-  return vNode((api, self) => {
+  return vNode((api) => {
     api.label = (next) => {
       if (next === undefined) {
         return labelText.value;
@@ -195,12 +195,6 @@ export function VButton({
     /** 容器给的联动上下文（与 `VStep.track` 同口径的内部协议）。 */
     api.track = (next) => {
       context.value = next ?? null;
-      return api;
-    };
-
-    /** 把焦点交给按钮元素（元素级方法不委托 `focus`，这里显式给一条命令）。 */
-    api.focus = () => {
-      self.node().renderDom()?.focus?.();
       return api;
     };
 

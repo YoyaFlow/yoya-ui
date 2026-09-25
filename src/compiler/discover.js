@@ -87,19 +87,13 @@ function returnedView(fn) {
 }
 
 /**
- * 这个表达式是不是一个 UI 视图（元素工厂调用 / vNode / 带 render() 的对象）。
+ * 这个表达式是不是一个 UI 视图（元素工厂调用 / vNode / 另一个工厂的转调）。
  * 判定口径与编译器本体一致：**元素白名单**（core 注册的工厂名）就够，不强制模块里有 core import——
  * CLI / 覆盖率扫描的语料常常直接写 `tr(...)`，编译器的分析也是按白名单认的。
  */
 function isViewExpression(expression, bindings, whitelist) {
   if (!expression) {
     return false;
-  }
-  if (expression.type === 'ObjectExpression') {
-    return expression.properties.some(
-      (property) =>
-        property.type === 'ObjectMethod' && (property.key.name ?? property.key.value) === 'render'
-    );
   }
   if (expression.type !== 'CallExpression') {
     return false;

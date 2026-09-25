@@ -1,8 +1,10 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
   I18n,
+  PropValue,
   SetupCallback,
   SetupInput
 } from './core.js';
@@ -12,7 +14,7 @@ export interface LanguageOption {
   label?: ChildInput;
   value: string;
   disabled?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type LanguageSwitchSize = 'small' | 'medium' | 'large';
@@ -22,45 +24,49 @@ export type LanguageSwitchVariant = 'primary' | 'secondary';
 export interface LanguageSwitchOptions {
   /** 绑定的 I18n 实例（默认用全局 `i18n`）。 */
   locale?: I18n;
-  languages?: Array<string | [string, string] | LanguageOption>;
+  languages?: PropValue<Array<string | [string, string] | LanguageOption>>;
   ariaLabel?: ChildInput;
-  size?: LanguageSwitchSize;
-  variant?: LanguageSwitchVariant;
+  size?: PropValue<LanguageSwitchSize>;
+  variant?: PropValue<LanguageSwitchVariant>;
   onChange?: (option: LanguageOption, locale: I18n) => void;
   [key: string]: unknown;
 }
 
-/** Component handle returned by vLanguageSwitch(). */
-export interface LanguageSwitchComponent {
+/** 语言切换句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（见 `ComponentNode`）。 */
+export interface VLanguageSwitch extends ComponentNode {
   activeLanguage(): string;
   ariaLabel(): string;
-  ariaLabel(value: ChildInput): LanguageSwitchComponent;
-  change(handler: (option: LanguageOption, locale: I18n) => void): LanguageSwitchComponent;
-  onChange(handler: (option: LanguageOption, locale: I18n) => void): LanguageSwitchComponent;
-  destroy(): LanguageSwitchComponent;
+  ariaLabel(value: ChildInput): VLanguageSwitch;
+  change(handler: (option: LanguageOption, locale: I18n) => void): VLanguageSwitch;
+  onChange(handler: (option: LanguageOption, locale: I18n) => void): VLanguageSwitch;
   languages(): LanguageOption[];
-  languages(value: Array<string | [string, string] | LanguageOption>): LanguageSwitchComponent;
+  languages(value: Array<string | [string, string] | LanguageOption>): VLanguageSwitch;
   locale(): I18n;
-  locale(value: I18n): LanguageSwitchComponent;
+  locale(value: I18n): VLanguageSwitch;
   size(): LanguageSwitchSize;
-  size(value: LanguageSwitchSize): LanguageSwitchComponent;
+  size(value: LanguageSwitchSize): VLanguageSwitch;
   variant(): LanguageSwitchVariant;
-  variant(value: LanguageSwitchVariant): LanguageSwitchComponent;
-  [key: string]: any;
+  variant(value: LanguageSwitchVariant): VLanguageSwitch;
 }
+
+/** @deprecated 旧名（对象组件时代的叫法），等同 `VLanguageSwitch`。 */
+export type LanguageSwitchComponent = VLanguageSwitch;
+
+/** 语言切换组件定义函数：直接参数 = props。 */
+export const VLanguageSwitch: { (props?: LanguageSwitchOptions): VLanguageSwitch };
 
 /** Creates a language switch bound to an I18n instance. */
 export function vLanguageSwitch(
-  first?: LanguageSwitchOptions | SetupInput<LanguageSwitchComponent> | null,
-  callback?: SetupCallback<LanguageSwitchComponent>
-): LanguageSwitchComponent;
+  first?: LanguageSwitchOptions | SetupInput<VLanguageSwitch> | null,
+  callback?: SetupCallback<VLanguageSwitch>
+): VLanguageSwitch;
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface I18nParentShortcuts {
   vLanguageSwitch(
-    first?: LanguageSwitchOptions | SetupInput<LanguageSwitchComponent> | null,
-    callback?: SetupCallback<LanguageSwitchComponent>
-  ): LanguageSwitchComponent;
+    first?: LanguageSwitchOptions | SetupInput<VLanguageSwitch> | null,
+    callback?: SetupCallback<VLanguageSwitch>
+  ): VLanguageSwitch;
 }
 
 export type { ElementFactory };

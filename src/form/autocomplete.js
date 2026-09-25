@@ -133,7 +133,7 @@ export function VAutocomplete() {
     const bindOutsideClose = (enabled) => {
       if (enabled && !outsideUnbind) {
         outsideUnbind = bindDocumentEvent('mousedown', (event) => {
-          if (!node._el || !node._el.contains(event.target)) {
+          if (!node.owns(event.target)) {
             api.close();
           }
         });
@@ -167,13 +167,12 @@ export function VAutocomplete() {
 
     /** 根据输入框坐标定位下拉列表（fixed 定位，脱离容器裁剪）。 */
     const positionList = () => {
-      if (typeof window === 'undefined' || !input._el || !suggestionList._el) {
+      if (typeof window === 'undefined' || !input.isLanded() || !suggestionList.isLanded()) {
         return;
       }
 
-      const rect = input._el.getBoundingClientRect();
-      const listElement = suggestionList._el;
-      const listHeight = listElement.offsetHeight || 240;
+      const rect = input.measure();
+      const listHeight = suggestionList.prop('offsetHeight') || 240;
       const margin = 8;
       let top = rect.bottom + 6;
 

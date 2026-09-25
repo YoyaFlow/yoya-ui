@@ -201,24 +201,23 @@ const componentPatterns = [
     title: '节点类型扩展（引擎内部，不是第三种组件形态）',
     intro:
       '需要元素级行为（重写 renderDom / toHTML / child 语义、DOM 测量、事件绑定、生命周期）时，' +
-      '视图根本身得是一个节点类型：class XxxNode extends HtmlElementNode。库内组件都这么做，' +
-      '但对外只有一个句柄（vNode 组件节点），节点类型不进包入口，第三方与业务组件都不需要继承。',
-    code: `// 库内：不导出的节点类型 + 公开的 vNode 外壳
-class BadgeNode extends HtmlElementNode {
-  // 元素机制：renderDom / child 语义 / 测量 / 生命周期
+      '视图根本身得是一个节点类型：class XxxNode extends HtmlElementNode。**这是引擎内部的少数位置，不是组件写法**——' +
+      '库内组件与业务组件一律 A / B（节点类型不进包入口，对外只有一个 vNode 句柄）。',
+    code: `// 引擎内部才这样写：节点类型只服务"元素级行为"，对外仍是一个普通 vNode 组件
+class WidgetNode extends HtmlElementNode {
+  constructor(props = {}) {
+    super('div', { class: 'widget', vn: 'VWidget' });
+    this.attr('data-kind', props.kind ?? 'default');
+  }
 }
 
-export function VBadge(props = {}) {
-  return vNode((api) => {
-    const node = new BadgeNode(props);
-    // 公开命令面用 delegateCommands / delegateNodeCommands 从节点类型补齐
-    delegateCommands(api, node, ['count', 'content', 'dot']);
-    return node;
-  });
-}
-
-export const vBadge = createComponentShortcut(VBadge, { props: true });`,
-    references: ['只有"自定义元素种类"这类引擎扩展才写节点类型；业务组件用 A 或 B。']
+export function VWidget(props = {}) {
+  return vNode(() => new WidgetNode(props));
+}`,
+    references: [
+      '业务组件用 A 或 B 就够；"造非 HTML 宿主 / 自绘渲染目标"是引擎扩展点（CustomNode），不是业务写法。',
+      '库内参考实现：feedback/message-manager.js（管理器转发）、data-display/tree.js 的自绘片段节点。'
+    ]
   }
 ];
 

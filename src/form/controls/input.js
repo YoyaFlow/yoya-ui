@@ -163,11 +163,14 @@ export function VInput() {
 
     api.value = (value) => {
       if (value === undefined) {
-        return field._el?.value ?? state.value ?? field.attr('value') ?? '';
+        return field.prop('value') ?? state.value ?? field.attr('value') ?? '';
       }
 
       const next = resolveTextValue(value);
 
+      if (next === '' && state.value !== '') {
+        console.log('[eng-value] 清空', JSON.stringify(state.value), 'landed=', field.isLanded());
+      }
       state.value = next;
       field.attr('value', next);
       syncClear();
@@ -213,10 +216,8 @@ export function VInput() {
     api.clear = () => {
       api.value('');
 
-      if (field._el) {
-        field._el.dispatchEvent(new Event('input', { bubbles: true }));
-        field._el.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      field.emit('input');
+      field.emit('change');
 
       return api;
     };
@@ -329,8 +330,9 @@ export function VInput() {
 
     // 元素机制挂到局部节点：SSR 回读走内层 input，权限落位走视图根（渲染路径按节点调用）
     field.hydrateSnapshot = () => {
-      if (field._el) {
-        api.value(field._el.value);
+      if (field.isLanded()) {
+        console.log('[eng-hydrate] 回读', JSON.stringify(field.prop('value')));
+        api.value(field.prop('value'));
       }
       return field;
     };
@@ -349,7 +351,7 @@ export function VInput() {
       event.preventDefault();
       event.stopPropagation();
       api.clear();
-      field._el?.focus();
+      field.focus();
     });
     field.on('input', syncClear);
     field.on('change', syncClear);

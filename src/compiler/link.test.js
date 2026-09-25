@@ -26,7 +26,6 @@ const registryDir = join(workDir, 'components');
 const built = buildComponentRegistry({
   entries: [
     { file: componentFile, export: 'StatusDot' },
-    { file: componentFile, export: 'StatusPill' },
     { file: componentFile, export: 'StatusTag' },
     { file: componentFile, export: 'StatusBox' }
   ],
@@ -86,7 +85,7 @@ describe('component registry', () => {
   it('compiles leaf components and keeps the registry pure data', () => {
     const keys = Object.keys(built.registry.components).sort();
 
-    expect(keys).toEqual([`${componentFile}#StatusDot`, `${componentFile}#StatusPill`, TAG_KEY]);
+    expect(keys).toEqual([`${componentFile}#StatusDot`, TAG_KEY]);
     expect(built.registry.components[DOT_KEY].hash).toMatch(/^[0-9a-f]{12}$/);
     expect(built.registry.components[DOT_KEY].plan.html).toBe(
       '<span class="status-dot" data-tone=""><!----></span>'

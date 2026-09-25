@@ -106,55 +106,43 @@ function RadioFormExample() {
 function RadioGroupDemo() {
   const content = RadioGroupExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('单选组');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vRadios 提供互斥选择，change 回调返回当前值。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('单选组');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('vRadios 提供互斥选择，change 回调返回当前值。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function RadioSingleDemo() {
   const content = RadioSingleExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('单选项');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vRadio 支持标签、说明、选中和禁用状态。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('单选项');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('vRadio 支持标签、说明、选中和禁用状态。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function RadioFormDemo() {
   const content = RadioFormExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('表单集成');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('vRadios 自动参与表单取值与必填校验。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('表单集成');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('vRadios 自动参与表单取值与必填校验。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 const radioDemos = [
@@ -193,97 +181,89 @@ function RadioDemoSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-radio-demo');
-        example.attr('data-radio-demo', demo.id);
-        example.h3(demo.title);
-        example.div((live) => {
-          live.className('components-radio-demo-live');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-radio-demo');
+    example.attr('data-radio-demo', demo.id);
+    example.h3(demo.title);
+    example.div((live) => {
+      live.className('components-radio-demo-live');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }
 
 export function RadioDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-radio-docs');
-        page.attr('data-component-route-item', 'form:radio');
-        page.attr('data-radio-docs', 'true');
-        page.h1('vRadio 单选框');
-        page.p('互斥选项选择控件，支持单选组、单选项与表单校验集成。');
+  return section((page) => {
+    page.className('components-route-page components-radio-docs');
+    page.attr('data-component-route-item', 'form:radio');
+    page.attr('data-radio-docs', 'true');
+    page.h1('vRadio 单选框');
+    page.p('互斥选项选择控件，支持单选组、单选项与表单校验集成。');
 
-        page.section((usage) => {
-          usage.className('components-radio-usage');
-          usage.attr('data-radio-usage', 'true');
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            list.li('选项互斥、只能选一个时使用单选组。');
-            list.li('选项数量少（2～7 个）且需要一眼对比时优先单选。');
-            list.li('需要必填校验时配合 vForm 使用。');
+    page.section((usage) => {
+      usage.className('components-radio-usage');
+      usage.attr('data-radio-usage', 'true');
+      usage.h2('何时使用');
+      usage.ul((list) => {
+        list.li('选项互斥、只能选一个时使用单选组。');
+        list.li('选项数量少（2～7 个）且需要一眼对比时优先单选。');
+        list.li('需要必填校验时配合 vForm 使用。');
+      });
+    });
+
+    page.section((api) => {
+      api.className('components-radio-api');
+      api.attr('data-radio-api', 'true');
+      api.h2('常用 API');
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.className('components-radio-api');
-          api.attr('data-radio-api', 'true');
-          api.h2('常用 API');
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
+        table.tbody((body) => {
+          [
+            [
+              'vRadio({ label, checked, disabled })',
+              '创建单个单选项。',
+              "vRadio({ label: '自动部署', checked: true })"
+            ],
+            [
+              'vRadios({ options, name, value })',
+              '创建互斥单选组。',
+              "vRadios({ options: [{ label: '开发', value: 'dev' }] })"
+            ],
+            [
+              'radios.value() / change(handler)',
+              '读取/设置选中值，变化回调。',
+              "radios.value('dev')"
+            ],
+            [
+              'radios.required(true) / disabled(true)',
+              '必填校验与整体禁用。',
+              'radios.required(true)'
+            ],
+            ['vForm.values() / validate()', '单选组自动参与表单取值与校验。', 'form.validate()']
+          ].forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              [
-                [
-                  'vRadio({ label, checked, disabled })',
-                  '创建单个单选项。',
-                  "vRadio({ label: '自动部署', checked: true })"
-                ],
-                [
-                  'vRadios({ options, name, value })',
-                  '创建互斥单选组。',
-                  "vRadios({ options: [{ label: '开发', value: 'dev' }] })"
-                ],
-                [
-                  'radios.value() / change(handler)',
-                  '读取/设置选中值，变化回调。',
-                  "radios.value('dev')"
-                ],
-                [
-                  'radios.required(true) / disabled(true)',
-                  '必填校验与整体禁用。',
-                  'radios.required(true)'
-                ],
-                ['vForm.values() / validate()', '单选组自动参与表单取值与校验。', 'form.validate()']
-              ].forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-radio-examples');
-          examples.h2('代码演示');
-          radioDemos.forEach((demo) => {
-            examples.child(RadioDemoSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-radio-examples');
+      examples.h2('代码演示');
+      radioDemos.forEach((demo) => {
+        examples.child(RadioDemoSection(demo));
+      });
+    });
+  });
 }

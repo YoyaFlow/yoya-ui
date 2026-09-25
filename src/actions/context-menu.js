@@ -1,9 +1,10 @@
 import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
-import { MenuNode } from '../navigation/menu.js';
+import { VMenu } from '../navigation/menu.js';
 import { div } from '../html/index.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import {
+  applyComponentSetup,
   createComponentShortcut,
   delegateNodeCommands,
   elementHasIdentity,
@@ -61,7 +62,7 @@ export function VContextMenu({
       }
 
       const handlePointer = (event) => {
-        if (!view?._el?.contains(event.target)) {
+        if (!view?.owns(event.target)) {
           api.close();
         }
       };
@@ -95,7 +96,8 @@ export function VContextMenu({
         return menuBox;
       }
 
-      setupContentSlot(menuBox, setup);
+      // 替换语义（迁移前 `setupContentSlot`）：菜单是组件了，内容走它自己的内容命令
+      menuBox.replaceContent(setup);
       return api;
     };
 
@@ -153,7 +155,7 @@ export function VContextMenu({
           });
         });
 
-        menuBox = new MenuNode().setup({ vn: 'VContextContent VMenu' });
+        menuBox = applyComponentSetup(VMenu(), { vn: 'VContextContent VMenu' });
         menuBox.on('click', (event) => {
           const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
 

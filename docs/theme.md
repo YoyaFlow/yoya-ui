@@ -99,7 +99,7 @@ Components only respond to density when they consume space/control tokens rather
 
 ## 5.1 Page shell vBody
 
-`vBody` is the page-level theming entry: it consumes theme tokens out of the box (background `--yoya-color-bg`, text `--yoya-color-text`, `--yoya-font-family`, `--yoya-font-size`, `--yoya-line-height`) and follows light/dark, brand, and density switches automatically. Region-level containers use `vThemeShell`, which provides a themed background (`--yoya-color-surface`), border (`--yoya-color-border`), radius (`--yoya-radius-md`), and text color (`--yoya-color-text`), tunable per instance via `.background()` / `.backgroundOpacity(alpha)` / `.radius()` / `.border()` / `.borderColor()` / `.scrollable()`.
+`vBody` is the page-level theming entry: it consumes theme tokens out of the box (background `--yoya-color-bg`, text `--yoya-color-text`, `--yoya-font-family`, `--yoya-font-size`, `--yoya-line-height`) and follows light/dark, brand, and density switches automatically. Region-level surfaces are owned by the components that provide them — `vCard` is the reference: its background (`--yoya-color-surface`), border (`--yoya-color-border`) and radius live in the skin under `[vn~='VCard']`, and one instance is tuned through that component's API or inline `styles()`. A plain box that wants the same look writes the surface rule (or instance styles) for its own identity; there is no separate "shell container" component to reach for.
 
 ```js
 import { vBody } from '@yoyaflow/yoya-ui/ui';

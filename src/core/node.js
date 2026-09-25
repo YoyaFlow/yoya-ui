@@ -1,17 +1,16 @@
 // HTML 布尔属性序列化时只需要属性名即可表示启用。
+import { getFocusableElements } from './a11y.js';
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
 import { isSignal, ref } from './signals/handle.js';
 import { optionKindOf } from './setup-keys.js';
-import { warnDeprecatedComponentObject } from './deprecations.js';
 import {
   COMPONENT_HOOK_NAMES,
   beginLanding,
   endLanding,
   fireWhenDestroy,
   fireWhenMount,
-  rearmWhenMount,
-  registerComponentHooks
+  rearmWhenMount
 } from './hooks.js';
 import {
   PART_ATTRIBUTE,
@@ -212,7 +211,7 @@ function afterRegisterBinding(owner) {
 /**
  * 绑定归属：区域构建期登记的绑定归区域所有（重跑时统一释放）。
  * 其余节点不需要额外的作用域对象——直接用自己的绑定数组，返回 null。
- * 非节点 owner（组件对象）保留一个兜底名单，保证仍能被释放。
+ * 非节点 owner 保留一个兜底名单，保证仍能被释放。
  */
 function bindingScopeFor(owner) {
   const region = activeRegion();
@@ -3023,9 +3022,34 @@ export class ViewNode {
     return this;
   }
 
+  /**
+   * 把焦点交给**自己的元素里第一个可聚焦后代**（没有就交给自己）——"还焦点给目标区 / 触发器"
+   * 这类不用自己查 DOM 的写法（可聚焦判定与焦点陷阱同一份 `a11y` 规则）。
+   */
+  focusFirst() {
+    const element = this._el;
+
+    if (!element || this._deleted) {
+      return this;
+    }
+
+    (getFocusableElements(element)[0] ?? element).focus?.();
+    return this;
+  }
+
   /** 这个元素是否**包含**给定目标（"点外面关掉"、事件命中判定用；未落地 = false）。 */
   owns(target) {
     return Boolean(this._el?.contains?.(target));
+  }
+
+  /**
+   * 元素**落地判定**：建出真元素了没有。
+   *
+   * 组件里的 `if (!node._el) return` 一律写这条——它只读自己的落地状态，不泄露元素、也不会
+   * 像 `renderDom()` 那样顺手把 DOM 建出来（SSR 路径还会碰 `document`）。
+   */
+  isLanded() {
+    return Boolean(this._el);
   }
 
   /**
@@ -3044,6 +3068,101 @@ export class ViewNode {
     }
 
     element[name] = value;
+    return this;
+  }
+
+  /**
+   * 量测：`getBoundingClientRect()`（未落地 = `null`）。偏移量 / 滚动量走 `prop()`。
+   * 名字不叫 `rect()`：`rect` 是 SVG 形状元素（`svgs.rect(…)`）的子工厂名，会撞上。
+   */
+  measure() {
+    return this._el?.getBoundingClientRect?.() ?? null;
+  }
+
+  /**
+   * 从自己的元素上派发一个 DOM 事件（`input` / `change` / `submit` 这类要让**用户监听器**
+   * 收到的原生事件）；给了 `detail` 就派发 `CustomEvent`。未落地 = 无事发生。
+   * `options` 是事件初始化选项（默认 `bubbles: true`）。
+   */
+  emit(type, detail = null, options = null) {
+    const element = this._el;
+
+    if (!element || this._deleted) {
+      return this;
+    }
+
+    const view = element.ownerDocument?.defaultView;
+    const init = { bubbles: true, ...(options ?? {}) };
+
+    if (detail === null || detail === undefined) {
+      const EventClass = view?.Event ?? Event;
+      element.dispatchEvent(new EventClass(type, init));
+      return this;
+    }
+
+    const CustomEventClass = view?.CustomEvent ?? CustomEvent;
+    element.dispatchEvent(new CustomEventClass(type, { ...init, detail }));
+    return this;
+  }
+
+  /**
+   * 在自己**已落地的元素**上调用一个原生方法（`showModal` / `close` / `matches(':modal')` /
+   * `reset` / `requestSubmit` / `click`…）：返回方法的返回值；未落地或没有这个方法 = `undefined`。
+   * 这是"真元素做真实的事"的那条口子，调用点写清方法名，比把元素本身递出去窄得多。
+   */
+  invoke(name, ...args) {
+    const element = this._el;
+    const method = element?.[name];
+
+    return typeof method === 'function' ? method.apply(element, args) : undefined;
+  }
+
+  /**
+   * 把已落地的子节点按给定顺序搬到**自己的元素末尾**（父元素内重排是元素级机制，组件只报顺序）：
+   * 清单外的子节点由 `commit()` 销毁；未落地 = 只清账不动 DOM；挂载条件转假的子节点跳过。
+   */
+  reorderChildren(ordered) {
+    const element = this._el;
+
+    if (!element) {
+      return this;
+    }
+
+    this.commit();
+
+    ordered.forEach((child) => {
+      const childElement = child.isMounted() ? child._el : null;
+
+      if (childElement) {
+        element.appendChild(childElement);
+      }
+    });
+
+    return this;
+  }
+
+  /**
+   * 换掉全部子节点：**真清空**（元素连带 DOM 一起摘掉，不等引擎下一次对账）+ 落新内容。
+   * 与 DOM 的 `replaceChildren()` 同义，是组件"整段换内容"的统一口子；组件节点写的是
+   * **它的根元素**的孩子们（与 `children()` 同一口径）。
+   */
+  replaceChildren(...children) {
+    // 组件节点的内容住在**根元素**里（与 `children()` 同一口径）；元素节点就是自己
+    const host = this._resolvedList?.[0] ?? this;
+    const previous = host.children();
+
+    host._dropChildKeys(previous);
+    previous.forEach((child) => child.destroy());
+    host._children = EMPTY_CHILDREN;
+    host._childrenDirty = false;
+    host._el?.replaceChildren?.();
+
+    const next = children.flat(Infinity).filter((child) => child !== null && child !== undefined);
+
+    if (next.length > 0) {
+      this.child(next);
+    }
+
     return this;
   }
 
@@ -3081,10 +3200,9 @@ export class ViewNode {
 
       if (parent && element) {
         parent.appendChild(element);
-        // 根节点自己落地：组件钩子在这里登记（子节点由父级挂载路径负责）
-        if (this._whenHooks !== undefined) {
-          fireWhenMount(this);
-        }
+        // 根节点自己落地：组件钩子在这里登记（子节点由父级挂载路径负责；
+        // 透明包装 / 组件嵌组件的内层由 `fireWhenMount` 沿钩子归属链转发）
+        fireWhenMount(this);
       }
     } finally {
       endLanding();
@@ -3239,18 +3357,21 @@ export class VTextNode extends ViewNode {
 }
 
 /**
- * ComponentNode 延迟解析函数 Factory 或带 render() 的组件对象。
- * render 返回单个 ViewNode 时按普通组件处理；返回 ViewNode 数组时按
+ * ComponentNode 延迟解析**组件定义函数**（票 07：对象组件退场，构造参数只能是函数）。
+ * 定义返回单个 ViewNode 时按普通组件处理；返回 ViewNode 数组时按
  * 多根 fragment 处理：不产生包装元素，父元素直接落实全部根节点。
  */
 export class ComponentNode extends ViewNode {
   constructor(component) {
     super(null);
-    this._component = component;
-    registerComponentHooks(this, component);
-    if (component && typeof component === 'object' && typeof component.whenFailed === 'function') {
-      this.whenFailed(component.whenFailed.bind(component));
+    if (typeof component !== 'function') {
+      throw new TypeError(
+        'ComponentNode requires a component definition function: ' +
+          'objects with render() retired in 0.7.0 (write it as vNode((api) => view) when it has ' +
+          'behaviour, or return a ViewNode directly).'
+      );
     }
+    this._component = component;
     this._resolved = null; // 第一个根，供外部兼容读取
     this._resolvedList = null; // 全部根
     this._roots = null; // 多根模式时非 null
@@ -3266,10 +3387,7 @@ export class ComponentNode extends ViewNode {
       return this._resolved;
     }
 
-    const build = () =>
-      withProviderScope(this, () =>
-        typeof this._component === 'function' ? this._component() : this._component.render()
-      );
+    const build = () => withProviderScope(this, () => this._component());
     const withEnvironment = () =>
       withContext(this._contextSnapshot, () =>
         i18nScopeBridge ? i18nScopeBridge.runWith(this._i18nSnapshot, build) : build()
@@ -3285,9 +3403,8 @@ export class ComponentNode extends ViewNode {
         throw new TypeError(
           'Component render must return a ViewNode or an array of ViewNodes. ' +
             `render() of ${componentInfo} returned ${describeValue(item)}.` +
-            `${ownerInfo} If render() returns a component object (for example ` +
-            'vPagination({ ... })), attach it with parent.child(...) instead of ' +
-            'returning it directly.'
+            `${ownerInfo} A component definition returns the view directly — returning a ` +
+            'component object ({ render() { … } }) retired in 0.7.0.'
         );
       }
     });
@@ -3435,6 +3552,15 @@ export class ComponentNode extends ViewNode {
   _resolveList() {
     this._resolve();
     return this._resolvedList || [];
+  }
+
+  /**
+   * 钩子归属链的内层视图根（`core/hooks.js` 的 `whenMount` / `rearmWhenMount` 沿链转发）：
+   * 组件节点的元素是**视图根**的，视图根本身又是组件时（"组件嵌组件"）钩子挂在内层节点上，
+   * 不转发就等于一次都不触发。只有这类节点定义 `viewRoots()`，普通元素节点出快路。
+   */
+  viewRoots() {
+    return this._resolveList();
   }
 
   /**
@@ -3677,10 +3803,18 @@ export class ComponentNode extends ViewNode {
 const DELEGATED_ELEMENT_METHODS = [
   'attr',
   // 元素级**操作 API**（组件碰 DOM 的唯一口子，见票 16 第 114 / 115 条）：组件代码里不出现
-  // `_el` / `renderDom()`，需要聚焦 / 包含判定 / 写 DOM property 就用这三条
+  // `_el` / `renderDom()`，需要落地判定 / 聚焦 / 包含判定 / 读写 property / 量测 / 派发事件 /
+  // 程序化点击 / 整段换子节点就用这几条
   'focus',
+  'focusFirst',
   'owns',
   'prop',
+  'isLanded',
+  'measure',
+  'emit',
+  'invoke',
+  'reorderChildren',
+  'replaceChildren',
   'id',
   'name',
   'className',
@@ -3705,6 +3839,13 @@ export const SHADOWABLE_DEFERRED_METHOD_NAMES = new Set(DELEGATED_ELEMENT_METHOD
 SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupFunction');
 SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupString');
 SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupObject');
+
+// 区域声明 / 手动重建同样允许被命令遮蔽：**内容区就是组件根元素**的组件（菜单容器：单元的加入
+// 与朝向都挂在根上）要把区域落到自己的视图根——区域只在元素节点上订阅依赖，组件节点上的区域
+// 不会随信号重建（见 `activateRegion` 的调用点）。组件里转发即可：
+// `api.rebuildable = (predicate) => { view.rebuildable(predicate); return api; }`。
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('rebuildable');
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('rebuild');
 
 DELEGATED_ELEMENT_METHODS.forEach((method) => {
   // 已有同名实现（例如 `textContent`）保持原样：它本来就是组件语义
@@ -3789,12 +3930,6 @@ function describeValue(value) {
     return `${value.constructor.name}${tag}`;
   }
 
-  if (value && typeof value.render === 'function') {
-    const ctor =
-      value.constructor && value.constructor !== Object ? ` ${value.constructor.name}` : '';
-    return `component object${ctor} with render()`;
-  }
-
   const ctor =
     value && value.constructor && value.constructor !== Object ? value.constructor.name : 'Object';
   return `${ctor} instance`;
@@ -3803,14 +3938,6 @@ function describeValue(value) {
 function describeComponent(component) {
   if (typeof component === 'function') {
     return `function ${component.name || '(anonymous)'}`;
-  }
-
-  if (component && typeof component === 'object') {
-    const renderName =
-      typeof component.render === 'function' && component.render.name
-        ? ` (render ${component.render.name})`
-        : '';
-    return `component object${renderName}`;
   }
 
   return String(component);
@@ -3828,7 +3955,7 @@ function normalizeChildWithContext(parent, child) {
       throw new TypeError(
         `Invalid child for ${describeValue(parent)}: ${error.message} ` +
           `(received ${describeValue(child)}). child() accepts a ViewNode, a component ` +
-          'object with render(), a function, a string, or a number.',
+          'definition function, a string, or a number.',
         { cause: error }
       );
     }
@@ -3850,14 +3977,7 @@ export function normalizeChild(child) {
     return new VTextNode(child);
   }
 
-  if (
-    typeof child === 'function' ||
-    (child && typeof child === 'object' && typeof child.render === 'function')
-  ) {
-    if (typeof child === 'object') {
-      // 形态 B 退场提示（票 03 阶段 1）：只在 devtools 开启时报一次，按对象去重
-      warnDeprecatedComponentObject(child, 'child()');
-    }
+  if (typeof child === 'function') {
     return new ComponentNode(child);
   }
 
@@ -3866,7 +3986,8 @@ export function normalizeChild(child) {
   }
 
   throw new TypeError(
-    'ViewNode child must be a ViewNode, component, string, number, or signal handle'
+    'ViewNode child must be a ViewNode, a component definition function, a string, a number, ' +
+      'or a signal handle'
   );
 }
 
@@ -3897,19 +4018,6 @@ export function normalizeSetupArguments(first = null, second = null, third = nul
  */
 export function applySetupValue(node, value) {
   if (value === null || value === undefined) {
-    return node;
-  }
-
-  // render-backed 组件 API（返回的是带 render() 的对象，不是节点）：语义与
-  // applyComponentArguments 的旧行为一致——对象选项落到 render() 的结果上，函数当作 builder。
-  if (typeof node.setup !== 'function') {
-    if (typeof value === 'function') {
-      value(node);
-      return node;
-    }
-    if (typeof value === 'object') {
-      applyElementOptions(typeof node.render === 'function' ? node.render() : node, value);
-    }
     return node;
   }
 
@@ -4164,8 +4272,8 @@ export class ElementNode extends ViewNode {
       // 只拦组件级钩子：whenFailed 是节点方法，options 里写它是既有合法用法
       if (COMPONENT_HOOK_NAMES.has(key)) {
         throw new TypeError(
-          `${key} is a component hook, not an option: declare it on the vNode api or on the ` +
-            'component object returned by render(), not in an options object.'
+          `${key} is a component hook, not an option: declare it on the vNode api, ` +
+            'not in an options object.'
         );
       }
 
@@ -4539,7 +4647,8 @@ export class ElementNode extends ViewNode {
           if (childElement && !placedInElement && this._childMountStates?.get(child) !== false) {
             element.appendChild(childElement);
             // 首屏单趟建树：这里才是子节点真正落地的位置（挂载条件为假时不会走到这支）
-            if (child._whenHooks !== undefined) {
+            // 组件子节点即便自己没有钩子也可能"视图根是另一个组件"（钩子在更内层）→ 交给链转发
+            if (child._whenHooks !== undefined || typeof child.viewRoots === 'function') {
               fireWhenMount(child);
             }
           } else if (!childElement && child._el && child._el.parentNode === element) {
@@ -4696,22 +4805,35 @@ export class ElementNode extends ViewNode {
     // 新鲜元素的类名必为空，省掉一次 getter 读；其余情况先读后写——
     // 类名已经一致就不碰 DOM（重复 className() / 重渲是常见路径），
     // 也让「外部改过 class」这种漂移仍然会被写回。
-    const previous = freshClass ? '' : element.className || '';
+    const previous = this._readClassText(element, freshClass);
     if (previous === className && (className !== '' || !element.hasAttribute('class'))) {
       return;
     }
 
-    if (className) {
-      element.className = className;
-    } else {
-      element.removeAttribute('class');
-    }
+    this._applyClassText(element, className);
     if (isDevtoolsEnabled() && !this._devtoolsRendering) {
       notifyDevtoolsMutation(this, 'attr', {
         name: 'class',
         previous,
         next: className || undefined
       });
+    }
+  }
+
+  /** 读元素上的类名文本（新鲜元素必为空 → 省一次 getter 读）。SVG 元素基类覆盖它。 */
+  _readClassText(element, freshClass) {
+    return freshClass ? '' : element.className || '';
+  }
+
+  /**
+   * 把类名文本写到元素上。**SVG 元素基类覆盖这一条**：`SVGElement.className` 是
+   * `SVGAnimatedString`，只能走属性（`setAttribute` / `removeAttribute`）。
+   */
+  _applyClassText(element, className) {
+    if (className) {
+      element.className = className;
+    } else {
+      element.removeAttribute('class');
     }
   }
 

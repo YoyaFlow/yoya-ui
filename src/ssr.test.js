@@ -42,15 +42,11 @@ describe('renderToString', () => {
     expect(JSON.parse(state)).toEqual({ count: 3 });
   });
 
-  it('supports component objects with a render method', () => {
-    const component = {
-      render() {
-        return div((root) => root.span('object'));
-      }
-    };
+  it('supports a component definition function', () => {
+    const component = () => div((root) => root.span('function'));
     const { html } = renderToString(component);
 
-    expect(html).toBe('<div><span>object</span></div>');
+    expect(html).toBe('<div><span>function</span></div>');
   });
 
   it('supports reusing a page node across renders', () => {

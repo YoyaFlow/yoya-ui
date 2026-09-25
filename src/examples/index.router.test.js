@@ -21,7 +21,9 @@ async function openRoute(path) {
   await vi.waitFor(
     () => {
       const content = document.querySelector('[vn~="VRouterViewsContent"]');
-      if (!content || content.textContent === '加载中…') {
+      // 路由切换中间态：`textContent` 可能先是空串（旧页已卸、新页未挂），再是"加载中…"。
+      // 只等"不等于加载中"会漏掉空串那一拍，后续查询就会拿到 null（并行满载时更明显）。
+      if (!content || content.textContent === '加载中…' || content.textContent.trim() === '') {
         throw new Error(`路由 ${path} 仍在加载中`);
       }
     },
@@ -88,7 +90,7 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     Object.entries(pages).forEach(([file, component]) => {
       const html = readFileSync(`./src/examples/${file}`, 'utf8');
       expect(html).toContain(component);
-      expect(html).toContain('.render().bindTo');
+      expect(html).toContain('.bindTo');
       expect(html).not.toContain('components-demo-shell');
       expect(html).not.toContain('index.router.js');
     });
@@ -119,7 +121,12 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(document.querySelector('[data-components-top-nav]')).not.toBeNull();
     expect(document.querySelector('.components-demo-shell').style.display).toBe('grid');
     expect(document.querySelector('.components-demo-shell').style.gap).toBe('0px');
-    expect(document.querySelector('.components-demo-shell').style.background).toBe('');
+    // 演示站的外壳外观就在这一层（原来是根上 vThemeShell 投影过来的那几行）：面底色 + 边框 + 圆角，
+    // 高度是 border-box 的 `100dvh` → 边框算在高度里，页面不会多出最外层滚动条
+    expect(document.querySelector('.components-demo-shell').style.background).toContain(
+      '--yoya-color-surface'
+    );
+    expect(document.querySelector('.components-demo-shell').style.boxSizing).toBe('border-box');
     expect(document.querySelector('.components-demo-shell').style.height).toContain('100');
     // 吸顶现在是根上的状态位（样式在 `yoya.ui.css` 的 `[data-sticky='true']` 规则里）
     expect(document.querySelector('[data-components-top-nav]').dataset.sticky).toBe('true');
@@ -1713,9 +1720,14 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
         expect(selectedRouteTitle()).toBe(routeTitle);
       });
 
-      const page = document.querySelector(
-        `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"], [data-async-docs="${docsKey}"]`
-      );
+      // 路由挂在异步视图上：等目标页真正落地再断言（`openRoute` 只保证不在"加载中"）。
+      const page = await vi.waitFor(() => {
+        const found = document.querySelector(
+          `[data-layout-docs="${docsKey}"], [data-navigation-docs="${docsKey}"], [data-feedback-docs="${docsKey}"], [data-form-docs="${docsKey}"], [data-data-display-docs="${docsKey}"], [data-i18n-docs="${docsKey}"], [data-state-docs="${docsKey}"], [data-async-docs="${docsKey}"]`
+        );
+        expect(found, `页面 ${docsKey} 未落地`).not.toBeNull();
+        return found;
+      });
       expect(page).not.toBeNull();
       expect(page.querySelector('h1').textContent).toBe(heading);
       const demoNodes = page.querySelectorAll(
@@ -2744,13 +2756,9 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
     expect(formOutput.textContent).toBe('校验未通过');
   });
 
-  it('renders the reusable source helper as an object component', () => {
+  it('renders the reusable source helper as a thin factory (票 07)', () => {
     function SampleCard() {
-      return {
-        render() {
-          return 'sample';
-        }
-      };
+      return 'sample';
     }
 
     const sourceText = componentSource(SampleCard, ['vCard']);
@@ -2759,16 +2767,12 @@ describe('renderExamplesIndex', { timeout: 30000 }, () => {
       imports: ['vCard'],
       title: '示例源码'
     });
-    const element = sourcePanel.render().renderDom();
+    const element = sourcePanel.renderDom();
 
     expect(sourceText).toBe(`import { vCard } from '@yoyaflow/yoya-ui';
 
 export function SampleCard() {
-  return {
-    render() {
-      return 'sample';
-    }
-  };
+  return 'sample';
 }`);
     const customImportSource = componentSource(SampleCard, [
       { from: '@yoyaflow/yoya-ui', names: ['vCard'] },

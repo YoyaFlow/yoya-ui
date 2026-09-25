@@ -198,11 +198,7 @@ export function VCarousel() {
       }
 
       if (emit) {
-        const element = self.node().renderDom();
-
-        element?.dispatchEvent?.(
-          new CustomEvent('change', { bubbles: false, detail: { count, index } })
-        );
+        self.node().emit('change', { count, index }, { bubbles: false });
       }
 
       return api;

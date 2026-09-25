@@ -11,12 +11,12 @@ import { parse } from '@babel/parser';
 import { describe, expect, it } from 'vitest';
 
 /**
- * 当前基线（2026-09-23）：源码面板里的演示（`demos/` + 页面文件里的演示组件）已全部
- * 迁成形态 A / B。剩下的 74 处是**页面壳**（`*DocumentationPage` / `*ExampleSection` /
- * `*Demo` 包装），按票 03 阶段 3 的后续批次推进。迁移把它推向 0，改小即可，改大即失败。
+ * 当前基线（2026-09-25，票 07）：**0** —— 对象组件（形态 B）已从运行期退场，
+ * `src/examples/**` 全部迁成形态 A（薄工厂）或 B（`vNode`）。基线保持 0：
+ * 再长出对象组件直接红（这条门禁从"只减不增"变成"必须为空"）。
  */
-const BASELINE_FACTORIES = 74;
-const BASELINE_FILES = 40;
+const BASELINE_FACTORIES = 0;
+const BASELINE_FILES = 0;
 
 const examplesDir = resolve(process.cwd(), 'src/examples');
 

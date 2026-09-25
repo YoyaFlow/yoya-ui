@@ -73,7 +73,8 @@ export function ServiceTag(options) {
 }
 ```
 
-**不要写对象组件**（`return { render(), … }`）：已弃用、仅存量（同一个对象挂两处会共用一份状态；退场计划见票 03）。它的等价写法就是下面的 vNode。
+**不要写对象组件**（`return { render(), … }`）：**0.7 起运行期直接拒收**——`child(对象)` / 页面对象 /
+`vClientOnly(() => 对象)` / 路由页面对象都会报错（同一个对象挂两处还会共用一份状态）。它的等价写法就是下面的 vNode。
 
 **形态 B：`vNode((api) => 视图)`**（定义即节点）
 
@@ -135,7 +136,7 @@ Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountab
 
 ## 组合、事件与生命周期
 
-- `child(...)` 接受 ViewNode、组件（vNode / 薄工厂的返回值；对象组件是过渡存量）或字符串/数字
+- `child(...)` 接受 ViewNode、组件（vNode / 薄工厂的返回值）或字符串/数字（对象组件已退场，传了直接报错）
 - `on(event, handler)` 绑定真实 DOM 事件，`destroy()` 自动清理
 - 视图根节点（含节点类型扩展）遵循 `renderDom` / `bindTo` / `destroy` 生命周期
 - 组件自带降级：vNode 里写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）；边界在出错时沿父链上溯解析（就近优先），与声明顺序 / 嵌套深度 / 运行时插入 / 搬家无关

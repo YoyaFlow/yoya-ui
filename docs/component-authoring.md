@@ -27,8 +27,9 @@ Component developers only need `yoya-ui/core` (zero third-party dependencies, sm
 ## 3. The two component shapes
 
 **A component has exactly two shapes** (converged 2026-09-21): **A, the thin factory** (no behaviour) and
-**B, `vNode`** (behaviour). The object component (`return { render(), … }`) is deprecated — do not write new
-ones (existing code only; the removal plan is ticket 03), and `class Xxx extends HtmlElementNode` is **not a
+**B, `vNode`** (behaviour). The object component (`return { render(), … }`) **has retired** — since 0.7 the
+runtime rejects it (`child(object)`, page objects, `vClientOnly(() => object)`, router page objects all
+throw); rewrite them as A / B (see §7.4). `class Xxx extends HtmlElementNode` is **not a
 component shape** — it is the engine's
 **node-type extension** (a component's view root / a custom element kind); see §7.3.
 
@@ -459,6 +460,29 @@ into it (`nodeChildren()` materialises a real array on the first write); class n
 children through `child()` / `addChild()` as usual — these helpers exist for node-type extensions that must
 touch the child list inside their own render path.
 
+### Element-level ops: how component code touches the DOM
+
+Component code never reads `_el` and never calls `renderDom()` (`renderDom()` is the **build** entry — it
+creates DOM, and on the SSR path it touches `document`). The gate `src/dom-access-baseline.test.js` freezes
+both at zero for library code and keeps a written allow-list for the node-type extensions whose element really
+is their product. Everything else goes through these ops (declared on `ViewNode`, delegated to the view root on
+component nodes, shadowable by component commands):
+
+| Need                                                                                       | Op                                                          |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| landed yet?                                                                                | `node.isLanded()`                                           |
+| focus / focus the first focusable descendant                                               | `node.focus()` / `node.focusFirst()`                        |
+| containment ("close on outside click", hit testing)                                        | `node.owns(target)`                                         |
+| DOM property read/write (`value` / `checked` / `indeterminate` / `files` / scroll offsets) | `node.prop(name[, value])`                                  |
+| measure                                                                                    | `node.measure()` (offsets via `prop('offsetWidth')`)        |
+| dispatch an event user listeners receive                                                   | `node.emit(type[, detail][, options])`                      |
+| call a native method (`showModal` / `close` / `reset` / `requestSubmit` / `remove`)        | `node.invoke(name, …)`                                      |
+| swap / reorder children for real                                                           | `node.replaceChildren(…)` / `node.reorderChildren(ordered)` |
+| a real element at mount time (observers, renderer hosts, focus traps)                      | `whenMount((host) => host.element())`                       |
+
+Two naming traps learned the hard way: `rect()` would collide with the SVG `rect` element factory (hence
+`measure()`), and `track` **is** the HTML `<track>` shortcut (hence `trackState()` for container contexts).
+
 ## 7.1 Slots: where content goes
 
 Mark an element in a component's own structure with a `slot` attribute and it becomes a **slot** of that
@@ -657,6 +681,78 @@ Rules:
   neither entered the DOM nor showed up in `children()`); multi-root components reject children.
 - **`whenMount` is under review**: it may be unnecessary (a `requestAnimationFrame` or lazy init covers many
   cases); `whenDestroy` stays as the required cleanup hook.
+- **Object-component protocol retired (types, 0.7.0)**: `{ render() }` is no longer a valid child / page
+  factory shape (`ChildInput` / `KeyedRowProduct` / `PageFactory` / `mount` / `hydrate` / `renderToString`
+  do not accept it), and `ComponentLike` is downgraded to a `@deprecated` "old code mentions it" type.
+  Components have exactly two shapes: A / B.
+- **Object-component protocol retired (runtime, 0.7.0, ticket 07)**: the runtime **rejects** object
+  components — `child({ render() { … } })`, `renderToString / mount / hydrate(pageObject)`,
+  `vClientOnly(() => ({ render() { … } }))`, router page objects and the compiler's shape-B branch are all
+  gone (the deprecation warning went with them). Rewrite them as A / B. Two lessons from the migration:
+  **cache page shells as factories, not nodes** (a node can only be attached once — caching nodes makes a
+  second visit render blank), and **turn read-only properties (`get x()`) into read commands**
+  (`api.x = () => …`, call sites write `x()`).
+- **Component definition functions have no construct signature**: `new VXxx()` and `instanceof VXxx` are not
+  promised usages (identity goes through `componentNameOf` / `hasComponentIdentity`); the types reject them.
+
+## 7.5 Types: direct props, handles and identity (0.7.0 onwards)
+
+`types/*.d.ts` ships with the package and is a **public contract** that has to match the runtime. Every
+component is declared in the same shape:
+
+```ts
+// 1) Handle: its own commands plus the element surface the engine delegates
+//    (ComponentNode already documents "handle surface = element surface").
+export interface VStatusTag extends ComponentNode {
+  status(): string;
+  status(value: string): VStatusTag;
+}
+// 2) Props: the **direct arguments** of `VStatusTag({ … })`, typed key by key; the trailing index
+//    signature keeps element-level pass-through working.
+export interface StatusTagOptions {
+  status?: string | null;
+  children?: ChildInput;
+  [key: string]: unknown;
+}
+// 3) The definition function takes props; the shortcut method dispatches the caller's arguments.
+export const VStatusTag: { (props?: StatusTagOptions): VStatusTag };
+export const vStatusTag: ElementFactory<VStatusTag> & {
+  (
+    first?: StatusTagOptions | SetupInput<VStatusTag> | null,
+    callback?: SetupCallback<VStatusTag>
+  ): VStatusTag;
+};
+```
+
+Four rules:
+
+1. **The definition function takes props, the shortcut method dispatches** — the same split the runtime
+   `VXxx` / `vXxx` pair has. `VStatusTag({ status: 'ok' })` is checked key by key; the first argument of
+   `vStatusTag(…)` is `StatusTagOptions ∪ SetupInput` (object = props, text = content, function = builder,
+   element options = pass-through), so it **cannot catch a mistyped prop value**. For key-by-key checking
+   call the definition function, or write the literal as `const props: StatusTagOptions = { … }` first.
+   When the runtime definition takes no props parameter, the type says `(): VXxx` too — arguments the
+   definition ignores are dropped at runtime (`VCard({ class })` writes no class), so the declaration must
+   not promise them; dispatcheable keys belong to the shortcut's first argument (`vCard({ class })`).
+2. **The props interface carries `[key: string]: unknown`**: `...rest` is spread onto the view root through
+   the key-classification table, so `class` / `style` / `onXxx` / `data-*` / `attrs` keep working. The cost
+   is that a mistyped key does not error — **structural keys excepted**: container components throw at
+   runtime (`assertVTableStructure`) and the types reject them too.
+3. **No construct signature, no object-component protocol**: `instanceof VXxx` is not a promised usage
+   (identity goes through `componentNameOf` / `hasComponentIdentity`), so declarations omit `new (…)`, and
+   the `{ render() }` union branch is gone as well. Engine bases and real classes (`ViewNode` /
+   `ElementNode` / `ComponentNode` / `VTextNode` / `VTreeNode` / `VMessageManager` / `VRouter`) stay `class`.
+4. **Interface merging only works inside one module**: to type a component, edit its own `.d.ts` instead of
+   declaring a second interface with the same name elsewhere — that merges silently and blurs ownership.
+
+**Steps for typing a new component**:
+
+1. Read the runtime definition and copy the destructured props into `XxxOptions`, key by key: value
+   positions take `SignalHandle<T>` / `ChildInput`, command signatures are copied from the handle;
+2. Turn `class VXxx` into `interface VXxx extends ComponentNode` (keep the method signatures);
+3. Add `const VXxx: { (props?: XxxOptions): VXxx }` and extend the first argument of `vXxx` with `XxxOptions`;
+4. Add one positive and one `@ts-expect-error` negative case to `types/tests/consumer.ts` (`npm run typecheck`).
+5. Keep `npm run typecheck` green.
 
 ## 8. Registering parent shortcuts
 

@@ -206,8 +206,8 @@ describe('compileSource', () => {
     expect(result.module).toBeNull();
   });
 
-  // 形态 B：只有 render() 一个成员的组件对象可以直接编（结构 = render 的 return）
-  it('compiles a single-member render() component object', () => {
+  // 票 07：对象组件（`{ render() }`）已退场 → 形状认不出，整体回落通用路径（产物为空）
+  it('does not compile a render() component object (shape retired)', () => {
     const result = compileSource({
       source:
         'export function Pill(props) {\n' +
@@ -222,9 +222,9 @@ describe('compileSource', () => {
       core
     });
 
-    expect(result.bails).toEqual([]);
-    expect(result.compiled).toBe(true);
-    expect(result.plan.html).toContain('<span class="pill">');
+    expect(result.compiled).toBe(false);
+    expect(result.module).toBeNull();
+    expect(result.bails.length).toBeGreaterThan(0);
   });
 
   // C6：产物不嵌机器绝对路径——同一份源码换个目录/换台机器编出来必须逐字节相同。

@@ -1187,7 +1187,7 @@ function createTreeRuntime(first = null) {
     }
 
     setTabStops(index);
-    target.row._el?.focus();
+    target.row.focus();
   }
 
   function focusNodeRow(id) {
@@ -1199,11 +1199,14 @@ function createTreeRuntime(first = null) {
 
   function handleTreeKeydown(event) {
     const row = event.target.closest?.('[vn~="VTreeRow"]');
-    if (!row || row.closest('[vn~="VTree"]') !== root._el) {
+    const owner = row?.closest?.('[vn~="VTree"]');
+
+    // 命中判定用引擎口子（不比对 `_el`）：最近的一层 VTree 必须是这一棵（嵌套树的行交给内层）
+    if (!row || !owner || !root.owns(owner) || root.owns(owner.parentElement)) {
       return;
     }
 
-    const index = state.visibleNodes.findIndex((entry) => entry.row._el === row);
+    const index = state.visibleNodes.findIndex((entry) => entry.row.owns(row));
     if (index === -1) {
       return;
     }

@@ -4,7 +4,15 @@ const VIEW_BOX = { height: 260, width: 640 };
 const PAD = { bottom: 34, left: 44, right: 16, top: 14 };
 const SERIES_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#8b5cf6'];
 
-// vChart 内置 SVG 适配器：bar 柱状图 / line 折线图，零外部依赖。
+/**
+ * 图表卡片（形态 A 薄工厂）：vCard 外壳 + vChart 宿主，没有对外命令方法。
+ *
+ * `vChart` 只提供宿主与**适配器契约**（`init` / `update` / `resize` / `destroy`），库内没有内置适配器；
+ * 下面这份 SVG 适配器是本模板自带的零依赖实现（bar 柱状图 / line 折线图）。
+ * 适配器画出来的内容交给引擎落位：`context.chart.replaceChildren(节点…)`——`chart` 是组件节点，
+ * `replaceChildren` 收的是**视图节点**（DOM 落盘与清理由引擎负责），不要自己调 `renderDom()`。
+ * 数据要跟着状态变时，把句柄放进 `data` 即可（`vChart` 的 `data` 收句柄）。
+ */
 export function DashboardChart({
   labels = [],
   series = [],
@@ -12,51 +20,42 @@ export function DashboardChart({
   type = 'bar',
   height = 280
 } = {}) {
-  const chart = vChart({
-    adapter: createSvgAdapter(),
-    data: { labels, series },
-    height,
-    options: { type }
-  });
-
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader(title);
-        card.vCardBody((body) => {
-          body.div((host) => {
-            host.style({ minWidth: '0', width: '100%' });
-            host.child(chart);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader(title);
+    card.vCardBody((body) => {
+      body.div((host) => {
+        host.style({ minWidth: '0', width: '100%' });
+        host.child(
+          vChart({
+            adapter: svgChartAdapter,
+            data: { labels, series },
+            height,
+            options: { type }
+          })
+        );
       });
-    },
-    update(next) {
-      chart.data(next);
-      return this;
-    }
-  };
+    });
+  });
 }
 
-function createSvgAdapter() {
-  return {
-    init(host, context) {
-      const instance = { host };
-      renderChart(instance, context);
-      return instance;
-    },
-    update(instance, context) {
-      renderChart(instance, context);
-    },
-    resize() {},
-    destroy() {}
-  };
-}
+/** 无状态适配器：整份图表由 renderChart 按 context 重画，可以所有实例共用一份。 */
+const svgChartAdapter = {
+  init(_host, context) {
+    renderChart(context);
+    return {};
+  },
+  update(_instance, context) {
+    renderChart(context);
+  },
+  resize() {},
+  destroy() {}
+};
 
-function renderChart(instance, context) {
+function renderChart(context) {
   const root = buildChartSvg(context.data, context.options);
   const legend = buildLegend(context.data?.series ?? []);
-  instance.host.replaceChildren(legend.renderDom(), root.renderDom());
+  // 换子节点走引擎口子：组件节点写的是它根元素的孩子们（旧内容连带销毁，不用自己碰 DOM）
+  context.chart.replaceChildren(legend, root);
 }
 
 function buildLegend(series) {

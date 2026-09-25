@@ -145,6 +145,7 @@
         ref,
         svg,
         SvgElementNode,
+        vNode,
         vText
       } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
 
@@ -273,63 +274,9 @@
         const bodyStrokeWidth = computed(() => (selected.value ? '4' : null));
         const tailOpacity = computed(() => (braking.value ? '1' : '0.35'));
 
-        return {
-          render() {
-            return new SvgElementNode('g', (carGroup) => {
-              carGroup.className(['car', variant]);
-              carGroup.attr('transform', transform);
-              carGroup.on('click', () => {
-                selected.value = !selected.value;
-              });
-
-              carGroup.path((beam) => {
-                beam.className('beam');
-                beam.attr('d', CAR_BEAM_PATH);
-                beam.style('opacity', beamStyle);
-              });
-
-              CAR_WHEEL_POSITIONS.forEach(([wheelX, wheelY]) => {
-                carGroup.circle({ class: 'car-wheel', cx: wheelX, cy: wheelY, r: 14 });
-              });
-
-              carGroup.rect(CAR_BODY, (body) => {
-                body.style('stroke', bodyStroke);
-                body.style('stroke-width', bodyStrokeWidth);
-              });
-              carGroup.rect(CAR_ROOF);
-
-              CAR_WHEEL_POSITIONS.forEach(([rimX, rimY]) => {
-                carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 4.5 });
-              });
-
-              CAR_HEADLIGHTS.forEach((light) => {
-                carGroup.rect({
-                  class: 'car-headlight',
-                  ...light,
-                  width: 8,
-                  height: 16,
-                  rx: 4
-                });
-              });
-
-              CAR_TAILLIGHTS.forEach((light) => {
-                carGroup.rect(
-                  {
-                    class: 'car-taillight',
-                    ...light,
-                    width: 8,
-                    height: 16,
-                    rx: 4
-                  },
-                  (tail) => {
-                    tail.style('opacity', tailOpacity);
-                  }
-                );
-              });
-            });
-          },
-
-          step(movement) {
+        // 形态 B（`vNode`）：命令只写状态，视图走读值绑定（票 07：对象组件退场）。
+        return vNode((api) => {
+          api.step = (movement) => {
             const nextVelocityX =
               clampNumber(
                 vx.value + movement.horizontal * CAR_PHYSICS.accel,
@@ -369,9 +316,9 @@
             beamOpacity.value += ((speed > 0.8 ? 0.24 : 0) - beamOpacity.value) * 0.12;
 
             return { speed, angle: angle.value };
-          },
+          };
 
-          reset() {
+          api.reset = () => {
             x.value = start.x;
             y.value = start.y;
             vx.value = 0;
@@ -380,85 +327,135 @@
             beamOpacity.value = 0;
             selected.value = false;
             braking.value = false;
-            return this;
-          }
-        };
+            return api;
+          };
+
+          return new SvgElementNode('g', (carGroup) => {
+            carGroup.className(['car', variant]);
+            carGroup.attr('transform', transform);
+            carGroup.on('click', () => {
+              selected.value = !selected.value;
+            });
+
+            carGroup.path((beam) => {
+              beam.className('beam');
+              beam.attr('d', CAR_BEAM_PATH);
+              beam.style('opacity', beamStyle);
+            });
+
+            CAR_WHEEL_POSITIONS.forEach(([wheelX, wheelY]) => {
+              carGroup.circle({ class: 'car-wheel', cx: wheelX, cy: wheelY, r: 14 });
+            });
+
+            carGroup.rect(CAR_BODY, (body) => {
+              body.style('stroke', bodyStroke);
+              body.style('stroke-width', bodyStrokeWidth);
+            });
+            carGroup.rect(CAR_ROOF);
+
+            CAR_WHEEL_POSITIONS.forEach(([rimX, rimY]) => {
+              carGroup.circle({ class: 'car-rim', cx: rimX, cy: rimY, r: 4.5 });
+            });
+
+            CAR_HEADLIGHTS.forEach((light) => {
+              carGroup.rect({
+                class: 'car-headlight',
+                ...light,
+                width: 8,
+                height: 16,
+                rx: 4
+              });
+            });
+
+            CAR_TAILLIGHTS.forEach((light) => {
+              carGroup.rect(
+                {
+                  class: 'car-taillight',
+                  ...light,
+                  width: 8,
+                  height: 16,
+                  rx: 4
+                },
+                (tail) => {
+                  tail.style('opacity', tailOpacity);
+                }
+              );
+            });
+          });
+        });
       }
 
       function Playfield({ cars }) {
-        return {
-          render() {
-            return svg((field) => {
-              field.className('playfield');
-              field.attr({
-                viewBox: '0 0 900 600',
-                role: 'img',
-                'aria-label': '用方向键控制小车在场地中移动'
-              });
+        // 形态 A 薄工厂（票 07）：直接返回视图
+        return svg((field) => {
+          field.className('playfield');
+          field.attr({
+            viewBox: '0 0 900 600',
+            role: 'img',
+            'aria-label': '用方向键控制小车在场地中移动'
+          });
 
-              field.defs((defs) => {
-                defs.linearGradient((gradient) => {
-                  gradient.attr({ id: 'bodyPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
-                  gradient.stop({ offset: '0%', 'stop-color': '#c7d4e4' });
-                  gradient.stop({ offset: '55%', 'stop-color': '#eef4fb' });
-                  gradient.stop({ offset: '100%', 'stop-color': '#9fb2c9' });
-                });
-
-                defs.linearGradient((gradient) => {
-                  gradient.attr({ id: 'roofPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
-                  gradient.stop({ offset: '0%', 'stop-color': '#334155' });
-                  gradient.stop({ offset: '100%', 'stop-color': '#0f172a' });
-                });
-
-                defs.linearGradient((gradient) => {
-                  gradient.attr({ id: 'beamPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
-                  gradient.stop({ offset: '0%', 'stop-color': '#fff7cc', 'stop-opacity': '0.6' });
-                  gradient.stop({ offset: '100%', 'stop-color': '#fff7cc', 'stop-opacity': '0' });
-                });
-              });
-
-              field.rect({
-                x: 0,
-                y: 0,
-                width: 900,
-                height: 600,
-                rx: 12,
-                fill: '#16213a'
-              });
-
-              [100, 200, 300, 400, 500].forEach((lineY) => {
-                field.line({ class: 'grid', x1: 0, y1: lineY, x2: 900, y2: lineY });
-              });
-
-              [100, 200, 300, 400, 500, 600, 700, 800].forEach((lineX) => {
-                field.line({ class: 'grid', x1: lineX, y1: 0, x2: lineX, y2: 600 });
-              });
-
-              field.rect({
-                x: 30,
-                y: 30,
-                width: 840,
-                height: 540,
-                rx: 10,
-                fill: 'none',
-                stroke: '#2b3d5f',
-                'stroke-width': 2
-              });
-
-              [
-                { x1: 30, y1: 150, x2: 870, y2: 150 },
-                { x1: 30, y1: 450, x2: 870, y2: 450 },
-                { x1: 150, y1: 30, x2: 150, y2: 570 },
-                { x1: 450, y1: 30, x2: 450, y2: 570 },
-                { x1: 750, y1: 30, x2: 750, y2: 570 }
-              ].forEach((lane) => {
-                field.line({ class: 'lane', ...lane });
-              });
-
-              cars.forEach((car) => field.child(car));
+          field.defs((defs) => {
+            defs.linearGradient((gradient) => {
+              gradient.attr({ id: 'bodyPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+              gradient.stop({ offset: '0%', 'stop-color': '#c7d4e4' });
+              gradient.stop({ offset: '55%', 'stop-color': '#eef4fb' });
+              gradient.stop({ offset: '100%', 'stop-color': '#9fb2c9' });
             });
-          }
-        };
+
+            defs.linearGradient((gradient) => {
+              gradient.attr({ id: 'roofPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+              gradient.stop({ offset: '0%', 'stop-color': '#334155' });
+              gradient.stop({ offset: '100%', 'stop-color': '#0f172a' });
+            });
+
+            defs.linearGradient((gradient) => {
+              gradient.attr({ id: 'beamPaint', x1: '0', y1: '0', x2: '1', y2: '0' });
+              gradient.stop({ offset: '0%', 'stop-color': '#fff7cc', 'stop-opacity': '0.6' });
+              gradient.stop({ offset: '100%', 'stop-color': '#fff7cc', 'stop-opacity': '0' });
+            });
+          });
+
+          field.rect({
+            x: 0,
+            y: 0,
+            width: 900,
+            height: 600,
+            rx: 12,
+            fill: '#16213a'
+          });
+
+          [100, 200, 300, 400, 500].forEach((lineY) => {
+            field.line({ class: 'grid', x1: 0, y1: lineY, x2: 900, y2: lineY });
+          });
+
+          [100, 200, 300, 400, 500, 600, 700, 800].forEach((lineX) => {
+            field.line({ class: 'grid', x1: lineX, y1: 0, x2: lineX, y2: 600 });
+          });
+
+          field.rect({
+            x: 30,
+            y: 30,
+            width: 840,
+            height: 540,
+            rx: 10,
+            fill: 'none',
+            stroke: '#2b3d5f',
+            'stroke-width': 2
+          });
+
+          [
+            { x1: 30, y1: 150, x2: 870, y2: 150 },
+            { x1: 30, y1: 450, x2: 870, y2: 450 },
+            { x1: 150, y1: 30, x2: 150, y2: 570 },
+            { x1: 450, y1: 30, x2: 450, y2: 570 },
+            { x1: 750, y1: 30, x2: 750, y2: 570 }
+          ].forEach((lane) => {
+            field.line({ class: 'lane', ...lane });
+          });
+
+          cars.forEach((car) => field.child(car));
+        });
       }
 
       function StatusBar() {
@@ -473,24 +470,22 @@
           () => `B 速度 ${Math.round(speedB.value * 10) / 10} ${directionLabel(angleB.value)}`
         );
 
-        return {
-          render() {
-            return div((status) => {
-              status.className('demo-status');
-              status.child(vText(textA));
-              status.child(' · ');
-              status.child(vText(textB));
-            });
-          },
-
-          update(next) {
+        return vNode((api) => {
+          api.update = (next) => {
             speedA.value = next.speedA;
             angleA.value = next.angleA;
             speedB.value = next.speedB;
             angleB.value = next.angleB;
-            return this;
-          }
-        };
+            return api;
+          };
+
+          return div((status) => {
+            status.className('demo-status');
+            status.child(vText(textA));
+            status.child(' · ');
+            status.child(vText(textB));
+          });
+        });
       }
 
       function CarDemoPage() {
@@ -515,38 +510,36 @@
           frameId = requestAnimationFrame(tick);
         }
 
-        return {
-          render() {
-            return div((page) => {
-              page.div((card) => {
-                card.className('demo-card');
-                card.h1('SVG 小车：方向键 / WASD 控制');
-                card.p(
-                  '方向键控制银色小车 A，WASD 控制蓝色小车 B；点击小车选中高亮，反向按键点亮刹车灯。'
-                );
-                card.child(Playfield({ cars: [carA, carB] }));
-                card.child(statusBar);
-              });
-            });
-          },
-
-          start() {
+        return vNode((api) => {
+          api.start = () => {
             unbindInput = input.bind();
             frameId = requestAnimationFrame(tick);
-          },
+            return api;
+          };
 
-          destroy() {
+          api.whenDestroy = () => {
             cancelAnimationFrame(frameId);
             unbindInput?.();
             input.clear();
-          }
-        };
+          };
+
+          return div((page) => {
+            page.div((card) => {
+              card.className('demo-card');
+              card.h1('SVG 小车：方向键 / WASD 控制');
+              card.p(
+                '方向键控制银色小车 A，WASD 控制蓝色小车 B；点击小车选中高亮，反向按键点亮刹车灯。'
+              );
+              card.child(Playfield({ cars: [carA, carB] }));
+              card.child(statusBar);
+            });
+          });
+        });
       }
 
-      const demo = CarDemoPage();
-      const root = demo.render();
+      const root = CarDemoPage();
       root.bindTo('#app');
-      demo.start();
+      root.start();
     </script>
   </body>
 </html>

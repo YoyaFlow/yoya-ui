@@ -92,7 +92,7 @@ export interface ViewNodeLike {
   toHTML(): string;
   renderDom(): Node | null;
   destroy(): unknown;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /** Creates a router; alias of createRouter. */
@@ -114,10 +114,21 @@ export const vRouter: ElementFactory<VRouter> & {
   (first?: SetupInput<VRouter> | null, callback?: SetupCallback<VRouter>): VRouter;
 };
 
+/** `vLink(router, { … })` 的可派发键（节点级 setup 仍照旧透传）。 */
+export interface LinkOptions {
+  exact?: boolean;
+  label?: ChildInput;
+  params?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  replace?: boolean;
+  to?: string;
+  [key: string]: unknown;
+}
+
 /** VRouter link with to/params/query/replace/exact helpers. */
 export function vLink(
   routerInstance: VRouter,
-  setup?: SetupInput<HtmlElementNode> | null,
+  setup?: LinkOptions | SetupInput<HtmlElementNode> | null,
   callback?: SetupCallback<HtmlElementNode>
 ): HtmlElementNode;
 

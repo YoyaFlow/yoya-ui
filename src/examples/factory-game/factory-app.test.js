@@ -183,7 +183,7 @@ describe('factory game standalone', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
     const app = FactoryGameStandalone();
-    const node = app.render();
+    const node = app;
     const element = node.renderDom();
     document.body.appendChild(element);
 

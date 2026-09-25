@@ -156,7 +156,7 @@ export function vPagination(first = null, second = null, third = null) {
     lastButton.on('click', () => setPage(state.totalPages, true));
     pageSizeSelect.on('change', () => {
       const nextValue = normalizePageSizeValue(
-        pageSizeSelect._el?.value ?? pageSizeSelect.attr('value')
+        pageSizeSelect.prop('value') ?? pageSizeSelect.attr('value')
       );
       if (nextValue !== null) {
         setPageSize(nextValue, true);
@@ -611,7 +611,7 @@ export function vPagination(first = null, second = null, third = null) {
         return api;
       }
 
-      const rawValue = pageInput._el?.value ?? pageInput.attr('value');
+      const rawValue = pageInput.prop('value') ?? pageInput.attr('value');
       const nextPage = normalizePageValue(rawValue);
 
       if (nextPage <= 0) {

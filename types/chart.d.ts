@@ -1,4 +1,11 @@
-import type { ElementFactory, ElementOptions, SetupCallback, SetupInput } from './core.js';
+import type {
+  ComponentNode,
+  ElementFactory,
+  ElementOptions,
+  PropValue,
+  SetupCallback,
+  SetupInput
+} from './core.js';
 import type { HtmlElementNode } from './html.js';
 
 /** Minimal ECharts module shape accepted by echartsLib(). */
@@ -10,22 +17,22 @@ export interface EChartsLib {
 /** `vEchart({ … })` 的 props（句柄 props 是活值；`echartsLib` 注入模块命名空间）。 */
 export interface EChartOptions {
   echartsLib?: EChartsLib;
-  width?: number | string;
-  height?: number | string;
+  width?: PropValue<number | string>;
+  height?: PropValue<number | string>;
   option?: Record<string, any>;
-  theme?: string;
-  renderer?: 'canvas' | 'svg' | string;
-  devicePixelRatio?: number;
-  autoResize?: boolean;
-  loading?: boolean;
-  loadingText?: string;
+  theme?: PropValue<string>;
+  renderer?: PropValue<'canvas' | 'svg' | string>;
+  devicePixelRatio?: PropValue<number>;
+  autoResize?: PropValue<boolean>;
+  loading?: PropValue<boolean>;
+  loadingText?: PropValue<string>;
   onChartReady?: (chart: unknown) => void;
   onChartResize?: (width: number, height: number) => void;
   [key: string]: unknown;
 }
 
 /** ECharts component (the echarts library itself is not bundled). */
-export class VEchart extends HtmlElementNode {
+export interface VEchart extends ComponentNode {
   echartsLib(lib: EChartsLib): VEchart;
   option(value: Record<string, any>): VEchart;
   width(): number | string;
@@ -44,6 +51,8 @@ export class VEchart extends HtmlElementNode {
   clear(): VEchart;
   dispose(): VEchart;
 }
+
+export const VEchart: { (props?: EChartOptions): VEchart };
 
 export const vEchart: ElementFactory<VEchart> & {
   (first?: EChartOptions | SetupInput<VEchart> | null, callback?: SetupCallback<VEchart>): VEchart;

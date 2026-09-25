@@ -141,39 +141,31 @@ function EchartsDemoSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-echarts-demo');
-        example.attr('data-echarts-demo', demo.id);
-        example.h3(demo.title);
-        example.div((live) => {
-          live.className('components-echarts-demo-live');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-echarts-demo');
+    example.attr('data-echarts-demo', demo.id);
+    example.h3(demo.title);
+    example.div((live) => {
+      live.className('components-echarts-demo-live');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }
 
 export function EchartsDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-echarts-page');
-        page.attr('data-echarts-page', 'true');
-        page.h1('ECharts 图表');
-        page.p('基于 yoya.echart.js 的 ECharts 扩展，支持柱状图、折线图和饼图。');
+  return section((page) => {
+    page.className('components-route-page components-echarts-page');
+    page.attr('data-echarts-page', 'true');
+    page.h1('ECharts 图表');
+    page.p('基于 yoya.echart.js 的 ECharts 扩展，支持柱状图、折线图和饼图。');
 
-        page.div((grid) => {
-          grid.className('components-echarts-grid');
-          grid.attr('data-echarts-grid', 'true');
-          echartsDemos.forEach((demo) => {
-            grid.child(EchartsDemoSection(demo));
-          });
-        });
+    page.div((grid) => {
+      grid.className('components-echarts-grid');
+      grid.attr('data-echarts-grid', 'true');
+      echartsDemos.forEach((demo) => {
+        grid.child(EchartsDemoSection(demo));
       });
-    }
-  };
+    });
+  });
 }

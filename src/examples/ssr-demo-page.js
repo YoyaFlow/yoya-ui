@@ -9,6 +9,7 @@ import {
   vFormItem,
   vInput,
   vMessageContainer,
+  vNode,
   vText,
   vThemeModeSwitch
 } from '../index.js';
@@ -71,20 +72,18 @@ export function createDemoPage(initial = {}) {
   const counterText = computed(() =>
     locale.t('counter', { count: count.value }, '点击次数：{count}')
   );
-  const counter = {
-    render() {
-      return div((root) => {
-        root.className('ssr-demo-counter');
-        root.attr('data-ssr-counter', 'true');
-        root.p((line) => line.child(vText(counterText)));
-        root.vButton('点击 +1'.s('increment', locale), (button) => {
-          button.on('click', () => {
-            count.value += 1;
-          });
+  // 形态 A 薄工厂（票 07）：直接返回视图
+  const counter = () =>
+    div((root) => {
+      root.className('ssr-demo-counter');
+      root.attr('data-ssr-counter', 'true');
+      root.p((line) => line.child(vText(counterText)));
+      root.vButton('点击 +1'.s('increment', locale), (button) => {
+        button.on('click', () => {
+          count.value += 1;
         });
       });
-    }
-  };
+    });
 
   const dialog = vDialog();
   dialog.attr('data-ssr-dialog', 'true');
@@ -243,93 +242,93 @@ export function SsrDemoPage() {
     requestAnimationFrame(sync);
   }
 
-  const component = {
-    render() {
-      return div((page) => {
-        page.className('ssr-demo-page');
-        page.styles({
-          background: 'var(--yoya-color-bg, #f5f7fa)',
-          boxSizing: 'border-box',
-          color: 'var(--yoya-color-text, #172033)',
-          fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-          lineHeight: '1.5',
-          minHeight: '100vh',
-          padding: '24px'
-        });
-        page.h1('SSR 独立演示');
-        page.p(
-          '在浏览器内模拟服务端渲染：renderToString 输出 HTML 与序列化状态，再 hydrate 收养并绑定交互。'
-        );
-        page.div((controls) => {
-          controls.className('ssr-demo-controls');
-          controls.style({ display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '12px 0' });
-          controls.vButton('SSR 模式', (button) => {
-            button.variant(state.renderMode === 'ssr' ? 'primary' : 'secondary');
-            button.on('click', () => component.setRenderMode('ssr'));
-          });
-          controls.vButton('客户端模式', (button) => {
-            button.variant(state.renderMode === 'client' ? 'primary' : 'secondary');
-            button.on('click', () => component.setRenderMode('client'));
-          });
-          controls.vButton('中文', (button) => {
-            button.variant(state.locale === 'zh-CN' ? 'primary' : 'secondary');
-            button.on('click', () => component.setLocale('zh-CN'));
-          });
-          controls.vButton('English', (button) => {
-            button.variant(state.locale === 'en-US' ? 'primary' : 'secondary');
-            button.on('click', () => component.setLocale('en-US'));
-          });
-          controls.child(
-            vThemeModeSwitch((switchNode) => {
-              switchNode.attr('data-ssr-theme-switch', 'true');
-            })
-          );
-        });
-        page.p(vText(modeText));
-        page.h2('renderToString 输出的 HTML');
-        page.pre((pre) => {
-          pre.className('ssr-demo-output');
-          pre.attr('data-ssr-live-output', 'true');
-          pre.styles(outputStyles);
-          pre.code(vText(htmlText));
-        });
-        page.h2('序列化状态 __YOYA_DATA__');
-        page.pre((pre) => {
-          pre.className('ssr-demo-output');
-          pre.attr('data-ssr-live-output', 'true');
-          pre.styles(outputStyles);
-          pre.code(vText(stateText));
-        });
-        page.h2('Hydration 后的实时应用');
-        page.div((host) => {
-          host.id(hostId);
-          host.className('ssr-demo-host');
-          host.styles({
-            background: 'var(--yoya-color-surface, #ffffff)',
-            border: '1px solid var(--yoya-color-border, #d8dee8)',
-            borderRadius: '8px',
-            boxSizing: 'border-box',
-            minHeight: '120px',
-            overflow: 'auto',
-            padding: '12px',
-            width: '100%'
-          });
-          host.span('等待 hydration…');
-        });
-      });
-    },
-    setLocale(locale) {
+  // 形态 B（`vNode`）：命令只改状态 + 收口一次重渲染，结构写在 setup 返回的那棵树里（票 07）。
+  const component = vNode((api) => {
+    api.setLocale = (locale) => {
       state.locale = locale;
       persistLocale(locale);
       sync();
-      return component;
-    },
-    setRenderMode(mode) {
+      return api;
+    };
+    api.setRenderMode = (mode) => {
       state.renderMode = mode === 'client' ? 'client' : 'ssr';
       sync();
-      return component;
-    }
-  };
+      return api;
+    };
+
+    return div((page) => {
+      page.className('ssr-demo-page');
+      page.styles({
+        background: 'var(--yoya-color-bg, #f5f7fa)',
+        boxSizing: 'border-box',
+        color: 'var(--yoya-color-text, #172033)',
+        fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+        lineHeight: '1.5',
+        minHeight: '100vh',
+        padding: '24px'
+      });
+      page.h1('SSR 独立演示');
+      page.p(
+        '在浏览器内模拟服务端渲染：renderToString 输出 HTML 与序列化状态，再 hydrate 收养并绑定交互。'
+      );
+      page.div((controls) => {
+        controls.className('ssr-demo-controls');
+        controls.style({ display: 'flex', flexWrap: 'wrap', gap: '8px', margin: '12px 0' });
+        controls.vButton('SSR 模式', (button) => {
+          button.variant(state.renderMode === 'ssr' ? 'primary' : 'secondary');
+          button.on('click', () => api.setRenderMode('ssr'));
+        });
+        controls.vButton('客户端模式', (button) => {
+          button.variant(state.renderMode === 'client' ? 'primary' : 'secondary');
+          button.on('click', () => api.setRenderMode('client'));
+        });
+        controls.vButton('中文', (button) => {
+          button.variant(state.locale === 'zh-CN' ? 'primary' : 'secondary');
+          button.on('click', () => api.setLocale('zh-CN'));
+        });
+        controls.vButton('English', (button) => {
+          button.variant(state.locale === 'en-US' ? 'primary' : 'secondary');
+          button.on('click', () => api.setLocale('en-US'));
+        });
+        controls.child(
+          vThemeModeSwitch((switchNode) => {
+            switchNode.attr('data-ssr-theme-switch', 'true');
+          })
+        );
+      });
+      page.p(vText(modeText));
+      page.h2('renderToString 输出的 HTML');
+      page.pre((pre) => {
+        pre.className('ssr-demo-output');
+        pre.attr('data-ssr-live-output', 'true');
+        pre.styles(outputStyles);
+        pre.code(vText(htmlText));
+      });
+      page.h2('序列化状态 __YOYA_DATA__');
+      page.pre((pre) => {
+        pre.className('ssr-demo-output');
+        pre.attr('data-ssr-live-output', 'true');
+        pre.styles(outputStyles);
+        pre.code(vText(stateText));
+      });
+      page.h2('Hydration 后的实时应用');
+      page.div((host) => {
+        host.id(hostId);
+        host.className('ssr-demo-host');
+        host.styles({
+          background: 'var(--yoya-color-surface, #ffffff)',
+          border: '1px solid var(--yoya-color-border, #d8dee8)',
+          borderRadius: '8px',
+          boxSizing: 'border-box',
+          minHeight: '120px',
+          overflow: 'auto',
+          padding: '12px',
+          width: '100%'
+        });
+        host.span('等待 hydration…');
+      });
+    });
+  });
 
   return component;
 }

@@ -131,77 +131,75 @@ const pageConfigs = Object.freeze([
 ]);
 
 function createPage(config) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(`components-route-page components-${config.key}-docs`);
-        page.attr('data-component-route-item', config.route);
-        page.attr(`data-${config.key}-docs`, 'true');
-        page.h1(config.heading);
-        page.p(config.intro);
+  return section((page) => {
+    page.className(`components-route-page components-${config.key}-docs`);
+    page.attr('data-component-route-item', config.route);
+    page.attr(`data-${config.key}-docs`, 'true');
+    page.h1(config.heading);
+    page.p(config.intro);
 
-        page.section((usage) => {
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            config.usage.forEach((item) => list.li(item));
+    page.section((usage) => {
+      usage.h2('何时使用');
+      usage.ul((list) => {
+        config.usage.forEach((item) => list.li(item));
+      });
+    });
+
+    page.section((api) => {
+      api.h2('常用 API');
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.h2('常用 API');
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
-            });
-            table.tbody((body) => {
-              config.apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
+        table.tbody((body) => {
+          config.apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
           });
-        });
-
-        page.section((examples) => {
-          examples.h2('代码演示');
-          const liveDemo = config.component();
-          const sourcePanel = ComponentSource({
-            component: config.component,
-            extraSource: config.extraSource,
-            sourceComponent: config.component,
-            imports: config.imports,
-            title: `${config.key} 核心源码`
-          });
-          examples.h3(config.title);
-          examples.div((live) => {
-            live.className('components-board-live');
-            live.child(
-              vCard((card) => {
-                card.vCardBody((body) => body.child(liveDemo));
-              })
-            );
-          });
-          examples.child(sourcePanel);
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.h2('代码演示');
+      const liveDemo = config.component();
+      const sourcePanel = ComponentSource({
+        component: config.component,
+        extraSource: config.extraSource,
+        sourceComponent: config.component,
+        imports: config.imports,
+        title: `${config.key} 核心源码`
+      });
+      examples.h3(config.title);
+      examples.div((live) => {
+        live.className('components-board-live');
+        live.child(
+          vCard((card) => {
+            card.vCardBody((body) => body.child(liveDemo));
+          })
+        );
+      });
+      examples.child(sourcePanel);
+    });
+  });
 }
 
+// 缓存**工厂**而不是节点（票 07）：页面工厂返回的是节点，一个节点只能挂一处，
+// 缓存节点会让第二次进入同一路由拿到已销毁的实例。
 const pages = Object.freeze(
-  Object.fromEntries(pageConfigs.map((config) => [config.key, createPage(config)]))
+  Object.fromEntries(pageConfigs.map((config) => [config.key, () => createPage(config)]))
 );
 
-export const DigitalBoardDocumentationPage = () => pages['digital-board'];
-export const TrendCardDocumentationPage = () => pages['trend-card'];
-export const SparklineDocumentationPage = () => pages.sparkline;
-export const RingStatDocumentationPage = () => pages['ring-stat'];
-export const GaugeDocumentationPage = () => pages.gauge;
-export const TimelineDocumentationPage = () => pages.timeline;
+export const DigitalBoardDocumentationPage = () => pages['digital-board']();
+export const TrendCardDocumentationPage = () => pages['trend-card']();
+export const SparklineDocumentationPage = () => pages.sparkline();
+export const RingStatDocumentationPage = () => pages['ring-stat']();
+export const GaugeDocumentationPage = () => pages.gauge();
+export const TimelineDocumentationPage = () => pages.timeline();

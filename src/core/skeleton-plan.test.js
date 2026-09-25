@@ -115,7 +115,7 @@ describe('skeleton plan', () => {
       reason: 'region'
     });
 
-    const component = div((node) => node.child({ render: () => span('x') }));
+    const component = div((node) => node.child(() => span('x')));
     expect(skeletonStats(recordSkeleton(component))).toMatchObject({
       foldable: false,
       reason: 'component'

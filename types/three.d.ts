@@ -1,4 +1,11 @@
-import type { ElementFactory, ElementOptions, SetupCallback, SetupInput } from './core.js';
+import type {
+  ComponentNode,
+  ElementFactory,
+  ElementOptions,
+  PropValue,
+  SetupCallback,
+  SetupInput
+} from './core.js';
 import type { HtmlElementNode } from './html.js';
 
 /** Minimal Three.js module shape accepted by threeLib(). */
@@ -35,14 +42,14 @@ export interface ThreeResizeSize {
 /** `vThree({ … })` 的 props（句柄 props 是活值；`threeLib` 注入模块命名空间）。 */
 export interface ThreeOptions {
   threeLib?: ThreeLib;
-  width?: number | string;
-  height?: number | string;
+  width?: PropValue<number | string>;
+  height?: PropValue<number | string>;
   scene?: any;
   camera?: any;
   rendererOptions?: Record<string, any>;
-  devicePixelRatio?: number | null;
-  autoResize?: boolean;
-  autoRender?: boolean;
+  devicePixelRatio?: PropValue<number | null>;
+  autoResize?: PropValue<boolean>;
+  autoRender?: PropValue<boolean>;
   onReady?: (api: ThreeInstanceApi) => void;
   onResize?: (size: ThreeResizeSize) => void;
   onFrame?: (api: ThreeInstanceApi) => void;
@@ -50,7 +57,7 @@ export interface ThreeOptions {
 }
 
 /** Three.js scene host (the three library itself is not bundled). */
-export class VThree extends HtmlElementNode {
+export interface VThree extends ComponentNode {
   threeLib(lib: ThreeLib): VThree;
   getThreeLib(): ThreeLib | null;
   scene(): any;
@@ -82,6 +89,8 @@ export class VThree extends HtmlElementNode {
   resize(): VThree;
   dispose(): VThree;
 }
+
+export const VThree: { (props?: ThreeOptions): VThree };
 
 export const vThree: ElementFactory<VThree> & {
   (first?: ThreeOptions | SetupInput<VThree> | null, callback?: SetupCallback<VThree>): VThree;

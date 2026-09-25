@@ -150,68 +150,64 @@ function DemoSection(definition) {
     title: `${definition.key} 核心源码`
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-form-demo');
-        example.attr('data-form-demo', 'basic');
-        example.h3(definition.title);
-        example.div((live) => {
-          live.className('components-form-demo-live');
-          live.attr('data-form-demo-live', 'true');
-          live.child(
-            vCard((card) => {
-              card.vCardBody((body) => body.child(liveDemo));
-            })
-          );
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-form-demo');
+    example.attr('data-form-demo', 'basic');
+    example.h3(definition.title);
+    example.div((live) => {
+      live.className('components-form-demo-live');
+      live.attr('data-form-demo-live', 'true');
+      live.child(
+        vCard((card) => {
+          card.vCardBody((body) => body.child(liveDemo));
+        })
+      );
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function createPage(definition) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(`components-route-page components-${definition.key}-docs`);
-        page.attr('data-component-route-item', definition.route);
-        page.attr('data-form-docs', definition.key);
+  return section((page) => {
+    page.className(`components-route-page components-${definition.key}-docs`);
+    page.attr('data-component-route-item', definition.route);
+    page.attr('data-form-docs', definition.key);
 
-        page.header((header) => {
-          header.h1(definition.heading);
-          header.p(definition.intro);
-        });
+    page.header((header) => {
+      header.h1(definition.heading);
+      header.p(definition.intro);
+    });
 
-        page.section((usage) => {
-          usage.className('components-form-usage');
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            definition.usage.forEach((item) => list.li(item));
-          });
-        });
-
-        page.child(ApiSection(definition));
-
-        page.section((examples) => {
-          examples.className('components-form-examples');
-          examples.h2('代码演示');
-          examples.child(DemoSection(definition));
-        });
+    page.section((usage) => {
+      usage.className('components-form-usage');
+      usage.h2('何时使用');
+      usage.ul((list) => {
+        definition.usage.forEach((item) => list.li(item));
       });
-    }
-  };
+    });
+
+    page.child(ApiSection(definition));
+
+    page.section((examples) => {
+      examples.className('components-form-examples');
+      examples.h2('代码演示');
+      examples.child(DemoSection(definition));
+    });
+  });
 }
 
+// 缓存**工厂**而不是节点（票 07）：页面工厂返回的是节点，一个节点只能挂一处，
+// 缓存节点会让第二次进入同一路由拿到已销毁的实例。
 const pages = Object.freeze(
-  Object.fromEntries(demoDefinitions.map((definition) => [definition.key, createPage(definition)]))
+  Object.fromEntries(
+    demoDefinitions.map((definition) => [definition.key, () => createPage(definition)])
+  )
 );
 
-export const SelectDocumentationPage = () => pages.select;
-export const TextareaDocumentationPage = () => pages.textarea;
-export const SwitchDocumentationPage = () => pages.switch;
-export const TimerDocumentationPage = () => pages.timer;
-export const TimerRangeDocumentationPage = () => pages['timer-range'];
-export const UploadDocumentationPage = () => pages.upload;
-export const RateDocumentationPage = () => pages.rate;
+export const SelectDocumentationPage = () => pages.select();
+export const TextareaDocumentationPage = () => pages.textarea();
+export const SwitchDocumentationPage = () => pages.switch();
+export const TimerDocumentationPage = () => pages.timer();
+export const TimerRangeDocumentationPage = () => pages['timer-range']();
+export const UploadDocumentationPage = () => pages.upload();
+export const RateDocumentationPage = () => pages.rate();

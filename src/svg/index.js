@@ -76,18 +76,16 @@ export class SvgElementNode extends ElementNode {
     return document.createElementNS(SVG_NAMESPACE, this._tagName);
   }
 
-  /**
-   * SVGElement.className 通常是 SVGAnimatedString，不能像 HTMLElement 一样直接赋值。
-   */
-  _syncClassName() {
-    const className = this._classText ?? '';
+  /** SVGElement.className 通常是 SVGAnimatedString：类名的读与写都走属性（覆盖引擎那两条）。 */
+  _readClassText(element, freshClass) {
+    return freshClass ? '' : element.getAttribute('class') || '';
+  }
 
-    if (this._el) {
-      if (className) {
-        this._el.setAttribute('class', className);
-      } else {
-        this._el.removeAttribute('class');
-      }
+  _applyClassText(element, className) {
+    if (className) {
+      element.setAttribute('class', className);
+    } else {
+      element.removeAttribute('class');
     }
   }
 

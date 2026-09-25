@@ -926,76 +926,72 @@ function createDataDisplayDocsDefinition(config) {
 }
 
 function createDataDisplayDocumentationPage(definition) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(
-          `components-route-page components-data-display-docs components-data-display-docs--${definition.key}`
-        );
-        page.attr('data-component-route-item', definition.routeItem);
-        page.attr('data-data-display-docs', definition.key);
+  return section((page) => {
+    page.className(
+      `components-route-page components-data-display-docs components-data-display-docs--${definition.key}`
+    );
+    page.attr('data-component-route-item', definition.routeItem);
+    page.attr('data-data-display-docs', definition.key);
 
-        page.header((header) => {
-          header.className('components-data-display-docs-header');
-          header.h1(definition.heading);
-          header.p(definition.intro);
+    page.header((header) => {
+      header.className('components-data-display-docs-header');
+      header.h1(definition.heading);
+      header.p(definition.intro);
+    });
+
+    page.section((usage) => {
+      usage.className('components-data-display-docs-usage');
+      usage.attr('data-data-display-usage', definition.key);
+      usage.h2(definition.usageTitle);
+      if (definition.usageIntro) {
+        usage.p(definition.usageIntro);
+      }
+      usage.ul((list) => {
+        definition.usageItems.forEach((itemText) => {
+          list.li(itemText);
         });
+      });
+    });
 
-        page.section((usage) => {
-          usage.className('components-data-display-docs-usage');
-          usage.attr('data-data-display-usage', definition.key);
-          usage.h2(definition.usageTitle);
-          if (definition.usageIntro) {
-            usage.p(definition.usageIntro);
-          }
-          usage.ul((list) => {
-            definition.usageItems.forEach((itemText) => {
-              list.li(itemText);
-            });
+    page.section((api) => {
+      api.className('components-data-display-docs-api');
+      api.h2(definition.apiTitle);
+      if (definition.apiIntro) {
+        api.p(definition.apiIntro);
+      }
+      api.pre((pre) => {
+        pre.className('data-display-api-signature');
+        pre.code(definition.apiSignature);
+      });
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.className('components-data-display-docs-api');
-          api.h2(definition.apiTitle);
-          if (definition.apiIntro) {
-            api.p(definition.apiIntro);
-          }
-          api.pre((pre) => {
-            pre.className('data-display-api-signature');
-            pre.code(definition.apiSignature);
-          });
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
+        table.tbody((body) => {
+          definition.apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              definition.apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-data-display-docs-examples');
-          examples.h2('代码演示');
-          examples.p(definition.examplesIntro);
-          definition.examples.forEach((demo) => {
-            examples.child(DataDisplayExampleSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-data-display-docs-examples');
+      examples.h2('代码演示');
+      examples.p(definition.examplesIntro);
+      definition.examples.forEach((demo) => {
+        examples.child(DataDisplayExampleSection(demo));
+      });
+    });
+  });
 }
 
 function DataDisplayExampleSection(demo) {
@@ -1007,26 +1003,22 @@ function DataDisplayExampleSection(demo) {
     title: demo.sourceTitle ?? `${demo.title} 核心源码`
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-data-display-demo');
-        example.attr('data-data-display-demo', demo.id);
-        example.h3(demo.title);
-        example.p(demo.description);
-        example.div((live) => {
-          live.className('components-data-display-demo-live');
-          live.attr('data-data-display-demo-live', 'true');
-          live.child(
-            vCard((card) => {
-              card.vCardBody((body) => body.child(liveDemo));
-            })
-          );
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-data-display-demo');
+    example.attr('data-data-display-demo', demo.id);
+    example.h3(demo.title);
+    example.p(demo.description);
+    example.div((live) => {
+      live.className('components-data-display-demo-live');
+      live.attr('data-data-display-demo-live', 'true');
+      live.child(
+        vCard((card) => {
+          card.vCardBody((body) => body.child(liveDemo));
+        })
+      );
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function BadgeCountExample1() {

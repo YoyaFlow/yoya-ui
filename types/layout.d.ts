@@ -1,7 +1,9 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput,
   StyleValue
@@ -124,8 +126,34 @@ export interface RegionOptions {
 
 export type SplitPanelDirection = 'horizontal' | 'vertical';
 
+/** `vSlot({ name })` 的直接参数：占位名（裸值 = 占位名），其余键走 options 分派。 */
+export interface SlotOptions {
+  name?: ChildInput;
+  [key: string]: unknown;
+}
+
+/** 零布局占位（A 形态薄工厂）：位置标记，内容作为它的子节点插入（`display: contents`）。 */
+export interface VSlot extends HtmlElementNode {}
+
+export const VSlot: { (): VSlot };
+
+/** 快捷方法：建占位 + 按 setup 分派调用方参数（裸值 = 占位名）。 */
+export const vSlot: ElementFactory<VSlot> & {
+  (first?: SlotOptions | SetupInput<VSlot> | null, callback?: SetupCallback<VSlot>): VSlot;
+};
+
+/** `VSplitPanel({ … })` 的直接参数。 */
+export interface SplitPanelOptions {
+  direction?: PropValue<SplitPanelDirection>;
+  first?: ChildInput | SetupCallback<HtmlElementNode>;
+  minSize?: PropValue<number>;
+  second?: ChildInput | SetupCallback<HtmlElementNode>;
+  size?: PropValue<Length>;
+  [key: string]: unknown;
+}
+
 /** Split panel with a draggable divider. */
-export class VSplitPanel extends HtmlElementNode {
+export interface VSplitPanel extends ComponentNode {
   direction(): SplitPanelDirection;
   direction(value: SplitPanelDirection): VSplitPanel;
   size(): string;
@@ -136,6 +164,8 @@ export class VSplitPanel extends HtmlElementNode {
   first(setup: ChildInput | SetupCallback<HtmlElementNode>): VSplitPanel;
   second(setup: ChildInput | SetupCallback<HtmlElementNode>): VSplitPanel;
 }
+
+export const VSplitPanel: { (props?: SplitPanelOptions): VSplitPanel };
 
 // ---------------------------------------------------------------------------
 // Layout node interfaces
@@ -336,19 +366,22 @@ export const divider: LayoutFactory<Divider, DividerOptions>;
 
 /** Split panel with a draggable divider. */
 export const vSplitPanel: ElementFactory<VSplitPanel> & {
-  (first?: SetupInput<VSplitPanel> | null, callback?: SetupCallback<VSplitPanel>): VSplitPanel;
+  (
+    first?: SplitPanelOptions | SetupInput<VSplitPanel> | null,
+    callback?: SetupCallback<VSplitPanel>
+  ): VSplitPanel;
 };
 
 /** `vMasonry({ … })` 的 props：列数 / 间距 / 最小列宽（句柄 props 是活值）。 */
 export interface MasonryOptions {
-  columns?: number;
-  gap?: number;
-  minColumnWidth?: number | null;
+  columns?: PropValue<number>;
+  gap?: PropValue<number>;
+  minColumnWidth?: PropValue<number | null>;
   [key: string]: unknown;
 }
 
 /** Masonry layout built on CSS multi-columns with configurable columns and gap. */
-export class VMasonry extends HtmlElementNode {
+export interface VMasonry extends ComponentNode {
   columns(): number;
   columns(value: number): VMasonry;
   gap(): number;
@@ -356,6 +389,8 @@ export class VMasonry extends HtmlElementNode {
   minColumnWidth(): number | null;
   minColumnWidth(value: number | null): VMasonry;
 }
+
+export const VMasonry: { (props?: MasonryOptions): VMasonry };
 
 export const vMasonry: ElementFactory<VMasonry> & {
   (
@@ -367,28 +402,6 @@ export const vMasonry: ElementFactory<VMasonry> & {
 // ---------------------------------------------------------------------------
 // Theme shell
 // ---------------------------------------------------------------------------
-
-/**
- * Themed generic container: background, border, radius and text color driven
- * by --yoya-* tokens, with scroll and background-opacity control.
- */
-export class VThemeShell extends HtmlElementNode {
-  /** Virtual mode renders the shell's styles onto its single child instead of its own DOM node. */
-  virtual(next?: boolean): VThemeShell;
-  background(): StyleValue | undefined;
-  background(value: string | null): VThemeShell;
-  backgroundOpacity(alpha: number | string): VThemeShell;
-  radius(): StyleValue | undefined;
-  radius(value: string | number | null): VThemeShell;
-  border(): StyleValue | undefined;
-  border(value: string | null): VThemeShell;
-  borderColor(): StyleValue | undefined;
-  borderColor(value: string | null): VThemeShell;
-  scrollable(next?: boolean): VThemeShell;
-}
-
-/** Creates a themed shell container. */
-export const vThemeShell: ElementFactory<VThemeShell>;
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface LayoutParentShortcuts {
@@ -446,13 +459,14 @@ export interface LayoutParentShortcuts {
   spacer(first?: SetupInput<Spacer> | null, callback?: SetupCallback<Spacer>): Spacer;
   divider(first?: SetupInput<Divider> | null, callback?: SetupCallback<Divider>): Divider;
   vSplitPanel(
-    first?: SetupInput<VSplitPanel> | null,
+    first?: SplitPanelOptions | SetupInput<VSplitPanel> | null,
     callback?: SetupCallback<VSplitPanel>
   ): VSplitPanel;
   vMasonry(
     first?: MasonryOptions | SetupInput<VMasonry> | null,
     callback?: SetupCallback<VMasonry>
   ): VMasonry;
+  vSlot(first?: SlotOptions | SetupInput<VSlot> | null, callback?: SetupCallback<VSlot>): VSlot;
 }
 
 export type { ElementOptions, SetupInput };

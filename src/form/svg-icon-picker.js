@@ -203,13 +203,12 @@ export function VSvgIconPicker() {
         return;
       }
 
-      const element = grid._el;
-
-      if (!element) {
+      if (!grid.isLanded()) {
         return;
       }
 
-      const distance = element.scrollHeight - element.scrollTop - (element.clientHeight || 0);
+      const distance =
+        grid.prop('scrollHeight') - grid.prop('scrollTop') - (grid.prop('clientHeight') || 0);
 
       if (distance <= ICON_LOAD_MORE_THRESHOLD) {
         renderMoreIcons();
@@ -221,16 +220,14 @@ export function VSvgIconPicker() {
         return;
       }
 
-      const element = grid._el;
-
-      if (!element) {
+      if (!grid.isLanded()) {
         return;
       }
 
       let guard = 0;
 
       while (state.renderedCount < state.iconEntries.length && guard < 200) {
-        if (element.scrollHeight > (element.clientHeight || 0)) {
+        if (grid.prop('scrollHeight') > (grid.prop('clientHeight') || 0)) {
           break;
         }
 

@@ -226,7 +226,7 @@ export function VImagePreview() {
     api.previewState = () => (state.open ? 'open' : 'closed');
 
     api.open = () => {
-      if (state.open || !state.src || !node._el) {
+      if (state.open || !state.src || !node.isLanded()) {
         return api;
       }
 

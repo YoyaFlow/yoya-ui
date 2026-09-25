@@ -97,16 +97,14 @@ export function VField() {
 
     /** 编辑面吸在查看面上：读元素走公共取用方法，未落地时不动。 */
     const positionEditor = () => {
-      // 未落地（还没建 DOM）时不动：`_el` 只读判定与 VTableWrapper 的首屏口径一致
-      if (!node._el) {
+      // 未落地（还没建 DOM）时不动：判定走引擎口子，与 VTableWrapper 的首屏口径一致
+      if (!node.isLanded()) {
         return api;
       }
 
-      // 已经落地了，直接读元素（`_el`）；不再用 `renderDom()` 去"取"元素
-      const fieldElement = node._el;
-      const anchor = displayBox._el || fieldElement;
-      const fieldRect = fieldElement.getBoundingClientRect();
-      const rect = anchor.getBoundingClientRect();
+      // 已经落地了：量测走 `measure()`（锚点优先查看面，没有就用字段自己）
+      const fieldRect = node.measure();
+      const rect = (displayBox.isLanded() ? displayBox.measure() : null) || fieldRect;
 
       editorBox.styles({
         left: `${rect.left - fieldRect.left}px`,
@@ -118,13 +116,8 @@ export function VField() {
     };
 
     const focusEditor = () => {
-      // 只要元素本身（已落地）；不为"取元素"提前 renderDom()
-      const editorElement = editorBox._el;
-      const field = editorElement?.querySelector('input, textarea, select');
-
-      if (field && typeof field.focus === 'function') {
-        field.focus();
-      }
+      // 编辑面里第一个可聚焦控件；不为"取元素"提前把 DOM 建出来
+      editorBox.focusFirst();
       return api;
     };
 

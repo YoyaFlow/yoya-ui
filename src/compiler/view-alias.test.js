@@ -175,48 +175,21 @@ describe('命名根 / 赋值流（票 21 §2.1）', () => {
     expect(wired.code).toContain('const view = (');
   });
 
-  it('形态 B（组件对象）：render() 里命名根也照编，另一个成员原样保留', async () => {
+  // 票 07：对象组件（`return { render() { … } }`）已退场，这三种形状不再被认成编译单元——
+  // 编译器**整体回落**通用路径（认不出就不编，绝不是产出半成品）。
+  it('对象组件（形态 B）不再被认成编译单元', () => {
     const units = componentUnits(source, { core, file: 'view-alias.js' });
-    const unit = units.find((entry) => entry.component === 'RenderObjectCard');
-    expect(unit, 'RenderObjectCard 应该被认成组件单元').toBeTruthy();
 
-    const wired = wireComponentModule({
-      source,
-      targets: [unit],
-      core,
-      runtime: runtimeUrl,
-      file: 'view-alias.js'
-    });
-    expect(wired).not.toBeNull();
-    expect(wired.code).toContain('touch()');
-    expect(wired.code).toContain('const view = (');
-    expect(wired.code).toContain('return view;');
+    expect(units.map((entry) => entry.component)).not.toContain('RenderObjectCard');
+    expect(units.map((entry) => entry.component)).not.toContain('OuterRootCard');
+    expect(units.map((entry) => entry.component)).not.toContain('SameLevelCard');
   });
 
-  it('形态 B（组件对象）：块声明在组件体、render 只交出它 → 照样定位到', async () => {
-    for (const mode of ['element', 'node']) {
-      const built = await compile('OuterRootCard', mode);
-      expect(built.compiled, `OuterRootCard@${mode}: ${JSON.stringify(built.bails)}`).toBe(true);
+  it('对象组件的编译请求整体回落（compiled=false + 记录原因）', async () => {
+    const built = await compile('RenderObjectCard', 'element');
 
-      const props = () => ({ label: core.ref('外层声明') });
-      const el =
-        mode === 'element'
-          ? built.generated.createRowFactory({})(props()).el
-          : built.generated.createRowFactory({})(props()).renderDom();
-      expect(signature(el), mode).toBe(signature(dsl.OuterRootCard(props()).render().renderDom()));
-    }
-  });
-
-  it('候选只在**同层**：闭包 / 别的方法里的赋值不当"那一块"', async () => {
-    const built = await compile('SameLevelCard', 'element');
-    expect(built.compiled, JSON.stringify(built.bails)).toBe(true);
-    // 同层那块是 `same-level`；闭包 / other-method 两块没被选中
-    expect(built.plan.html).toContain('class="same-level"');
-
-    const props = () => ({ label: core.ref('同层') });
-    const el = built.generated.createRowFactory({})(props()).el;
-    expect(signature(el)).toBe(signature(dsl.SameLevelCard(props()).render().renderDom()));
-    expect(el.className).toBe('same-level');
+    expect(built.compiled).toBe(false);
+    expect(built.bails.length).toBeGreaterThan(0);
   });
 
   it('视图句柄被读过 → 走**就地替换**：包装路径会把视图之外的语句悄悄丢掉', async () => {

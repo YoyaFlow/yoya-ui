@@ -1,8 +1,9 @@
-import { HtmlElementNode, vNode } from '../../index.js';
+import { div, vNode } from '../../index.js';
 import { Compartment } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { EditorView, basicSetup } from 'codemirror';
 import { javascript } from '@codemirror/lang-javascript';
+import { isDarkMode, watchDocsTheme } from './docs-theme.js';
 
 const INITIAL_DOC = [
   '// 配置片段：yoya-ui + CodeMirror 6',
@@ -11,117 +12,55 @@ const INITIAL_DOC = [
   '}'
 ].join('\n');
 
-function isDarkMode() {
-  if (typeof document === 'undefined') {
-    return false;
-  }
-  const mode = document.documentElement?.dataset.yoyaMode;
-  if (mode === 'dark') {
-    return true;
-  }
-  if (mode === 'system' && typeof window !== 'undefined') {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-}
+/**
+ * CodeMirror 6 胶水组件（形态 B，照 `VBadge` 的写法规格）：结构纯声明，编辑器实例与主题观察器
+ * 都是闭包状态，生命周期挂 `whenMount` / `whenDestroy`，宿主元素从钩子上下文现取。
+ */
+export function vCodeMirror(doc = INITIAL_DOC) {
+  return vNode((api) => {
+    const editor = { host: null, stopTheme: null, theme: new Compartment(), view: null };
 
-export class CodeMirrorDemoNode extends HtmlElementNode {
-  constructor(doc = INITIAL_DOC) {
-    super('div', null);
-    this._onMediaChange = null;
-    this._doc = doc;
-    this._themeCompartment = new Compartment();
-    this._themeObserver = null;
-    this._view = null;
-    this.attr('data-codemirror-host', 'true');
-  }
-
-  renderDom() {
-    const element = super.renderDom();
-    if (this._view) {
-      return element;
-    }
-    this._view = new EditorView({
-      doc: this._doc,
-      extensions: [
-        basicSetup,
-        javascript(),
-        this._themeCompartment.of(isDarkMode() ? oneDark : [])
-      ],
-      parent: element
-    });
-    this._watchTheme();
-    return element;
-  }
-
-  _applyTheme() {
-    if (!this._view) {
-      return;
-    }
-    this._view.dispatch({
-      effects: this._themeCompartment.reconfigure(isDarkMode() ? oneDark : [])
-    });
-  }
-
-  _watchTheme() {
-    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
-      return;
-    }
-    if (!this._themeObserver) {
-      this._themeObserver = new MutationObserver(() => this._applyTheme());
-      this._themeObserver.observe(document.documentElement, {
-        attributeFilter: ['data-yoya-mode'],
-        attributes: true
+    const applyTheme = () => {
+      editor.view?.dispatch({
+        effects: editor.theme.reconfigure(isDarkMode() ? oneDark : [])
       });
-    }
-    if (
-      !this._onMediaChange &&
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function'
-    ) {
-      this._onMediaChange = () => this._applyTheme();
-      window
-        .matchMedia('(prefers-color-scheme: dark)')
-        .addEventListener?.('change', this._onMediaChange);
-    }
-  }
+    };
 
-  value() {
-    return this._view ? this._view.state.doc.toString() : '';
-  }
+    api.value = () => (editor.view ? editor.view.state.doc.toString() : '');
+    api.setValue = (next) => {
+      editor.view?.dispatch({
+        changes: { from: 0, insert: next, to: editor.view.state.doc.length }
+      });
+      return api;
+    };
+    api.whenMount = (host) => {
+      editor.host = host?.element?.() ?? null;
+      editor.view ??= new EditorView({
+        doc,
+        extensions: [basicSetup, javascript(), editor.theme.of(isDarkMode() ? oneDark : [])],
+        parent: editor.host
+      });
+      editor.stopTheme ??= watchDocsTheme(applyTheme);
+    };
+    api.whenDestroy = () => {
+      editor.stopTheme?.();
+      editor.stopTheme = null;
+      editor.view?.destroy();
+      editor.view = null;
+      editor.host = null;
+    };
 
-  setValue(doc) {
-    if (!this._view) {
-      return;
-    }
-    this._view.dispatch({
-      changes: { from: 0, insert: doc, to: this._view.state.doc.length }
-    });
-  }
-
-  destroy() {
-    this._themeObserver?.disconnect();
-    this._themeObserver = null;
-    if (typeof window !== 'undefined' && this._onMediaChange) {
-      window
-        .matchMedia('(prefers-color-scheme: dark)')
-        .removeEventListener?.('change', this._onMediaChange);
-      this._onMediaChange = null;
-    }
-    if (this._view) {
-      this._view.destroy();
-      this._view = null;
-    }
-    return super.destroy();
-  }
+    return div({ 'data-codemirror-host': 'true' });
+  });
 }
 
 export function CodeMirrorExample(doc = INITIAL_DOC) {
-  return vNode((api) => {
-    const node = new CodeMirrorDemoNode(doc);
-    api.setValue = (next) => node.setValue(next);
-    api.value = () => node.value();
+  const editor = vCodeMirror(doc);
 
-    return node;
+  return vNode((api) => {
+    api.value = () => editor.value();
+    api.setValue = (next) => editor.setValue(next);
+
+    return editor;
   });
 }

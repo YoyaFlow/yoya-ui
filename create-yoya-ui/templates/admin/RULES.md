@@ -72,8 +72,9 @@ export default {
 - 导航字段（`menus` / `activeModuleKey` / `activePath`）是 `ref`：`router.subscribe → state.syncFromPath(path)` 只把路径写回信号
 - 顶栏 / 侧栏从状态**派生高亮**：菜单区先 `rebuildable()` 再读信号（模块 / 路径变化自动重建），组件不持有自己的激活状态
 - `AdminShell` 只做装配：布局组装，不直接操作 router，也不需要订阅回调转发
-- 组件统一写法：节点在 `render()` 内声明式构建，不保留 `applyState()` 这类手动同步入口；没有额外行为要定义（无内部状态、无对外命令方法）的组件直接返回 ViewNode 即可，不必包一层 `render()`
-- 组件需要对外命令方法时用 `vNode((api) => 视图)`：命令收到 `api` 上（`api.reload = () => { …; return api }`），工厂挂到返回的节点并校验重名；自带边界写 `api.whenFailed`，其余节点级能力（`mountable()` / `rebuildable()`）链在节点上
+- **组件只有两种形态**：没有额外行为要定义（无内部状态、无对外命令方法）的组件**直接返回 ViewNode**（形态 A 薄工厂，不必包一层 `render()`）；需要对外命令方法时用 **`vNode((api) => 视图)`**（形态 B）。`{ render(), … }` 对象组件已退场，新组件不要写
+- 形态 B 的命令写在 `api` 上：`api.reload = () => { …; return api }`（`return api` 等价于返回节点，链式两端都通）；命令名撞节点 API（`child` / `destroy` / `renderDom` …）引擎直接报错，不静默覆盖；自带错误边界写 `api.whenFailed`，其余节点级能力（`mountable()` / `rebuildable()`）链在节点上
+- **页面与外壳**：页面文件（`pages/*-page.js`）与外壳（`AdminShell`）同样是组件——没有命令方法就返回 ViewNode；页面需要对外方法（如 `refresh()`）时按形态 B 写
 
 ## 7. 页面规则
 

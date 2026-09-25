@@ -209,70 +209,66 @@ export function FieldDocumentationPage() {
 }
 
 function createFormDocumentationPage(definition) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(
-          `components-route-page components-form-docs components-feedback-docs components-form-docs--${definition.key}`
-        );
-        page.attr('data-component-route-item', definition.routeItem);
-        page.attr('data-form-docs', definition.key);
+  return section((page) => {
+    page.className(
+      `components-route-page components-form-docs components-feedback-docs components-form-docs--${definition.key}`
+    );
+    page.attr('data-component-route-item', definition.routeItem);
+    page.attr('data-form-docs', definition.key);
 
-        page.header((header) => {
-          header.className('components-feedback-docs-header');
-          header.h1(definition.heading);
-          header.p(definition.intro);
-        });
+    page.header((header) => {
+      header.className('components-feedback-docs-header');
+      header.h1(definition.heading);
+      header.p(definition.intro);
+    });
 
-        page.section((usage) => {
-          usage.className('components-feedback-docs-usage');
-          usage.attr('data-form-usage', definition.key);
-          usage.h2(definition.usageTitle);
-          usage.p(definition.usageIntro);
-          usage.ul((list) => {
-            definition.usageItems.forEach((item) => list.li(item));
+    page.section((usage) => {
+      usage.className('components-feedback-docs-usage');
+      usage.attr('data-form-usage', definition.key);
+      usage.h2(definition.usageTitle);
+      usage.p(definition.usageIntro);
+      usage.ul((list) => {
+        definition.usageItems.forEach((item) => list.li(item));
+      });
+    });
+
+    page.section((api) => {
+      api.className('components-feedback-docs-api');
+      api.h2('常用 API');
+      api.p(definition.apiIntro);
+      api.pre((pre) => {
+        pre.className('feedback-api-signature');
+        pre.code(definition.apiSignature);
+      });
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.className('components-feedback-docs-api');
-          api.h2('常用 API');
-          api.p(definition.apiIntro);
-          api.pre((pre) => {
-            pre.className('feedback-api-signature');
-            pre.code(definition.apiSignature);
-          });
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
+        table.tbody((body) => {
+          definition.apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              definition.apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-feedback-docs-examples');
-          examples.h2('代码演示');
-          examples.p(definition.examplesIntro);
-          definition.examples.forEach((demo) => {
-            examples.child(FormExampleSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-feedback-docs-examples');
+      examples.h2('代码演示');
+      examples.p(definition.examplesIntro);
+      definition.examples.forEach((demo) => {
+        examples.child(FormExampleSection(demo));
+      });
+    });
+  });
 }
 
 function FormExampleSection(demo) {
@@ -284,62 +280,46 @@ function FormExampleSection(demo) {
     title: demo.sourceTitle ?? `${demo.title} 核心源码`
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-feedback-demo');
-        example.attr('data-form-demo', demo.id);
-        example.h3(demo.title);
-        example.p(demo.description);
-        example.div((live) => {
-          live.className('components-feedback-demo-live');
-          live.attr('data-form-demo-live', 'true');
-          live.child(
-            vCard((card) => {
-              card.vCardBody((body) => body.child(liveDemo));
-            })
-          );
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-feedback-demo');
+    example.attr('data-form-demo', demo.id);
+    example.h3(demo.title);
+    example.p(demo.description);
+    example.div((live) => {
+      live.className('components-feedback-demo-live');
+      live.attr('data-form-demo-live', 'true');
+      live.child(
+        vCard((card) => {
+          card.vCardBody((body) => body.child(liveDemo));
+        })
+      );
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function BasicFormCard() {
   const form = FormExample1();
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.child(form);
-      });
-    }
-  };
+  return vstack((body) => {
+    body.child(form);
+  });
 }
 
 function ValidatedFormCard() {
   const form = FormExample2();
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.child(form);
-      });
-    }
-  };
+  return vstack((body) => {
+    body.child(form);
+  });
 }
 
 function CustomCollectCard() {
   const form = FormExample3();
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.child(form);
-      });
-    }
-  };
+  return vstack((body) => {
+    body.child(form);
+  });
 }
 
 function FormExample1() {

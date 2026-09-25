@@ -6,7 +6,9 @@ export default [
     ignores: [
       '.codebase-memory/**',
       '.scratch/**',
-      'dist/**',
+      // 产物目录：根 dist 与**子目录里的产物**（脚手架模板在仓库内构建时会生成
+      // `create-yoya-ui/templates/<模板>/dist`，它们是压缩产物、不该进 lint）
+      '**/dist/**',
       'node_modules/**',
       'src/chart/echarts.min.js',
       'src/core/signals/vendor/**'

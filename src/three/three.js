@@ -2,6 +2,7 @@ import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode, div } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { vNode } from '../core/v-node.js';
+import { ref } from '../core/signals/handle.js';
 import {
   createComponentShortcut,
   delegateNodeCommands,
@@ -38,6 +39,10 @@ export function VThree({
   width,
   ...rest
 } = {}) {
+  // 尺寸是**状态**（命令写、视图跟）：句柄进 `style` 才是随状态变的活值，
+  // 写死成普通值会让 `three.height('100%')` 只改状态、DOM 停在默认值（R6 读值绑定）。
+  const heightRef = ref(height ?? '400px');
+  const widthRef = ref(width ?? '100%');
   const state = {
     autoRender: autoRender === undefined ? true : Boolean(autoRender),
     autoResize: autoResize === undefined ? true : Boolean(autoResize),
@@ -47,7 +52,7 @@ export function VThree({
     element: null,
     frameCallbacks: [],
     frameId: null,
-    height: height ?? '400px',
+    height: heightRef,
     initScheduled: false,
     onReadyCallbacks: [],
     onResizeCallbacks: [],
@@ -58,7 +63,7 @@ export function VThree({
     running: false,
     scene: scene ?? null,
     threeLib: threeLib ?? null,
-    width: width ?? '100%'
+    width: widthRef
   };
 
   const resolveLib = () => {
@@ -128,8 +133,8 @@ export function VThree({
         boxHeight = element.clientHeight || rect.height || 0;
       }
 
-      boxWidth = boxWidth || parseLength(state.width);
-      boxHeight = boxHeight || parseLength(state.height);
+      boxWidth = boxWidth || parseLength(state.width.value);
+      boxHeight = boxHeight || parseLength(state.height.value);
 
       return {
         height: Math.max(1, Math.round(boxHeight)),
@@ -360,19 +365,19 @@ export function VThree({
 
     api.width = (value) => {
       if (value === undefined) {
-        return state.width;
+        return state.width.value;
       }
 
-      state.width = value;
+      state.width.value = value;
       return api;
     };
 
     api.height = (value) => {
       if (value === undefined) {
-        return state.height;
+        return state.height.value;
       }
 
-      state.height = value;
+      state.height.value = value;
       return api;
     };
 

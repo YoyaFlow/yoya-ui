@@ -45,22 +45,18 @@ export function VForm() {
     };
 
     api.reset = () => {
-      const element = node._el;
-
-      if (element?.reset) {
-        element.reset();
-      }
+      node.invoke('reset');
       return api;
     };
 
     api.submit = () => {
-      const element = node._el;
-
-      if (element?.requestSubmit) {
-        element.requestSubmit();
-      } else if (element?.dispatchEvent) {
-        element.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      // 优先原生 `requestSubmit`（校验 + submit 事件）；退化环境派发一个 submit 事件
+      if (typeof node.prop('requestSubmit') === 'function') {
+        node.invoke('requestSubmit');
+      } else {
+        node.emit('submit', null, { cancelable: true });
       }
+
       return api;
     };
 

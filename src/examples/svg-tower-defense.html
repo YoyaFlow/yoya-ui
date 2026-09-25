@@ -303,7 +303,8 @@
         div,
         ref,
         svg,
-        SvgElementNode
+        SvgElementNode,
+        vNode
       } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.js';
 
       /*
@@ -473,80 +474,31 @@
         let slowFactor = 1;
         let node = null;
 
-        return {
-          render() {
-            node = new SvgElementNode('g', (group) => {
-              group.className(['enemy', `enemy--${kind}`]);
-              group.attr('transform', transform);
-
-              group.rect({
-                class: 'enemy-hp-bg',
-                x: -def.radius - 2,
-                y: -def.radius - 12,
-                width: barWidth,
-                height: 4,
-                rx: 2
-              });
-
-              group.rect((bar) => {
-                bar.className('enemy-hp-fill');
-                bar.attr({
-                  x: -def.radius - 2,
-                  y: -def.radius - 12,
-                  height: 4,
-                  rx: 2
-                });
-                bar.attr('width', barWidthValue);
-              });
-
-              group.circle({ class: 'enemy-body', r: def.radius });
-            });
-            return node;
-          },
-
-          get kind() {
-            return kind;
-          },
-
-          get x() {
-            return positionX.value;
-          },
-
-          get y() {
-            return positionY.value;
-          },
-
-          get hp() {
-            return hp.value;
-          },
-
-          get alive() {
-            return alive;
-          },
-
-          hit(damage, now, slowMs, nextSlowFactor) {
+        return vNode((api) => {
+          api.kind = () => kind;
+          api.x = () => positionX.value;
+          api.y = () => positionY.value;
+          api.hp = () => hp.value;
+          api.alive = () => alive;
+          api.hit = (damage, now, slowMs, nextSlowFactor) => {
             const nextHp = Math.max(0, hp.value - damage);
             if (slowMs > 0 && nextSlowFactor < 1) {
               slowUntil = Math.max(slowUntil, now + slowMs);
               slowFactor = nextSlowFactor;
             }
-
             hp.value = nextHp;
             alive = nextHp > 0;
             return nextHp <= 0;
-          },
-
-          step(dtSeconds, now) {
+          };
+          api.step = (dtSeconds, now) => {
             if (!alive) {
               return { arrived: false };
             }
-
             const slowed = now < slowUntil ? slowFactor : 1;
             const speed = def.speed * slowed;
             let remaining = speed * dtSeconds;
             let x = positionX.value;
             let y = positionY.value;
-
             while (remaining > 0 && pathIndex < PATH.points.length) {
               const target = PATH.points[pathIndex];
               const dx = target.x - x;
@@ -564,17 +516,40 @@
                 remaining = 0;
               }
             }
-
             const arrived = pathIndex >= PATH.points.length;
             positionX.value = x;
             positionY.value = y;
             return { arrived };
-          },
+          };
 
-          destroy() {
-            node?.destroy();
-          }
-        };
+          node = new SvgElementNode('g', (group) => {
+            group.className(['enemy', `enemy--${kind}`]);
+            group.attr('transform', transform);
+
+            group.rect({
+              class: 'enemy-hp-bg',
+              x: -def.radius - 2,
+              y: -def.radius - 12,
+              width: barWidth,
+              height: 4,
+              rx: 2
+            });
+
+            group.rect((bar) => {
+              bar.className('enemy-hp-fill');
+              bar.attr({
+                x: -def.radius - 2,
+                y: -def.radius - 12,
+                height: 4,
+                rx: 2
+              });
+              bar.attr('width', barWidthValue);
+            });
+
+            group.circle({ class: 'enemy-body', r: def.radius });
+          });
+          return node;
+        });
       }
 
       function Tower({ col, row, kind, onPick }) {
@@ -589,64 +564,48 @@
         let cd = 0;
         let node = null;
 
-        const tower = {
-          render() {
-            node = new SvgElementNode('g', (group) => {
-              group.className(['tower', `tower--${kind}`]);
-              group.attr('transform', `translate(${center.x} ${center.y})`);
-              group.on('click', () => onPick(tower));
-
-              // 已放置炮塔的射程圈：点击选中时显示，再次点击取消时隐藏。
-              group.circle((range) => {
-                range.className('tower-range');
-                range.attr('r', def.range);
-                range.style('opacity', rangeOpacity);
-              });
-
-              group.circle({ class: 'tower-body', r: 15 });
-              group.line((barrel) => {
-                barrel.className('tower-barrel');
-                barrel.attr({ x1: 0, y1: 0 });
-                barrel.attr('x2', barrelX);
-                barrel.attr('y2', barrelY);
-              });
-              group.circle({ r: 6, fill: '#0f172a' });
-            });
-            return node;
-          },
-
-          get kind() {
-            return kind;
-          },
-
-          get col() {
-            return col;
-          },
-
-          get row() {
-            return row;
-          },
-
-          tick(dtMs) {
+        const tower = vNode((api) => {
+          api.kind = () => kind;
+          api.col = () => col;
+          api.row = () => row;
+          api.tick = (dtMs) => {
             const ready = cd <= 0;
             cd = Math.max(0, cd - dtMs);
             return ready;
-          },
-
-          fire(nextAngle) {
+          };
+          api.fire = (nextAngle) => {
             angle.value = nextAngle;
             cd = def.interval;
-          },
-
-          select(next) {
+          };
+          // `select` 撞 HTML `<select>` 子工厂（运行期命令会遮蔽它）：命令名改用 `setSelected`。
+          api.setSelected = (next) => {
             selected.value = next;
-            return this;
-          },
+            return api;
+          };
 
-          destroy() {
-            node?.destroy();
-          }
-        };
+          node = new SvgElementNode('g', (group) => {
+            group.className(['tower', `tower--${kind}`]);
+            group.attr('transform', `translate(${center.x} ${center.y})`);
+            group.on('click', () => onPick(tower));
+
+            // 已放置炮塔的射程圈：点击选中时显示，再次点击取消时隐藏。
+            group.circle((range) => {
+              range.className('tower-range');
+              range.attr('r', def.range);
+              range.style('opacity', rangeOpacity);
+            });
+
+            group.circle({ class: 'tower-body', r: 15 });
+            group.line((barrel) => {
+              barrel.className('tower-barrel');
+              barrel.attr({ x1: 0, y1: 0 });
+              barrel.attr('x2', barrelX);
+              barrel.attr('y2', barrelY);
+            });
+            group.circle({ r: 6, fill: '#0f172a' });
+          });
+          return node;
+        });
 
         return tower;
       }
@@ -673,44 +632,41 @@
 
         let node = null;
 
-        return {
-          render() {
-            node = new SvgElementNode('g', (group) => {
-              group.className('placement-preview');
-              group.attr('transform', transform);
-              group.attr('opacity', opacity);
-
-              group.circle((ring) => {
-                ring.className('preview-range');
-                ring.attr('r', range);
-                ring.style('fill', rangeFill);
-                ring.style('stroke', rangeStroke);
-              });
-
-              group.circle((mark) => {
-                mark.className('preview-tower');
-                mark.attr('r', '15');
-                mark.style('fill', color);
-              });
-            });
-            return node;
-          },
-
-          show(info) {
+        return vNode((api) => {
+          api.show = (info) => {
             positionX.value = info.x;
             positionY.value = info.y;
             range.value = info.range;
             color.value = info.color;
             valid.value = info.valid;
             visible.value = true;
-            return this;
-          },
-
-          hide() {
+            return api;
+          };
+          api.hide = () => {
             visible.value = false;
-            return this;
-          }
-        };
+            return api;
+          };
+
+          node = new SvgElementNode('g', (group) => {
+            group.className('placement-preview');
+            group.attr('transform', transform);
+            group.attr('opacity', opacity);
+
+            group.circle((ring) => {
+              ring.className('preview-range');
+              ring.attr('r', range);
+              ring.style('fill', rangeFill);
+              ring.style('stroke', rangeStroke);
+            });
+
+            group.circle((mark) => {
+              mark.className('preview-tower');
+              mark.attr('r', '15');
+              mark.style('fill', color);
+            });
+          });
+          return node;
+        });
       }
 
       function Projectile({ startX, startY, target, kind, speed, damage, onHit }) {
@@ -720,48 +676,31 @@
 
         let node = null;
 
-        return {
-          render() {
-            node = new SvgElementNode('g', (group) => {
-              group.className(['projectile', `projectile--${kind}`]);
-              group.attr('transform', transform);
-              group.circle({ class: 'projectile-circle', r: kind === 'cannon' ? 6 : 4 });
-            });
-            return node;
-          },
-
-          get alive() {
-            return true;
-          },
-
-          get x() {
-            return positionX.value;
-          },
-
-          get y() {
-            return positionY.value;
-          },
-
-          step(dtSeconds, targetX, targetY, targetRadius) {
+        return vNode((api) => {
+          api.alive = () => true;
+          api.x = () => positionX.value;
+          api.y = () => positionY.value;
+          api.step = (dtSeconds, targetX, targetY, targetRadius) => {
             const dx = targetX - positionX.value;
             const dy = targetY - positionY.value;
             const distance = Math.hypot(dx, dy);
             const stepDistance = speed * dtSeconds;
-
             if (distance <= stepDistance + targetRadius) {
               onHit();
               return { done: true };
             }
-
             positionX.value += (dx / distance) * stepDistance;
             positionY.value += (dy / distance) * stepDistance;
             return { done: false };
-          },
+          };
 
-          destroy() {
-            node?.destroy();
-          }
-        };
+          node = new SvgElementNode('g', (group) => {
+            group.className(['projectile', `projectile--${kind}`]);
+            group.attr('transform', transform);
+            group.circle({ class: 'projectile-circle', r: kind === 'cannon' ? 6 : 4 });
+          });
+          return node;
+        });
       }
 
       function Playfield({ onCellClick, resolvePreview }) {
@@ -772,58 +711,56 @@
           fieldNode?.child(component);
         }
 
-        return {
-          render() {
-            return svg((field) => {
-              fieldNode = field;
-              field.className('playfield');
-              field.attr({
-                viewBox: '0 0 900 600',
-                role: 'img',
-                'aria-label': '塔防游戏战场'
-              });
+        return vNode((api) => {
+          api.addEntity = addEntity;
 
-              for (let row = 0; row < FIELD.rows; row += 1) {
-                for (let col = 0; col < FIELD.cols; col += 1) {
-                  const rect = cellRect(col, row);
-                  const isRoad = PATH.pathCells.has(`${col},${row}`);
-
-                  field.rect(
-                    {
-                      class: isRoad ? 'road' : 'build-cell',
-                      ...rect,
-                      rx: 3,
-                      'data-cell': `${col},${row}`
-                    },
-                    (cell) => {
-                      const cellInfo = { col, row };
-
-                      // 点击落地；mouseenter 时用 resolvePreview 获取“这个格子能否放、范围多大”。
-                      cell.on('click', () => {
-                        onCellClick(cellInfo);
-                        preview.hide();
-                      });
-                      cell.on('mouseenter', () => {
-                        const info = resolvePreview?.(cellInfo);
-                        if (info) {
-                          preview.show(info);
-                        } else {
-                          preview.hide();
-                        }
-                      });
-                      cell.on('mouseleave', () => preview.hide());
-                    }
-                  );
-                }
-              }
-
-              // 预览图层最后追加，绘制在所有格子之上。
-              field.child(preview);
+          return svg((field) => {
+            fieldNode = field;
+            field.className('playfield');
+            field.attr({
+              viewBox: '0 0 900 600',
+              role: 'img',
+              'aria-label': '塔防游戏战场'
             });
-          },
 
-          addEntity
-        };
+            for (let row = 0; row < FIELD.rows; row += 1) {
+              for (let col = 0; col < FIELD.cols; col += 1) {
+                const rect = cellRect(col, row);
+                const isRoad = PATH.pathCells.has(`${col},${row}`);
+
+                field.rect(
+                  {
+                    class: isRoad ? 'road' : 'build-cell',
+                    ...rect,
+                    rx: 3,
+                    'data-cell': `${col},${row}`
+                  },
+                  (cell) => {
+                    const cellInfo = { col, row };
+
+                    // 点击落地；mouseenter 时用 resolvePreview 获取“这个格子能否放、范围多大”。
+                    cell.on('click', () => {
+                      onCellClick(cellInfo);
+                      preview.hide();
+                    });
+                    cell.on('mouseenter', () => {
+                      const info = resolvePreview?.(cellInfo);
+                      if (info) {
+                        preview.show(info);
+                      } else {
+                        preview.hide();
+                      }
+                    });
+                    cell.on('mouseleave', () => preview.hide());
+                  }
+                );
+              }
+            }
+
+            // 预览图层最后追加，绘制在所有格子之上。
+            field.child(preview);
+          });
+        });
       }
 
       function Hud({ onChooseTower, onStartWave }) {
@@ -850,69 +787,8 @@
           return `开始第 ${wave.value + 1} 波`;
         });
 
-        return {
-          render() {
-            return div((sidebar) => {
-              sidebar.className('sidebar');
-
-              sidebar.div((statRow) => {
-                statRow.className('stat-row');
-
-                statRow.div((box) => {
-                  box.className('stat-box');
-                  box.span('金币');
-                  box.strong((value) => value.child(gold));
-                });
-
-                statRow.div((box) => {
-                  box.className('stat-box');
-                  box.span('生命');
-                  box.strong((value) => value.child(lives));
-                });
-
-                statRow.div((box) => {
-                  box.className('stat-box');
-                  box.span('波次');
-                  box.strong((value) => value.child(wave));
-                });
-              });
-
-              sidebar.p('炮塔');
-              sidebar.div((palette) => {
-                palette.className('palette');
-
-                towerOrder.forEach((kind) => {
-                  const def = TOWER_DEFS[kind];
-                  palette.button((button) => {
-                    button.attr({ class: 'palette-button', 'data-tower-kind': kind });
-                    button.style(
-                      'box-shadow',
-                      computed(() => (selectedType.value === kind ? '0 0 0 2px #facc15' : null))
-                    );
-                    button.child(def.name);
-                    button.small(`花费 ${def.cost} · 伤害 ${def.damage}`);
-                    button.on('click', () => {
-                      selectedType.value = kind;
-                      onChooseTower(kind);
-                    });
-                  });
-                });
-              });
-
-              sidebar.button((button) => {
-                button.className('wave-button');
-                button.on('click', onStartWave);
-                button.child(waveLabel);
-              });
-
-              sidebar.p((line) => {
-                line.className('game-message');
-                line.child(messageText);
-              });
-            });
-          },
-
-          update(stats) {
+        return vNode((api) => {
+          api.update = (stats) => {
             gold.value = stats.gold;
             lives.value = stats.lives;
             wave.value = stats.wave;
@@ -921,9 +797,68 @@
             gameOver.value = stats.gameOver;
             selectedType.value = stats.selectedType;
             messageText.value = stats.message;
-            return this;
-          }
-        };
+            return api;
+          };
+
+          return div((sidebar) => {
+            sidebar.className('sidebar');
+
+            sidebar.div((statRow) => {
+              statRow.className('stat-row');
+
+              statRow.div((box) => {
+                box.className('stat-box');
+                box.span('金币');
+                box.strong((value) => value.child(gold));
+              });
+
+              statRow.div((box) => {
+                box.className('stat-box');
+                box.span('生命');
+                box.strong((value) => value.child(lives));
+              });
+
+              statRow.div((box) => {
+                box.className('stat-box');
+                box.span('波次');
+                box.strong((value) => value.child(wave));
+              });
+            });
+
+            sidebar.p('炮塔');
+            sidebar.div((palette) => {
+              palette.className('palette');
+
+              towerOrder.forEach((kind) => {
+                const def = TOWER_DEFS[kind];
+                palette.button((button) => {
+                  button.attr({ class: 'palette-button', 'data-tower-kind': kind });
+                  button.style(
+                    'box-shadow',
+                    computed(() => (selectedType.value === kind ? '0 0 0 2px #facc15' : null))
+                  );
+                  button.child(def.name);
+                  button.small(`花费 ${def.cost} · 伤害 ${def.damage}`);
+                  button.on('click', () => {
+                    selectedType.value = kind;
+                    onChooseTower(kind);
+                  });
+                });
+              });
+            });
+
+            sidebar.button((button) => {
+              button.className('wave-button');
+              button.on('click', onStartWave);
+              button.child(waveLabel);
+            });
+
+            sidebar.p((line) => {
+              line.className('game-message');
+              line.child(messageText);
+            });
+          });
+        });
       }
 
       function GameModel() {
@@ -951,10 +886,10 @@
           let nearestDistance = range;
 
           model.enemies.forEach((enemy) => {
-            if (!enemy.alive) {
+            if (!enemy.alive()) {
               return;
             }
-            const distance = Math.hypot(enemy.x - centerX, enemy.y - centerY);
+            const distance = Math.hypot(enemy.x() - centerX, enemy.y() - centerY);
             if (distance <= nearestDistance) {
               nearestDistance = distance;
               nearest = enemy;
@@ -1052,7 +987,7 @@
               model.selectedTower.select(false);
             }
             model.selectedTower = alreadySelected ? null : tower;
-            tower.select(!alreadySelected);
+            tower.setSelected(!alreadySelected);
           },
 
           tryPlaceTower({ col, row }) {
@@ -1125,8 +1060,8 @@
             });
 
             model.towers.forEach((tower) => {
-              const def = TOWER_DEFS[tower.kind];
-              const center = cellCenter(tower.col, tower.row);
+              const def = TOWER_DEFS[tower.kind()];
+              const center = cellCenter(tower.col(), tower.row());
               const ready = tower.tick(dtMs);
               if (!ready || model.gameOver) {
                 return;
@@ -1148,7 +1083,7 @@
                 speed: def.projectileSpeed,
                 damage: def.damage,
                 onHit: () => {
-                  const targetKind = target.kind;
+                  const targetKind = target.kind();
                   const dead = target.hit(def.damage, now, def.slowMs ?? 0, def.slowFactor ?? 1);
                   if (dead) {
                     model.gold += ENEMY_DEFS[targetKind].reward;
@@ -1168,9 +1103,9 @@
 
               // 目标已消失（被击杀或抵达终点）时，弹道必须一并清理，否则会停在场上。
               if (
-                !projectile.alive ||
+                !projectile.alive() ||
                 !target ||
-                !target.alive ||
+                !target.alive() ||
                 !model.enemies.includes(target)
               ) {
                 finishedProjectiles.push(projectile);
@@ -1181,9 +1116,9 @@
                 dtMs / 1000,
                 target.x,
                 target.y,
-                ENEMY_DEFS[target.kind].radius
+                ENEMY_DEFS[target.kind()].radius
               );
-              if (result.done || !target.alive) {
+              if (result.done || !target.alive()) {
                 finishedProjectiles.push(projectile);
               }
             });
@@ -1250,41 +1185,37 @@
           frameId = requestAnimationFrame(tick);
         }
 
-        return {
-          render() {
-            return div((page) => {
-              page.div((card) => {
-                card.className('game-card');
+        return vNode((api) => {
+          api.start = () => {
+            frameId = requestAnimationFrame(tick);
+          };
+          api.whenDestroy = () => {
+            cancelAnimationFrame(frameId);
+          };
 
-                card.div((head) => {
-                  head.className('game-head');
-                  head.h1('SVG 塔防');
-                  head.p('点击炮塔类型 → 点击空地放置；守住基地，抵御一波波敌人。');
-                });
+          return div((page) => {
+            page.div((card) => {
+              card.className('game-card');
 
-                card.div((layout) => {
-                  layout.className('game-layout');
-                  layout.child(playfield.render());
-                  layout.child(hud);
-                });
+              card.div((head) => {
+                head.className('game-head');
+                head.h1('SVG 塔防');
+                head.p('点击炮塔类型 → 点击空地放置；守住基地，抵御一波波敌人。');
+              });
+
+              card.div((layout) => {
+                layout.className('game-layout');
+                layout.child(playfield);
+                layout.child(hud);
               });
             });
-          },
-
-          start() {
-            frameId = requestAnimationFrame(tick);
-          },
-
-          destroy() {
-            cancelAnimationFrame(frameId);
-          }
-        };
+          });
+        });
       }
 
-      const demo = TowerDefenseApp();
-      const root = demo.render();
+      const root = TowerDefenseApp();
       root.bindTo('#app');
-      demo.start();
+      root.start();
     </script>
   </body>
 </html>

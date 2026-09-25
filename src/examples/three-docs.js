@@ -95,43 +95,35 @@ function ThreeDemoSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader(demo.title);
-        card.vCardBody((body) => {
-          body.div((liveBox) => {
-            liveBox.className('components-three-demo-live');
-            liveBox.attr('data-three-demo-live', 'true');
-            liveBox.child(live);
-          });
-          body.child(sourcePanel);
-        });
+  return vCard((card) => {
+    card.vCardHeader(demo.title);
+    card.vCardBody((body) => {
+      body.div((liveBox) => {
+        liveBox.className('components-three-demo-live');
+        liveBox.attr('data-three-demo-live', 'true');
+        liveBox.child(live);
       });
-    }
-  };
+      body.child(sourcePanel);
+    });
+  });
 }
 
 export function ThreeDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-three-page');
-        page.attr('data-three-page', 'true');
-        page.h1('Three.js 场景');
-        page.p(
-          '基于 yoya.three.js 的 Three.js 扩展：引擎容器交给 WebGLRenderer，' +
-            '渲染循环、尺寸同步与销毁清理由组件生命周期接管。'
-        );
+  return section((page) => {
+    page.className('components-route-page components-three-page');
+    page.attr('data-three-page', 'true');
+    page.h1('Three.js 场景');
+    page.p(
+      '基于 yoya.three.js 的 Three.js 扩展：引擎容器交给 WebGLRenderer，' +
+        '渲染循环、尺寸同步与销毁清理由组件生命周期接管。'
+    );
 
-        page.div((grid) => {
-          grid.className('components-three-grid');
-          grid.attr('data-three-grid', 'true');
-          threeDemos.forEach((demo) => {
-            grid.child(ThreeDemoSection(demo));
-          });
-        });
+    page.div((grid) => {
+      grid.className('components-three-grid');
+      grid.attr('data-three-grid', 'true');
+      threeDemos.forEach((demo) => {
+        grid.child(ThreeDemoSection(demo));
       });
-    }
-  };
+    });
+  });
 }

@@ -46,129 +46,124 @@ const provideInjectDemoDefinitions = Object.freeze([
 ]);
 
 export function ProvideInjectDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-provide-inject-docs');
-        page.attr('data-component-route-item', 'guides:provide-inject');
+  return section((page) => {
+    page.className('components-route-page components-provide-inject-docs');
+    page.attr('data-component-route-item', 'guides:provide-inject');
 
-        page.header((header) => {
-          header.className('components-provide-inject-docs-header');
-          header.h1('跨组件共享');
-          header.p(
-            'provide(key, value) 声明一份值，后代组件用 inject(key, fallback) 就近读取；' +
-              '请求级数据仍走 withContext + currentContext 的作用域注入。'
-          );
-        });
+    page.header((header) => {
+      header.className('components-provide-inject-docs-header');
+      header.h1('跨组件共享');
+      header.p(
+        'provide(key, value) 声明一份值，后代组件用 inject(key, fallback) 就近读取；' +
+          '请求级数据仍走 withContext + currentContext 的作用域注入。'
+      );
+    });
 
-        page.section((usage) => {
-          usage.className('components-provide-inject-docs-usage');
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            list.li('隔了好几层的组件要共享同一份状态，又不想一路透传 props。');
-            list.li('同一块子树要读到局部不同的配置（主题、只读开关、货币等）。');
-            list.li('异步加载或懒解析的组件也要读到祖先声明的数据。');
-            list.li('每请求的数据（当前用户、租户、语言）用 withContext 走作用域注入。');
+    page.section((usage) => {
+      usage.className('components-provide-inject-docs-usage');
+      usage.h2('何时使用');
+      usage.ul((list) => {
+        list.li('隔了好几层的组件要共享同一份状态，又不想一路透传 props。');
+        list.li('同一块子树要读到局部不同的配置（主题、只读开关、货币等）。');
+        list.li('异步加载或懒解析的组件也要读到祖先声明的数据。');
+        list.li('每请求的数据（当前用户、租户、语言）用 withContext 走作用域注入。');
+      });
+    });
+
+    page.section((api) => {
+      api.className('components-provide-inject-docs-api');
+      api.h2('常用 API');
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.className('components-provide-inject-docs-api');
-          api.h2('常用 API');
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
+        table.tbody((body) => {
+          [
+            [
+              'provide(key, value)',
+              '在当前构建帧声明，归属这个节点，随节点销毁；帧外调用抛错。',
+              "provide('user', { name: 'Ada' })"
+            ],
+            [
+              'inject(key, fallback)',
+              '就近读取：词法构建帧 → 父链 → withContext 层 → 全局层 → fallback。',
+              "const user = inject('user')"
+            ],
+            [
+              'withContext(providers, build)',
+              '调用栈作用域，构建期可见；适合请求级注入。',
+              'withContext({ tenant }, () => buildPage())'
+            ],
+            [
+              'currentContext(key, fallback)',
+              '只读 withContext / 全局层，不查 provide 链。',
+              "currentContext('tenant')"
+            ],
+            [
+              'installContext(providers)',
+              '单用户 SPA 装一次全局兜底层。',
+              'installContext({ locale })'
+            ],
+            [
+              'buildInProviderScope(host, build)',
+              '先挂后建：子树挂到 host 之前构建时用它声明构建帧。',
+              'buildInProviderScope(host, () => view())'
+            ],
+            [
+              'renderToString(page, { context })',
+              'SSR：每请求注入作用域层，请求之间不共享。',
+              'renderToString(page, { context })'
+            ]
+          ].forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              [
-                [
-                  'provide(key, value)',
-                  '在当前构建帧声明，归属这个节点，随节点销毁；帧外调用抛错。',
-                  "provide('user', { name: 'Ada' })"
-                ],
-                [
-                  'inject(key, fallback)',
-                  '就近读取：词法构建帧 → 父链 → withContext 层 → 全局层 → fallback。',
-                  "const user = inject('user')"
-                ],
-                [
-                  'withContext(providers, build)',
-                  '调用栈作用域，构建期可见；适合请求级注入。',
-                  'withContext({ tenant }, () => buildPage())'
-                ],
-                [
-                  'currentContext(key, fallback)',
-                  '只读 withContext / 全局层，不查 provide 链。',
-                  "currentContext('tenant')"
-                ],
-                [
-                  'installContext(providers)',
-                  '单用户 SPA 装一次全局兜底层。',
-                  'installContext({ locale })'
-                ],
-                [
-                  'buildInProviderScope(host, build)',
-                  '先挂后建：子树挂到 host 之前构建时用它声明构建帧。',
-                  'buildInProviderScope(host, () => view())'
-                ],
-                [
-                  'renderToString(page, { context })',
-                  'SSR：每请求注入作用域层，请求之间不共享。',
-                  'renderToString(page, { context })'
-                ]
-              ].forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((values) => {
-          values.className('components-provide-inject-docs-values');
-          values.h2('值位置口径');
-          values.p(
-            '共享的通常是句柄，不是快照：纯占位直接把句柄传给值位置，派生文本才包 computed。' +
-              '写成模板串取值会得到渲染那一刻的死快照，之后写入不再更新。'
-          );
-          values.pre((pre) => {
-            pre.className('provide-inject-value-correct');
-            pre.code(
-              '// 正确：句柄进值位置\n' +
-                "provide('project', { name, members });\n" +
-                'line.child(project.name);\n' +
-                'line.child(project.members);\n\n' +
-                '// 正确：派生文本用 computed\n' +
-                'const summary = computed(() => `${project.name.value}，${project.members.value} 人`);\n' +
-                'block.child(vText(summary));'
-            );
-          });
-          values.pre((pre) => {
-            pre.className('provide-inject-value-wrong');
-            pre.code(
-              '// 反例：渲染时取值，写进去的是死快照\n' +
-                'line.child(`项目：${project.name.value}`);'
-            );
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-provide-inject-docs-examples');
-          examples.h2('代码演示');
-          provideInjectDemoDefinitions.forEach((demo) => {
-            examples.child(ProvideInjectExampleSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((values) => {
+      values.className('components-provide-inject-docs-values');
+      values.h2('值位置口径');
+      values.p(
+        '共享的通常是句柄，不是快照：纯占位直接把句柄传给值位置，派生文本才包 computed。' +
+          '写成模板串取值会得到渲染那一刻的死快照，之后写入不再更新。'
+      );
+      values.pre((pre) => {
+        pre.className('provide-inject-value-correct');
+        pre.code(
+          '// 正确：句柄进值位置\n' +
+            "provide('project', { name, members });\n" +
+            'line.child(project.name);\n' +
+            'line.child(project.members);\n\n' +
+            '// 正确：派生文本用 computed\n' +
+            'const summary = computed(() => `${project.name.value}，${project.members.value} 人`);\n' +
+            'block.child(vText(summary));'
+        );
+      });
+      values.pre((pre) => {
+        pre.className('provide-inject-value-wrong');
+        pre.code(
+          '// 反例：渲染时取值，写进去的是死快照\n' + 'line.child(`项目：${project.name.value}`);'
+        );
+      });
+    });
+
+    page.section((examples) => {
+      examples.className('components-provide-inject-docs-examples');
+      examples.h2('代码演示');
+      provideInjectDemoDefinitions.forEach((demo) => {
+        examples.child(ProvideInjectExampleSection(demo));
+      });
+    });
+  });
 }
 
 function ProvideInjectExampleSection(demo) {
@@ -180,35 +175,31 @@ function ProvideInjectExampleSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-provide-inject-demo');
-        example.attr('data-provide-inject-demo', demo.id);
-        example.child(
-          vCard((card) => {
-            card.vCardHeader(demo.title);
-            card.vCardBody((body) => {
-              body.p(demo.description);
-              body.div((live) => {
-                live.className('components-provide-inject-demo-live');
-                live.attr('data-provide-inject-demo-live', 'true');
-                live.child(liveDemo);
+  return section((example) => {
+    example.className('components-provide-inject-demo');
+    example.attr('data-provide-inject-demo', demo.id);
+    example.child(
+      vCard((card) => {
+        card.vCardHeader(demo.title);
+        card.vCardBody((body) => {
+          body.p(demo.description);
+          body.div((live) => {
+            live.className('components-provide-inject-demo-live');
+            live.attr('data-provide-inject-demo-live', 'true');
+            live.child(liveDemo);
+          });
+        });
+        if (demo.actions.length > 0) {
+          card.vCardFooter((footer) => {
+            demo.actions.forEach((action) => {
+              footer.vButton(action.label, (button) => {
+                button.on('click', () => liveDemo[action.method](...action.args));
               });
             });
-            if (demo.actions.length > 0) {
-              card.vCardFooter((footer) => {
-                demo.actions.forEach((action) => {
-                  footer.vButton(action.label, (button) => {
-                    button.on('click', () => liveDemo[action.method](...action.args));
-                  });
-                });
-              });
-            }
-          })
-        );
-        example.child(sourcePanel);
-      });
-    }
-  };
+          });
+        }
+      })
+    );
+    example.child(sourcePanel);
+  });
 }

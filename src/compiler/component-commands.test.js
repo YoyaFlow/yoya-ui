@@ -92,36 +92,34 @@ describe('组件的命令 / 状态保留（票 02）', () => {
     expect(clock(genericNode)).toBe('2');
   });
 
-  it('形态 B 对象组件：成员方法照旧可用，DOM 与通用路径一致', async () => {
+  it('vNode 组件：命令方法照旧可用，DOM 与通用路径一致', async () => {
     const source = [
-      "import { div, ref, vText } from '../../src/yoya.core.js';",
+      "import { div, ref, vNode, vText } from '../../src/yoya.core.js';",
       '',
       'export function Stepper(props) {',
-      '  return {',
-      '    render() {',
-      "      return div((box) => box.className('stepper').child(vText(props.value)));",
-      '    },',
-      '    step() {',
+      '  return vNode((api) => {',
+      '    api.step = () => {',
       '      props.value.value += 1;',
-      '      return this;',
-      '    }',
-      '  };',
+      '      return api;',
+      '    };',
+      "    return div((box) => box.className('stepper').child(vText(props.value)));",
+      '  });',
       '}',
       ''
     ].join('\n');
 
     const { wired, generic, compiled } = await wire('stepper', source);
-    expect(wired, '带成员的形态 B 组件应该能编').not.toBeNull();
+    expect(wired, '带命令的 vNode 组件应该能编').not.toBeNull();
 
     const value = core.ref(0);
-    const genericElement = generic.Stepper({ value }).render().renderDom();
-    const compiledElement = compiled.Stepper({ value }).render().renderDom();
+    const genericElement = generic.Stepper({ value }).renderDom();
+    const compiledElement = compiled.Stepper({ value }).renderDom();
     expect(compiledElement.outerHTML).toBe(genericElement.outerHTML);
 
     const instance = compiled.Stepper({ value });
     instance.step();
     expect(value.value).toBe(1);
-    expect(instance.render().renderDom().textContent).toBe('1');
+    expect(instance.renderDom().textContent).toBe('1');
   });
 
   it('组件体有分支 / 多条 return 时不改写源码（整形状回落）', () => {

@@ -17,48 +17,40 @@ import {
 function StateDynamicFormDemo() {
   const form = StateDynamicFormExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('动态表单');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('切换类型重建字段；输入值只写入 ref，不重建输入框。');
-            stack.child(form);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('动态表单');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('切换类型重建字段；输入值只写入 ref，不重建输入框。');
+        stack.child(form);
       });
-    }
-  };
+    });
+  });
 }
 
 function StateMethodsDemo() {
   const counter = StateMethodsExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('自定义方法');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('组件用 vNode 把操作方法挂在 api 上，内部写 ref，文本绑定自动同步。');
-            stack.child(counter);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('+1', (button) => {
-            button.variant('primary').on('click', () => counter.increment());
-          });
-          footer.vButton('-1', (button) => {
-            button.on('click', () => counter.decrement());
-          });
-          footer.vButton('重置', (button) => {
-            button.on('click', () => counter.reset());
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('自定义方法');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('组件用 vNode 把操作方法挂在 api 上，内部写 ref，文本绑定自动同步。');
+        stack.child(counter);
       });
-    }
-  };
+    });
+    card.vCardFooter((footer) => {
+      footer.vButton('+1', (button) => {
+        button.variant('primary').on('click', () => counter.increment());
+      });
+      footer.vButton('-1', (button) => {
+        button.on('click', () => counter.decrement());
+      });
+      footer.vButton('重置', (button) => {
+        button.on('click', () => counter.reset());
+      });
+    });
+  });
 }
 
 const stateDemoDefinitions = Object.freeze([
@@ -156,114 +148,106 @@ const stateDemoDefinitions = Object.freeze([
 ]);
 
 export function StateNodeDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-state-docs');
-        page.attr({
-          'data-component-route-item': 'guides:state-node',
-          'data-state-docs': 'state'
-        });
+  return section((page) => {
+    page.className('components-route-page components-state-docs');
+    page.attr({
+      'data-component-route-item': 'guides:state-node',
+      'data-state-docs': 'state'
+    });
 
-        page.header((header) => {
-          header.className('components-state-docs-header');
-          header.h1('状态管理：ref 与值绑定');
-          header.p(
-            'ref() 持有状态、computed() 派生；vText / attr / style 的值位置直接传句柄，写入后自动更新到 DOM，结构变化走 rebuildable() 区域重建。'
-          );
-        });
+    page.header((header) => {
+      header.className('components-state-docs-header');
+      header.h1('状态管理：ref 与值绑定');
+      header.p(
+        'ref() 持有状态、computed() 派生；vText / attr / style 的值位置直接传句柄，写入后自动更新到 DOM，结构变化走 rebuildable() 区域重建。'
+      );
+    });
 
-        page.section((usage) => {
-          usage.className('components-state-docs-usage');
-          usage.attr('data-state-usage', 'true');
-          usage.h2('何时使用');
-          usage.p('组件需要保存计数、开关、加载状态等内部状态时，用 ref 收敛状态源。');
-          usage.ul((list) => {
-            list.li('文本、属性、样式跟随状态：值位置直接传句柄，无需手写同步。');
-            list.li('派生值用 computed 声明，依赖变化自动重算。');
-            list.li('结构变化（显示/隐藏、字段切换）用 rebuildable() 区域读取信号。');
-          });
-        });
+    page.section((usage) => {
+      usage.className('components-state-docs-usage');
+      usage.attr('data-state-usage', 'true');
+      usage.h2('何时使用');
+      usage.p('组件需要保存计数、开关、加载状态等内部状态时，用 ref 收敛状态源。');
+      usage.ul((list) => {
+        list.li('文本、属性、样式跟随状态：值位置直接传句柄，无需手写同步。');
+        list.li('派生值用 computed 声明，依赖变化自动重算。');
+        list.li('结构变化（显示/隐藏、字段切换）用 rebuildable() 区域读取信号。');
+      });
+    });
 
-        page.section((api) => {
-          api.className('components-state-docs-api');
-          api.h2('常用 API');
-          api.p('ref / computed 从包入口导入，句柄经 .value 读写，可传入任意值绑定位置。');
-          api.pre((pre) => {
-            pre.className('state-api-signature');
-            pre.code(`const count = ref(0);
+    page.section((api) => {
+      api.className('components-state-docs-api');
+      api.h2('常用 API');
+      api.p('ref / computed 从包入口导入，句柄经 .value 读写，可传入任意值绑定位置。');
+      api.pre((pre) => {
+        pre.className('state-api-signature');
+        pre.code(`const count = ref(0);
 const double = computed(() => count.value * 2);
 
 div((node) => {
   node.child(vText(double)); // 值位置直接传句柄
 });`);
-          });
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
-            });
-            table.tbody((body) => {
-              [
-                [
-                  'ref(initial)',
-                  '创建可写信号句柄，经 .value 读写。',
-                  'const count = ref(0); count.value += 1;'
-                ],
-                [
-                  'computed(fn)',
-                  '创建只读派生信号，惰性求值并缓存，依赖变化自动重算。',
-                  'computed(() => count.value * 2)'
-                ],
-                [
-                  'batch(fn)',
-                  '合并 fn 内的多次写入，提交一次通知。',
-                  'batch(() => { a.value = 1; })'
-                ],
-                [
-                  'vText / attr / style / toggleClass 的值位置',
-                  '接受句柄，写入后自动提交到该位置；attr 值为 null 时移除属性。',
-                  'node.attr("title", computed(() => name.value))'
-                ],
-                [
-                  'node.rebuildable(predicate?)',
-                  '声明区域：构建期读到的信号成为依赖，写入触发子树重建。',
-                  'node.rebuildable(() => true)'
-                ],
-                ['handle.peek()', '读取当前值且不建立依赖。', 'count.peek()'],
-                ['isSignal(value)', '判断是否为库句柄。', 'isSignal(count)'],
-                [
-                  'batch / update 链式',
-                  'handle.update(fn) 以当前值计算并写回。',
-                  'count.update((n) => n + 1)'
-                ]
-              ].forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
+      });
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((examples) => {
-          examples.className('components-state-docs-examples');
-          examples.h2('代码演示');
-          examples.p(
-            '十个示例分别展示文本值绑定、输入值绑定、区域重建、结构切换、动态表单、自定义方法、多根 fragment、Keyed 子节点、事件覆盖与动态属性绑定。'
-          );
-          stateDemoDefinitions.forEach((demo) => {
-            examples.child(StateExampleSection(demo));
+        table.tbody((body) => {
+          [
+            [
+              'ref(initial)',
+              '创建可写信号句柄，经 .value 读写。',
+              'const count = ref(0); count.value += 1;'
+            ],
+            [
+              'computed(fn)',
+              '创建只读派生信号，惰性求值并缓存，依赖变化自动重算。',
+              'computed(() => count.value * 2)'
+            ],
+            ['batch(fn)', '合并 fn 内的多次写入，提交一次通知。', 'batch(() => { a.value = 1; })'],
+            [
+              'vText / attr / style / toggleClass 的值位置',
+              '接受句柄，写入后自动提交到该位置；attr 值为 null 时移除属性。',
+              'node.attr("title", computed(() => name.value))'
+            ],
+            [
+              'node.rebuildable(predicate?)',
+              '声明区域：构建期读到的信号成为依赖，写入触发子树重建。',
+              'node.rebuildable(() => true)'
+            ],
+            ['handle.peek()', '读取当前值且不建立依赖。', 'count.peek()'],
+            ['isSignal(value)', '判断是否为库句柄。', 'isSignal(count)'],
+            [
+              'batch / update 链式',
+              'handle.update(fn) 以当前值计算并写回。',
+              'count.update((n) => n + 1)'
+            ]
+          ].forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
+            });
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-state-docs-examples');
+      examples.h2('代码演示');
+      examples.p(
+        '十个示例分别展示文本值绑定、输入值绑定、区域重建、结构切换、动态表单、自定义方法、多根 fragment、Keyed 子节点、事件覆盖与动态属性绑定。'
+      );
+      stateDemoDefinitions.forEach((demo) => {
+        examples.child(StateExampleSection(demo));
+      });
+    });
+  });
 }
 
 function StateExampleSection(demo) {
@@ -276,20 +260,16 @@ function StateExampleSection(demo) {
     extraSource: demo.extraSource
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-state-demo');
-        example.attr('data-state-demo', demo.id);
-        example.h3(demo.title);
-        example.p(demo.description);
-        example.div((live) => {
-          live.className('components-state-demo-live');
-          live.attr('data-state-demo-live', 'true');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-state-demo');
+    example.attr('data-state-demo', demo.id);
+    example.h3(demo.title);
+    example.p(demo.description);
+    example.div((live) => {
+      live.className('components-state-demo-live');
+      live.attr('data-state-demo-live', 'true');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }

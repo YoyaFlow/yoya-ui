@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { div, ref, vButton, vText } from '../../index.js';
+import { div, ref, vButton, vNode, vText } from '../../index.js';
 import { vThree } from '../../yoya.three.js';
 import {
   ASSEMBLER,
@@ -112,42 +112,43 @@ export function FactoryGameStandalone() {
     const plates = ref(0);
     const tick = ref(0);
 
-    return {
-      render() {
-        return div((row) => {
-          row.className('factory-stats');
-          row.style({
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '16px',
-            padding: '10px 0'
-          });
-          [
-            ['矿石', minedOre],
-            ['组装件', plates],
-            ['流失', lostItems],
-            ['tick', tick]
-          ].forEach(([label, stat]) => {
-            row.div((item) => {
-              item.style({
-                background: 'var(--yoya-color-surface, #ffffff)',
-                border: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
-                borderRadius: '8px',
-                padding: '4px 12px'
-              });
-              item.strong(`${label} `);
-              item.child(vText(stat));
-            });
-          });
-        });
-      },
-      update(next) {
+    // 形态 B（`vNode`）：`update` 只写数据，视图走读值绑定（票 07 的对象组件迁移）。
+    return vNode((api) => {
+      api.update = (next) => {
         lostItems.value = next.lostItems;
         minedOre.value = next.minedOre;
         plates.value = next.plates;
         tick.value = next.tick;
-      }
-    };
+        return api;
+      };
+
+      return div((row) => {
+        row.className('factory-stats');
+        row.style({
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '16px',
+          padding: '10px 0'
+        });
+        [
+          ['矿石', minedOre],
+          ['组装件', plates],
+          ['流失', lostItems],
+          ['tick', tick]
+        ].forEach(([label, stat]) => {
+          row.div((item) => {
+            item.style({
+              background: 'var(--yoya-color-surface, #ffffff)',
+              border: '1px solid var(--yoya-color-border-faint, #e2e8f0)',
+              borderRadius: '8px',
+              padding: '4px 12px'
+            });
+            item.strong(`${label} `);
+            item.child(vText(stat));
+          });
+        });
+      });
+    });
   }
 
   function refreshStats(force = false) {
@@ -373,71 +374,68 @@ export function FactoryGameStandalone() {
   threeNode.on('pointerup', endOrbit);
   threeNode.on('wheel', zoomCamera);
 
-  return {
-    render() {
-      const stats = createStatsPanel();
-      ui.stats = stats;
-      ui.directionText = ref(`方向 ${DIRECTIONS[tool.direction].label}`);
-      ui.selectionText = ref(toolLabel(tool.name));
+  // 形态 A 薄工厂（票 07）：结构一次写清，没有对外命令——状态与运行时都留在闭包里。
+  const stats = createStatsPanel();
+  ui.stats = stats;
+  ui.directionText = ref(`方向 ${DIRECTIONS[tool.direction].label}`);
+  ui.selectionText = ref(toolLabel(tool.name));
 
-      return div((root) => {
-        root.className('factory-game');
-        root.style({ margin: '0 auto', maxWidth: '1080px', padding: '20px' });
-        root.h1('工业自动化原型');
-        root.p('矿机把矿石送上传送带，传送带把矿石送进组装机；组装机攒够两份矿石后开始合成。');
+  return div((root) => {
+    root.className('factory-game');
+    root.style({ margin: '0 auto', maxWidth: '1080px', padding: '20px' });
+    root.h1('工业自动化原型');
+    root.p('矿机把矿石送上传送带，传送带把矿石送进组装机；组装机攒够两份矿石后开始合成。');
 
-        root.div((toolbar) => {
-          toolbar.className('factory-toolbar');
-          toolbar.style({
-            alignItems: 'center',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px'
-          });
-          TOOL_OPTIONS.forEach((option) => {
-            const button = vButton(option.label, (entry) => {
-              entry.on('click', () => selectTool(option.key));
-            });
-            toolButtons.set(option.key, button);
-            toolbar.child(button);
-          });
-          selectTool(tool.name);
-          toolbar.vButton('旋转方向', (button) => {
-            button.on('click', rotateDirection);
-          });
-          toolbar.vButton('清空重建', (button) => {
-            button.on('click', resetFactory);
-          });
-          toolbar.vButton('重置视角', (button) => {
-            button.on('click', resetCamera);
-          });
-          toolbar.div((meta) => {
-            meta.style({ display: 'flex', gap: '16px', marginLeft: 'auto' });
-            meta.span((text) => text.child(vText(ui.selectionText)));
-            meta.span((text) => text.child(vText(ui.directionText)));
-          });
-        });
-
-        root.child(stats);
-        root.div((viewport) => {
-          viewport.className('factory-viewport');
-          viewport.style({
-            background: '#0b1220',
-            border: '1px solid var(--yoya-color-border, #cbd5e1)',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            position: 'relative'
-          });
-          viewport.child(threeNode);
-        });
-
-        root.p(
-          '操作：左键按当前工具建造；右键拖动旋转视角、滚轮缩放；' +
-            '矿机必须建在橙色矿点上；矿机/传送带用“旋转方向”调整输出侧。'
-        );
+    root.div((toolbar) => {
+      toolbar.className('factory-toolbar');
+      toolbar.style({
+        alignItems: 'center',
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px'
       });
-    }
-  };
+      TOOL_OPTIONS.forEach((option) => {
+        const button = vButton(option.label, (entry) => {
+          entry.on('click', () => selectTool(option.key));
+        });
+        toolButtons.set(option.key, button);
+        toolbar.child(button);
+      });
+      selectTool(tool.name);
+      toolbar.vButton('旋转方向', (button) => {
+        button.on('click', rotateDirection);
+      });
+      toolbar.vButton('清空重建', (button) => {
+        button.on('click', resetFactory);
+      });
+      toolbar.vButton('重置视角', (button) => {
+        button.on('click', resetCamera);
+      });
+      toolbar.div((meta) => {
+        meta.style({ display: 'flex', gap: '16px', marginLeft: 'auto' });
+        meta.span((text) => text.child(vText(ui.selectionText)));
+        meta.span((text) => text.child(vText(ui.directionText)));
+      });
+    });
+
+    root.child(stats);
+    root.div((viewport) => {
+      viewport.className('factory-viewport');
+      viewport.style({
+        background: '#0b1220',
+        border: '1px solid var(--yoya-color-border, #cbd5e1)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+        position: 'relative'
+      });
+      viewport.child(threeNode);
+    });
+
+    root.p(
+      '操作：左键按当前工具建造；右键拖动旋转视角、滚轮缩放；' +
+        '矿机必须建在橙色矿点上；矿机/传送带用“旋转方向”调整输出侧。'
+    );
+  });
 }
 
 function clamp(value, min, max) {

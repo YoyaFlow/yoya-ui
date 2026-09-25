@@ -1,4 +1,4 @@
-import { computed, toast, vConfirm, vDialog, vText, vTr } from '@yoyaflow/yoya-ui';
+import { computed, toast, vConfirm, vDialog, vNode, vText, vTr } from '@yoyaflow/yoya-ui';
 import { fieldValue } from '../../../../shared/state.rows.js';
 import { RowActionButton } from '../../../../shared/ui.buttons.js';
 import { DictItemFormDialog } from './dict-item-form-dialog.js';
@@ -179,13 +179,17 @@ export function DictEditorDialog({ state, onSubmit }) {
     onSubmit(editingId, form.values()).then(() => dialog.close());
   }
 
-  return {
-    render() {
-      return dialog;
-    },
-    open,
-    close() {
+  // 有对外命令方法（open / close）→ 形态 B：命令写在 api 上，视图就是自己的弹窗节点
+  return vNode((api) => {
+    api.open = (type = null) => {
+      open(type);
+      return api;
+    };
+    api.close = () => {
       dialog.close();
-    }
-  };
+      return api;
+    };
+
+    return dialog;
+  });
 }

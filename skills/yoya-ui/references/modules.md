@@ -42,15 +42,15 @@ src/
 - **页面也是组件**：PascalCase 组件名（`MemberListPage`、`OrderListPage`），文件 `<名字>-page.js`；SSR 场景用 `createPage(requestState)` 作为服务端与客户端复用的入口
 - 页面只做编排：组合业务组件、绑定事件、调用状态动作；不写请求逻辑、不堆散落结构
 - 请求状态只传可序列化数据（路径、筛选条件、locale），不放函数
-- **要驱动的先建后放，非必要不提前建**：只有确实需要组件句柄（`refresh()` / `update()` / `open()` 等对外命令方法）时，才在 `render()` 之外先建再 `child()` 挂载——`child()` 与 `page.vXxx()` 都返回父节点，内联创建拿不到子组件句柄。**其余一律在 `render()` 里就地组合**（`stack.div((box) => …)` / `page.vCard((card) => …)`），不要把纯结构节点提到函数作用域再挂回来：
+- **要驱动的先建后放，非必要不提前建**：只有确实需要组件句柄（`update()` / `open()` 等对外命令方法）时，才在视图表达式之前先建、再 `child()` 挂载——`child()` 与 `page.vXxx()` 返回的是**父节点**，内联创建拿不到子组件句柄。**其余一律就地组合**（`stack.div((box) => …)` / `page.vCard((card) => …)`），不要把纯结构节点提到函数作用域再挂回来：
 
   ```js
   // 反例：box 只当子节点用，却先建到外面（多一次中间变量，读者要找它挂在哪）
   const box = div((node) => node.p('内容'));
-  return { render: () => vstack((stack) => stack.child(box)) };
+  return vstack((stack) => stack.child(box));
 
   // 正例：就地组合；只有需要 box.rebuild() / box.update() 这类句柄时才提前建
-  return { render: () => vstack((stack) => stack.div((box) => box.p('内容'))) };
+  return vstack((stack) => stack.div((box) => box.p('内容')));
   ```
 
 ```js
@@ -98,29 +98,23 @@ export function MemberListPage() {
     toast.success('已保存');
   }
 
-  return {
-    render() {
-      // 纯结构直接内联，上面建好的三个句柄只负责挂载
-      return vstack({ gap: '16px' }, (page) => {
-        page.h2('成员管理');
-        page.vCard((card) => {
-          card.vCardHeader('成员列表');
-          card.vCardBody((body) => {
-            body.child(MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) }));
-            body.child(table).child(pagination);
-          });
-        });
-        page.child(dialog);
+  // 页面也是组件：没有对外命令方法 → 形态 A 薄工厂，直接返回视图节点
+  // 纯结构就地内联，上面建好的三个句柄只负责挂载
+  return vstack({ gap: '16px' }, (page) => {
+    page.h2('成员管理');
+    page.vCard((card) => {
+      card.vCardHeader('成员列表');
+      card.vCardBody((body) => {
+        body.child(MemberToolbar({ onSearch: applyFilters, onAdd: () => dialog.open(null) }));
+        body.child(table).child(pagination);
       });
-    },
-    // 页面也是组件：父级 / 路由可以调用实例方法刷新
-    refresh() {
-      return load();
-    }
-  };
+    });
+    page.child(dialog);
+  });
 }
 ```
 
+- **页面需要对外方法**（如 `refresh()`）时按形态 B 写：`return vNode((api) => { api.refresh = () => { …; return api }; return view; })`；不需要就不要加（`vDialog` / 表格这类句柄命令已经够用）
 - **信号感知的视图**（表格 / 文本 / 区域）绑句柄后自动更新；**命令式组件**（`vPagination` / `vTree`）没有绑定通道，由动作在数据到位后同步一次
 - 页面里不写 `state.subscribe(() => table.refresh())` 这类「通知 → 手动重建」接线：写入 ref 就是通知，列表按 key 对账
 
@@ -250,7 +244,7 @@ export default class MembersPageState {
 ## 业务组件
 
 - **形态 A 薄工厂**：纯展示 / 配置化组合，直接返回 ViewNode；**确定没有额外行为要定义时就用它**，不要为预留能力先包成对象组件；演示代码同理——没有对外命令方法就直接返回节点，不包 `render()`
-- **vNode 组件**：确有内部状态或对外命令方法的业务组件用它（`vNode((api) => 视图)`）——它是形态 B；对象组件（`{ render() }`）已弃用、仅存量，不要写
+- **vNode 组件**：确有内部状态或对外命令方法的业务组件用它（`vNode((api) => 视图)`）——它是形态 B；对象组件（`{ render() }`）**0.7 起退场**（运行期直接拒收），不要写
 - **一个业务块一个文件**：`member-table.js`（表格与行操作）、`member-toolbar.js`（筛选栏）、`member-form-dialog.js`（新增/编辑弹窗）
 - 输入用 props 式参数与回调（`{ rows, onEdit, onRemove }`），**组件自己不请求数据**：数据由页面从状态取来传入
 - 命名用业务前缀（`MemberTable`），与库内 `v` 前缀区分；需要时可 `registerChildFactories` 注册为页面快捷方法
@@ -378,7 +372,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 
 ## SSR 纪律（业务模块同样适用）
 
-- 页面工厂 `render()/toHTML()` DOM-free 且确定性：不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出
+- 页面工厂与组件定义函数 DOM-free 且确定性（`toHTML()` 同样不碰 DOM）：不读 `document`/`window`、不用 `Date.now()`/`Math.random()` 影响输出
 - 请求状态显式传入，渲染后组件树销毁；共享状态实例不要跨请求复用
 
 ## 权限接入
@@ -395,7 +389,7 @@ export function MemberPanel({ state, onFilter, onSelect }) {
 
 1. 导入并注册所有 mock（副作用导入，含 `shell.mock.js` / `auth.mock.js`）
 2. `state.load()`：内部先 `loadSession()` 加载会话并 `installAccess(...)`，再取菜单（按权限过滤）+ 创建路由 + 订阅导航
-3. `AdminShell({ state })` 装配外壳 → `shell.render().bindTo('#app')`
+3. `AdminShell({ state })` 装配外壳 → `shell.bindTo('#app')`（或 `mount(shell, '#app')`）
 4. `state.start()` 启动路由
 
 新增一个菜单项要**同步三处**：

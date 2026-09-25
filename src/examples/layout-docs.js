@@ -643,77 +643,73 @@ function createLayoutDocsDefinition(config) {
 }
 
 function createLayoutDocumentationPage(definition) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(
-          `components-route-page components-layout-docs components-layout-docs--${definition.key}`
-        );
-        page.attr('data-component-route-item', definition.routeItem);
-        page.attr('data-layout-docs', definition.key);
+  return section((page) => {
+    page.className(
+      `components-route-page components-layout-docs components-layout-docs--${definition.key}`
+    );
+    page.attr('data-component-route-item', definition.routeItem);
+    page.attr('data-layout-docs', definition.key);
 
-        page.header((header) => {
-          header.className('components-layout-docs-header');
-          header.h1(definition.heading);
-          header.p(definition.intro);
+    page.header((header) => {
+      header.className('components-layout-docs-header');
+      header.h1(definition.heading);
+      header.p(definition.intro);
+    });
+
+    page.section((usage) => {
+      usage.className('components-layout-docs-usage');
+      usage.attr('data-layout-usage', definition.key);
+      usage.h2(definition.usageTitle);
+      if (definition.usageIntro) {
+        usage.p(definition.usageIntro);
+      }
+      usage.ul((list) => {
+        definition.usageItems.forEach((itemText) => {
+          list.li(itemText);
         });
+      });
+    });
 
-        page.section((usage) => {
-          usage.className('components-layout-docs-usage');
-          usage.attr('data-layout-usage', definition.key);
-          usage.h2(definition.usageTitle);
-          if (definition.usageIntro) {
-            usage.p(definition.usageIntro);
-          }
-          usage.ul((list) => {
-            definition.usageItems.forEach((itemText) => {
-              list.li(itemText);
-            });
+    page.section((api) => {
+      api.className('components-layout-docs-api');
+      api.h2(definition.apiTitle ?? '常用 API');
+      if (definition.apiIntro) {
+        api.p(definition.apiIntro);
+      }
+      api.pre((pre) => {
+        pre.className('layout-api-signature');
+        pre.code(definition.apiSignature);
+      });
+      api.table((table) => {
+        const [headerA, headerB, headerC] = definition.tableHeaders;
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th(headerA);
+            row.th(headerB);
+            row.th(headerC);
           });
         });
-
-        page.section((api) => {
-          api.className('components-layout-docs-api');
-          api.h2(definition.apiTitle ?? '常用 API');
-          if (definition.apiIntro) {
-            api.p(definition.apiIntro);
-          }
-          api.pre((pre) => {
-            pre.className('layout-api-signature');
-            pre.code(definition.apiSignature);
-          });
-          api.table((table) => {
-            const [headerA, headerB, headerC] = definition.tableHeaders;
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th(headerA);
-                row.th(headerB);
-                row.th(headerC);
-              });
+        table.tbody((body) => {
+          definition.apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              definition.apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-layout-docs-examples');
-          examples.h2('代码演示');
-          examples.p(definition.examplesIntro);
-          definition.examples.forEach((demo) => {
-            examples.child(LayoutExampleSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-layout-docs-examples');
+      examples.h2('代码演示');
+      examples.p(definition.examplesIntro);
+      definition.examples.forEach((demo) => {
+        examples.child(LayoutExampleSection(demo));
+      });
+    });
+  });
 }
 
 function LayoutExampleSection(demo) {
@@ -725,53 +721,47 @@ function LayoutExampleSection(demo) {
     title: demo.sourceTitle ?? `${demo.title} 核心源码`
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-layout-demo');
-        example.attr('data-layout-demo', demo.id);
-        example.h3(demo.title);
-        example.p(demo.description);
-        example.div((live) => {
-          live.className('components-layout-demo-live');
-          live.attr('data-layout-demo-live', 'true');
-          if (demo.frame || demo.phone) {
-            const phone = Boolean(demo.phone);
-            const frameClass = phone
-              ? 'components-layout-demo-phone'
-              : 'components-layout-demo-frame';
-            const frameDataAttr = phone ? 'data-layout-demo-phone' : 'data-layout-demo-frame';
-            live.iframe((frame) => {
-              frame.className(frameClass);
-              frame.attr(frameDataAttr, 'true');
-              frame.attr('title', `${demo.title} 演示`);
+  return section((example) => {
+    example.className('components-layout-demo');
+    example.attr('data-layout-demo', demo.id);
+    example.h3(demo.title);
+    example.p(demo.description);
+    example.div((live) => {
+      live.className('components-layout-demo-live');
+      live.attr('data-layout-demo-live', 'true');
+      if (demo.frame || demo.phone) {
+        const phone = Boolean(demo.phone);
+        const frameClass = phone ? 'components-layout-demo-phone' : 'components-layout-demo-frame';
+        const frameDataAttr = phone ? 'data-layout-demo-phone' : 'data-layout-demo-frame';
+        live.iframe((frame) => {
+          frame.className(frameClass);
+          frame.attr(frameDataAttr, 'true');
+          frame.attr('title', `${demo.title} 演示`);
 
-              let mounted = false;
-              frame.on('load', () => {
-                if (mounted) return;
-                mounted = true;
-                mountLayoutDemoInFrame(frame, liveDemo);
-              });
+          let mounted = false;
+          frame.on('load', () => {
+            if (mounted) return;
+            mounted = true;
+            mountLayoutDemoInFrame(frame, liveDemo);
+          });
 
-              const destroy = frame.destroy.bind(frame);
-              frame.destroy = () => {
-                liveDemo.destroy();
-                return destroy();
-              };
+          const destroy = frame.destroy.bind(frame);
+          frame.destroy = () => {
+            liveDemo.destroy();
+            return destroy();
+          };
 
-              frame.attr(
-                'srcdoc',
-                `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>`
-              );
-            });
-          } else {
-            live.child(liveDemo);
-          }
+          frame.attr(
+            'srcdoc',
+            `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>`
+          );
         });
-        example.child(sourcePanel);
-      });
-    }
-  };
+      } else {
+        live.child(liveDemo);
+      }
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function mountLayoutDemoInFrame(frameNode, demoNode) {

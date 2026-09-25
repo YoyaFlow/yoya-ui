@@ -43,8 +43,10 @@ export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}
   /** 观察器与图片元素（内部，不进视图状态）。 */
   let observer = null;
   let imgBox = null;
+  /** 引擎钩子给的真元素（观察器要元素本身，组件代码不读 `_el`） */
+  let observeElement = null;
 
-  return vNode((api, self) => {
+  return vNode((api) => {
     const stopObserving = () => {
       observer?.disconnect();
       observer = null;
@@ -62,7 +64,10 @@ export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}
         return;
       }
 
-      const element = self.node().renderDom();
+      if (!observeElement) {
+        // 还没落地：等 `whenMount` 把元素给过来再建观察器（不为拿元素提前把 DOM 建出来）
+        return;
+      }
 
       observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -75,9 +80,7 @@ export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}
         });
       });
 
-      if (element) {
-        observer.observe(element);
-      }
+      observer.observe(observeElement);
     };
 
     api.src = (value) => {
@@ -136,12 +139,14 @@ export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}
       return api;
     };
 
-    api.whenMount = () => {
+    api.whenMount = (host) => {
+      observeElement = host.element() ?? observeElement;
       startObserving();
     };
 
     api.whenDestroy = () => {
       stopObserving();
+      observeElement = null;
     };
 
     return div(

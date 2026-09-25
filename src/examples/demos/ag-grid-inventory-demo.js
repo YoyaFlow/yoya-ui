@@ -1,5 +1,5 @@
-import { HtmlElementNode, vNode } from '../../index.js';
-import { AgGridDemoNode } from './ag-grid-glue.js';
+import { div, vNode } from '../../index.js';
+import { vAgGrid } from './ag-grid-glue.js';
 
 export function AgGridInventoryExample() {
   const variant = (sku, label, available, price, year = 2025) => ({
@@ -256,7 +256,7 @@ export function AgGridInventoryExample() {
   ];
 
   return vNode((api) => {
-    master = new AgGridDemoNode({
+    master = vAgGrid({
       columnDefs: masterColumns(),
       height: '330px',
       gridOptions: {
@@ -270,7 +270,7 @@ export function AgGridInventoryExample() {
       },
       rowData: filteredRows()
     });
-    detail = new AgGridDemoNode({
+    detail = vAgGrid({
       columnDefs: detailColumns(),
       height: '210px',
       gridOptions: { defaultColDef: { resizable: true } },
@@ -278,14 +278,10 @@ export function AgGridInventoryExample() {
       rowData: []
     });
 
-    const host = new HtmlElementNode('div');
-    host.styles({
-      display: 'grid',
-      gap: '10px',
-      minWidth: '0',
-      width: '100%'
-    });
-    host.child(master, detail);
+    const host = div(
+      { style: { display: 'grid', gap: '10px', minWidth: '0', width: '100%' } },
+      (box) => box.child(master, detail)
+    );
 
     api.setStatus = (status) => {
       state.status = status;

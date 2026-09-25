@@ -37,8 +37,8 @@ div((page) => {
 
 ## 为什么这不是魔法
 
-- `vEchart` 是一个生命周期清晰记录的薄节点类（`renderDom` → 初始化，`option()` → 更新，
-  `destroy()` → `dispose()`）；
+- `vEchart` 是一个生命周期清晰的形态 B 组件（`vNode` 闭包：`whenMount(host)` → 初始化，`option()` →
+  更新，`whenDestroy` → `dispose()`）——定义即得到组件节点，库只拿到真实 DOM 容器，不继承基础元素；
 - 同一契约适用于**任何**能挂载到 DOM 节点的库：富文本编辑器、表格、地图、树、代码编辑器……
   生命周期桥接只需写一次，之后就能像内置组件一样通过 `child()` 组合；
 - 组件还可以通过 `registerChildFactories` 注册进 DSL 本身（上面的 `page.vEchart(...)` 之所以

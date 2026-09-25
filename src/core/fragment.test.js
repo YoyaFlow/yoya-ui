@@ -1,12 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { div, ref, vText } from '../index.js';
+import { div, ref, vNode, vText } from '../index.js';
 import { vTbody, vTr } from '../data-display/table.js';
 
 describe('component fragment', () => {
   it('renders the component view root without an extra wrapper element', () => {
-    const Card = {
-      render: () => div().attr('data-root', 'true').child(vText('0'))
-    };
+    const Card = () => div().attr('data-root', 'true').child(vText('0'));
     const element = div().child(Card).renderDom();
 
     expect(element.firstElementChild.getAttribute('data-root')).toBe('true');
@@ -14,9 +12,8 @@ describe('component fragment', () => {
   });
 
   it('works as a table row without wrapper nodes', () => {
-    const Row = {
-      render: () => vTr((tr) => tr.vTd('Ada'))
-    };
+    // 形态 A 薄工厂（票 07）：工厂直接返回视图
+    const Row = () => vTr((tr) => tr.vTd('Ada'));
     const element = vTbody().child(Row).renderDom();
 
     expect(element.children.length).toBe(1);
@@ -26,14 +23,13 @@ describe('component fragment', () => {
 
   it('swaps the region content in place after a rebuild', () => {
     const count = ref(0);
-    const Counter = {
-      render() {
+    const Counter = () =>
+      vNode(() => {
         return div((box) => {
           box.rebuildable();
           box.child(vText(String(count.value)));
         });
-      }
-    };
+      });
     const host = div().child(Counter);
     const container = host.renderDom();
     const first = container.firstElementChild.firstChild;
@@ -50,15 +46,14 @@ describe('component fragment', () => {
   it('releases region subscriptions when destroyed through the view tree', () => {
     const count = ref(0);
     let builds = 0;
-    const Counter = {
-      render() {
+    const Counter = () =>
+      vNode(() => {
         return div((box) => {
           box.rebuildable();
           builds += 1;
           box.child(vText(String(count.value)));
         });
-      }
-    };
+      });
     const host = div().child(Counter);
 
     host.renderDom();

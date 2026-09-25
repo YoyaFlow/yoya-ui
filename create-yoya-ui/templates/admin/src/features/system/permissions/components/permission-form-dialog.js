@@ -1,4 +1,4 @@
-import { vDialog } from '@yoyaflow/yoya-ui';
+import { vDialog, vNode } from '@yoyaflow/yoya-ui';
 
 const typeOptions = [
   ['menu', '菜单'],
@@ -86,13 +86,17 @@ export function PermissionFormDialog({ onSubmit }) {
     dialog.close();
   }
 
-  return {
-    render() {
-      return dialog;
-    },
-    open,
-    close() {
+  // 有对外命令方法（open / close）→ 形态 B：命令写在 api 上，视图就是自己的弹窗节点
+  return vNode((api) => {
+    api.open = (init = {}) => {
+      open(init);
+      return api;
+    };
+    api.close = () => {
       dialog.close();
-    }
-  };
+      return api;
+    };
+
+    return dialog;
+  });
 }

@@ -20,14 +20,16 @@ Local tickets are the source of truth for pending tracer-bullet work. They live 
 git-ignored. When the user asks about “工作票” or remaining tasks, inspect the newest ticket
 set by directory modification time before answering.
 
-The current active set is **`.scratch/vnode-convergence/issues/`**（组件收敛 + 属性化迁移）。
-动组件之前至少读这几份：
+`.scratch/` 在 2026-09-25 清理过一轮：**已完成的过程类票、探针脚本、一次性 patch、命令输出全部删除**，
+目录表与清理口径见 `.scratch/README.md`。仍然保留的入口：
 
-- `15-attribute-and-identity-migration-plan.md`：方案、波次、逐刀台账（§11.6 / §11.7）；
-- `16-migration-gap-list.md`：降级与口径台账（每条都写清"原能力 / 迁移后口径 / 影响面"）；
-- `17-handoff.md`：**交接现场**（当前状态、硬口径、每刀执行清单）；
-- `19-component-writing-rules.md`：写法规则 R1–R12 / 四维度判据怎么逐条查；
-- `18-compiler-runtime-options-merge.md`：编译器侧待办（options 里的 `...rest`）。
+- `.scratch/vnode-convergence/issues/17-handoff.md`：**交接现场**（当前状态、硬口径、每刀执行清单）；
+- `.scratch/vnode-convergence/issues/19-component-writing-rules.md`：写法规则 R1–R12 / 四维度判据怎么逐条查；
+- `.scratch/vnode-convergence/issues/18`–`24` + `.scratch/compiler-landing/issues/`：还没做完的编译器 / 视图根 / 页面壳 / 自定义节点票；
+- `.scratch/component-typing/issues/08-vnode-command-surface-inference.md`：`vNode` 命令面推断（**暂不实现**）；
+- `.scratch/negatives/README.md`：已证伪 / 决定不做的结论索引（**非必要不读**，只在索引命中时才点开）。
+
+动组件之前先读 17 + 19；动编译路径先读 `.scratch/vnode-convergence/issues/18` 与 `20`。
 
 ## 编译路径的定位（准则，优先级最高）
 
@@ -68,7 +70,9 @@ The current active set is **`.scratch/vnode-convergence/issues/`**（组件收�
 ## Component Definition Patterns
 
 **组件只有两种形态**（2026-09-21 收敛）：**A 薄工厂**（没有行为）与 **B vNode**（有行为）。
-对象组件（`return { render(), … }`）已退场（存量见票 03），class 继承节点**不再是组件写法**——
+对象组件（`return { render(), … }`）已退场（票 03 阶段 1–3 + 票 07 阶段 4：**运行期直接拒收**，
+`child({ render() {} })` / `renderToString({ render() {} })` / `vClientOnly(() => ({ render() {} }))` /
+路由页面对象都报错），class 继承节点**不再是组件写法**——
 它只作为**引擎内部的节点类型扩展**存在（见文末「节点类型扩展」）。
 
 ### A. 薄工厂：函数直接返回 ViewNode
@@ -126,8 +130,9 @@ function RateCard() {
 
 ### 属性契约：`vn` / `vn_slot`（属性化迁移，票 15）
 
-组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名**已退场**（票 15 波 6 收口，基线清零，只减不增）。
-方案与分波、单组件 DoD 见 `.scratch/vnode-convergence/issues/15-attribute-and-identity-migration-plan.md`。
+组件身份与部件位置统一走**属性**；`yoya-component` / `yoya-v*` 类名**已退场**（属性化迁移收口，基线清零、只减不增）。
+门禁在 `src/attribute-migration-baseline.test.js`；口径细则见 `docs/component-authoring{,.zh-CN}.md` §7.3 与
+`.scratch/vnode-convergence/issues/19-component-writing-rules.md`。
 
 1. **身份 = `vn` 对象事实 + 真 DOM 属性**：视图根写 `vn: 'VXxx'`（值 = 导出名；包装型多值空格分隔，
    如 `'VTimer VInput'`）。`defineComponentIdentity`（`Symbol.hasInstance` 注册）与
@@ -192,6 +197,9 @@ B 形态里需要元素级行为的组件，视图根就是这样一个节点类
 ### Demo 演示组件
 
 - 演示代码（examples/demos）同样只有 A / B 两种：**没有额外操作（无对外命令方法、无需持有组件句柄）时用 A 直接返回 ViewNode**；确有状态或命令方法时用 B（`vNode`）展示操作空间。不再书写对象组件（`{ render() }`）与 class 组件。
+- **页面壳缓存工厂、不缓存节点**（票 07 迁移踩到的）：A / B 工厂返回的是**节点**，一个节点只能挂一处；
+  `const pages = { upload: createPage(definition) }` 这种模块级缓存会让第二次进同一路由拿到**已销毁的实例**
+  （表现为"第一次进页面正常、第二次空白"）。要缓存就缓存 `() => createPage(definition)`，用的时候再调用。
 - 演示源码面板复用 ComponentSource（src/examples/component-source.js），不维护重复源码字符串或重新实现源码面板。
 - 演示组件与页面壳分离：演示组件只包含 vCardBody 内容与操作方法（如 increment()/reset()/setValue()），Card、按钮和说明文字属于页面壳（live demo），不放进演示组件，也不出现在源码面板中。
 - 源码面板展示核心组件时，imports 只列核心组件实际使用的符号；页面壳（Card/按钮）用到的符号不列入。
@@ -406,6 +414,45 @@ export function VXxx({ count = null, ...rest } = {}) {
   **编译路径吃不到**，只能整体回落通用路径——按仓库「编译路径为打榜曝光服务」的定位，
   模板式写法（结构一次写清 + 活值）才是能给编译器接住的形状。
   `src/view-binding-baseline.test.js` 的文件头与 `docs/component-authoring{,.zh-CN}.md` 有对照样例。
+
+## TypeScript 配套（0.7.0 起，票 `.scratch/component-typing/`）
+
+`types/*.d.ts` 是**随包发布的对外契约**，与运行期同口径：改组件 API 就**同一刀**改类型，
+并在类型门禁里补正/负例（`types/tests/consumer.ts`，`npm run typecheck` 跑）。
+
+每个组件的声明按**同一个形状**写（参考实现 `VBadge`，`types/data-display.d.ts`）：
+
+```ts
+// 1) 句柄：自己的命令面 + 引擎委托的元素面（ComponentNode 已写清"句柄面 = 元素面"）
+export interface VXxx extends ComponentNode { /* … */ }
+// 2) props：`VXxx({ … })` 的**直接参数**，逐键写值类型；末尾留 `[key: string]: unknown` 给元素级透传
+export interface XxxOptions { /* … */; [key: string]: unknown }
+// 3) 定义函数收 props；快捷方法按 setup 分派调用方参数
+export const VXxx: { (props?: XxxOptions): VXxx };
+export const vXxx: ElementFactory<VXxx> & {
+  (first?: XxxOptions | SetupInput<VXxx> | null, callback?: SetupCallback<VXxx>): VXxx;
+};
+```
+
+- **定义函数收 props、快捷方法管分派**（与运行期 `VXxx` / `vXxx` 这一对一致）：`VXxx({ count: 3 })`
+  逐键检查；`vXxx(…)` 首参是 `XxxOptions ∪ SetupInput`（对象 = props、文本 = 内容、函数 = 构建回调、
+  元素选项 = 透传），所以**抓不住"props 取值写错"**——要逐键检查就用定义函数，
+  或先把字面量写成 `const props: XxxOptions = { … }`。
+- **运行期定义函数没有 props 参数的，类型也写 `(): VXxx`**（不是 `(props?: ElementOptions)`）：
+  定义函数忽略的实参**运行期会被静默丢掉**（例如 `VCard({ class })`），写出来就是骗人。
+  这类组件的可派发键写进快捷方法首参的 `XxxOptions`（`vCard({ class })` 由节点 setupObject 分派）。
+- **props 接口带 `[key: string]: unknown`**：`...rest` 按键分类透传到视图根，`class` / `style` /
+  `onXxx` / `data-*` / `attrs` 照旧可用；代价是拼错的键不报错（**结构键除外**：容器组件运行期报错，
+  类型上也不收——见 `assertVTableStructure`）。
+- **不给构造签名**：`instanceof VXxx` 不是承诺用法（身份走 `componentNameOf` / `hasComponentIdentity`），
+  声明里不写 `new (…)`；`x instanceof VXxx` 因此收窄不到句柄，写下去就红。**组件对象协议
+  （`{ render() }`）也已退场**，类型里不再有这条联合分支。
+- **引擎基底 / 节点类型 / 真类仍然是 `class`**：`ViewNode` / `ElementNode` / `ComponentNode` /
+  `VTextNode` / `VTreeNode` / `VMessageManager` / `VRouter` 这类保持 `class` 声明；
+  只有**组件定义函数**走上面这一对（`interface` + 可调用的 `const`）。
+- **接口合并只在同一模块生效**：给一个组件补类型就改它自己那份 `.d.ts`，别在别的文件里"再声明一个同名接口"。
+- **新组件必须带类型**：A / B 两种形态都要有 `XxxOptions` + 定义函数签名 + 快捷方法首参，
+  并在 `types/tests/consumer.ts` 补一条正例 + 一条 `@ts-expect-error` 负例（取值类型写错）。
 
 ## Setup 回调节点命名规则
 

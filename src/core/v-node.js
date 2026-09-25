@@ -45,9 +45,8 @@ export function vNode(setup) {
   const root = withProviderScope(frame, () => setup(api, self));
   assertViewRoot(root);
 
-  const node = new ComponentNode({
-    render: () => root
-  });
+  // 组件定义就是一个函数（票 07）：`ComponentNode` 只收函数，懒解析时调它拿视图。
+  const node = new ComponentNode(() => root);
   instance = node;
 
   adoptProvides(frame, node);

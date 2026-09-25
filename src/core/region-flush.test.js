@@ -90,18 +90,15 @@ describe('region flush', () => {
   it('flushes every binding of the tree, regions included', () => {
     const data = { label: 'x', total: 1 };
     let region = null;
-    const Widget = {
-      render() {
-        return div((host) => {
-          host.attr('data-outside', () => String(data.total));
-          host.div((ele) => {
-            region = ele;
-            ele.rebuildable();
-            ele.attr('data-inside', () => data.label);
-          });
+    const Widget = () =>
+      div((host) => {
+        host.attr('data-outside', () => String(data.total));
+        host.div((ele) => {
+          region = ele;
+          ele.rebuildable();
+          ele.attr('data-inside', () => data.label);
         });
-      }
-    };
+      });
     const page = div().child(Widget);
     const element = page.renderDom();
 

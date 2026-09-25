@@ -48,19 +48,29 @@ export function registerComponentHooks(node, source) {
 
 /** 节点真正落到 DOM：每次落地触发一次。 */
 export function fireWhenMount(node) {
-  const hooks = node?._whenHooks;
-  if (!hooks || hooks.mounted === true || typeof hooks.whenMount !== 'function') {
-    return;
+  // 钩子归属链：元素属于**视图根**（而不是定义它的那个节点）时，事件要沿链落到内层——
+  // 透明包装（`vClientOnly` 自己没有元素）与"组件嵌组件"（视图根本身是另一个组件）两种形状
+  // 都会把事件吞掉，见 `viewRoots()` 的口径。
+  const roots = typeof node?.viewRoots === 'function' ? node.viewRoots() : null;
+
+  if (roots !== null) {
+    for (let index = 0; index < roots.length; index += 1) {
+      if (roots[index] !== node) {
+        fireWhenMount(roots[index]);
+      }
+    }
   }
 
   // 落地收口（票 02）：一趟落地（`bindTo` / `mount` / `hydrate`）里先登记，收口时统一触发
   // ——那时元素已经挂进文档，第三方集成可以直接测量，不必自己补 rAF。
-  if (landingQueue !== null) {
-    landingQueue.add(node);
-    return;
-  }
+  if (node._whenHooks !== undefined) {
+    if (landingQueue !== null) {
+      landingQueue.add(node);
+      return;
+    }
 
-  fireWhenMountNow(node);
+    fireWhenMountNow(node);
+  }
 }
 
 /**
@@ -119,6 +129,12 @@ export function rearmWhenMount(node) {
   const hooks = node?._whenHooks;
   if (hooks) {
     hooks.mounted = false;
+  }
+
+  // 内层视图根一起重新武装（透明包装 / 组件嵌组件：真正触发的是它们）
+  const roots = typeof node?.viewRoots === 'function' ? node.viewRoots() : null;
+  if (roots !== null) {
+    roots.forEach(rearmWhenMount);
   }
 }
 

@@ -1,8 +1,10 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementNode,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput
 } from './core.js';
@@ -63,19 +65,19 @@ export type SkeletonVariant = 'paragraph' | 'avatar' | 'block';
 
 /** `vSkeleton({ … })` 的 props：占位形态与几何（句柄 props 是活值）。 */
 export interface SkeletonOptions {
-  variant?: SkeletonVariant;
-  rows?: number;
-  barHeight?: number;
-  gap?: number;
-  avatarSize?: number;
+  variant?: PropValue<SkeletonVariant>;
+  rows?: PropValue<number>;
+  barHeight?: PropValue<number>;
+  gap?: PropValue<number>;
+  avatarSize?: PropValue<number>;
   /** `false` = 不建占位块（展示真实内容）。 */
-  active?: boolean;
-  motion?: 'auto' | 'always';
+  active?: PropValue<boolean>;
+  motion?: PropValue<'auto' | 'always'>;
   [key: string]: unknown;
 }
 
 /** Loading placeholder with paragraph / avatar / block variants. */
-export class VSkeleton extends HtmlElementNode {
+export interface VSkeleton extends ComponentNode {
   variant(): SkeletonVariant;
   variant(value: SkeletonVariant): VSkeleton;
   rows(): number;
@@ -92,6 +94,8 @@ export class VSkeleton extends HtmlElementNode {
   motion(value: string): VSkeleton;
 }
 
+export const VSkeleton: { (props?: SkeletonOptions): VSkeleton };
+
 export const vSkeleton: {
   (
     first?: SkeletonOptions | SetupInput<VSkeleton> | null,
@@ -99,8 +103,16 @@ export const vSkeleton: {
   ): VSkeleton;
 } & ElementFactory<VSkeleton>;
 
+/** `VLazyImage({ … })` 的直接参数。 */
+export interface LazyImageOptions {
+  alt?: PropValue<string>;
+  defer?: PropValue<boolean>;
+  src?: PropValue<string | null>;
+  [key: string]: unknown;
+}
+
 /** Lazy image with native lazy loading and loading / loaded / error states. */
-export class VLazyImage extends HtmlElementNode {
+export interface VLazyImage extends ComponentNode {
   src(): string | null;
   src(value: string | null): VLazyImage;
   alt(): string;
@@ -111,7 +123,14 @@ export class VLazyImage extends HtmlElementNode {
   retry(): VLazyImage;
 }
 
-export const vLazyImage: ElementFactory<VLazyImage>;
+export const VLazyImage: { (props?: LazyImageOptions): VLazyImage };
+
+export const vLazyImage: ElementFactory<VLazyImage> & {
+  (
+    first?: LazyImageOptions | SetupInput<VLazyImage> | null,
+    callback?: SetupCallback<VLazyImage>
+  ): VLazyImage;
+};
 
 /**
  * Parent-shortcut surface merged onto HtmlElementNode. vDynamicLoader is
@@ -123,7 +142,7 @@ export interface AsyncParentShortcuts {
     callback?: SetupCallback<VSkeleton>
   ): VSkeleton;
   vLazyImage(
-    first?: SetupInput<VLazyImage> | null,
+    first?: LazyImageOptions | SetupInput<VLazyImage> | null,
     callback?: SetupCallback<VLazyImage>
   ): VLazyImage;
 }

@@ -163,7 +163,7 @@ describe('child(<表达式>)：运行期子节点（票 09）', () => {
     expect(() => compiled.One({ slot: true }).renderDom()).toThrow(TypeError);
   });
 
-  it('节点通道：组件对象（带 render()）与 ViewNode 同一条分派', async () => {
+  it('节点通道：组件定义函数与 ViewNode 同一条分派', async () => {
     const source = [
       "import { div } from '../../src/yoya.core.js';",
       '',
@@ -176,11 +176,7 @@ describe('child(<表达式>)：运行期子节点（票 09）', () => {
       ''
     ].join('\n');
     const propsOf = () => ({
-      slot: {
-        render() {
-          return core.span((box) => box.className('comp').child('comp'));
-        }
-      }
+      slot: () => core.span((box) => box.className('comp').child('comp'))
     });
     const { wired, compiled, generic } = await setup('one-node', source, 'node', 'One');
     expect(wired, '插件没有编出产物').not.toBeNull();

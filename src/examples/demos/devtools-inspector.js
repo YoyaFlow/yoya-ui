@@ -22,6 +22,28 @@ const EVENT_FILTERS = [
 ];
 
 /**
+ * 值 → 文本：日志里的前后值与状态列表里的信号值可能是**自引用结构**（节点带着父链/子节点），
+ * `JSON.stringify` 会直接抛 "Converting circular structure to JSON"，把整张列表打断。
+ * 这类值只按形状给个摘要，够诊断用。
+ */
+function stringifyInspectValue(value) {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value !== 'object') {
+    return String(value);
+  }
+
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    const size = Array.isArray(value) ? value.length : Object.keys(value).length;
+    return `[${Array.isArray(value) ? '数组' : '对象'} ${size} 项]`;
+  }
+}
+
+/**
  * 专用 DevTools 大弹窗：按标签页分类展示对象结构、操作日志与状态/作用域；
  * 「隐藏」只收起弹窗，不销毁任何面板状态。
  */
@@ -43,6 +65,8 @@ export function DevtoolsInspectorDemo() {
   let highlighted = null;
   let inspectRoot = null;
   let overlay = null;
+  /** 正在把事件落进面板（日志 / 状态列表）期间为真：这期间的写入事件都是自己的回声，要丢。 */
+  let applyingEventState = false;
   let statusText = null;
   let stopSubscription = null;
   let toggleButton = null;
@@ -57,31 +81,29 @@ export function DevtoolsInspectorDemo() {
   // 被检视的目标卡片：计数走值绑定，模式驱动区域重建（写入都会上报 signal-write）
   const targetCount = ref(0);
   const targetMode = ref('normal');
-  const target = {
-    render() {
-      return div((box) => {
-        box.className('devtools-target-card');
-        box.rebuildable(() => true);
-        box.p('计数：', (p) => {
-          p.child(vText(targetCount));
-        });
-        box.p(`模式：${targetMode.value}`);
-        box.div((actions) => {
-          actions.vButton('+1', (button) => {
-            button.variant('primary');
-            button.on('click', () => {
-              targetCount.value += 1;
-            });
+  // 形态 A 薄工厂（票 07）：直接返回视图
+  const target = () =>
+    div((box) => {
+      box.className('devtools-target-card');
+      box.rebuildable(() => true);
+      box.p('计数：', (p) => {
+        p.child(vText(targetCount));
+      });
+      box.p(`模式：${targetMode.value}`);
+      box.div((actions) => {
+        actions.vButton('+1', (button) => {
+          button.variant('primary');
+          button.on('click', () => {
+            targetCount.value += 1;
           });
-          actions.vButton(targetMode.value === 'normal' ? '切换高亮' : '恢复正常', (button) => {
-            button.on('click', () => {
-              targetMode.value = targetMode.value === 'normal' ? 'highlight' : 'normal';
-            });
+        });
+        actions.vButton(targetMode.value === 'normal' ? '切换高亮' : '恢复正常', (button) => {
+          button.on('click', () => {
+            targetMode.value = targetMode.value === 'normal' ? 'highlight' : 'normal';
           });
         });
       });
-    }
-  };
+    });
 
   function toggle() {
     if (state.enabled) {
@@ -120,15 +142,29 @@ export function DevtoolsInspectorDemo() {
       if (!isInsideInspectedTree(event)) {
         return;
       }
-      if (event.type === 'signal-write') {
+
+      const signalWrite = event.type === 'signal-write';
+      // 面板自己也用信号（日志 / 状态列表）：写入会回声成新的 signal-write 事件，
+      // 不挡掉就是"写列表 → 事件 → 再写列表"的自激循环
+      if (signalWrite && applyingEventState) {
+        return;
+      }
+      if (signalWrite) {
         signalValues.set(event.signalId, event.next);
-        renderStateList();
       }
       state.events.push(event);
       if (state.events.length > 100) {
         state.events.shift();
       }
-      renderEvents();
+      applyingEventState = true;
+      try {
+        if (signalWrite) {
+          renderStateList();
+        }
+        renderEvents();
+      } finally {
+        applyingEventState = false;
+      }
     });
     updateStatus();
     refreshTree();
@@ -262,7 +298,7 @@ export function DevtoolsInspectorDemo() {
     if (value === undefined || value === null) {
       return '（无）';
     }
-    const text = typeof value === 'string' ? value : JSON.stringify(value);
+    const text = stringifyInspectValue(value);
     return text.length > 30 ? `${text.slice(0, 30)}…` : text;
   }
 
@@ -536,7 +572,7 @@ export function DevtoolsInspectorDemo() {
                 const row = pre();
                 row.className('devtools-state-row');
                 row.attr('data-devtools-state-row', 'true');
-                row.child(`#${item.data.id}: ${JSON.stringify(item.data.value)}`);
+                row.child(`#${item.data.id}: ${stringifyInspectValue(item.data.value)}`);
                 return row;
               });
             });

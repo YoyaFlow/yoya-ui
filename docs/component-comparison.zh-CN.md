@@ -31,7 +31,7 @@
 | 间距       | Space                            | ElSpace                                   | hstack / vstack（gap）+ spacer()                           |
 | 分隔线     | Divider                          | ElDivider                                 | divider()                                                  |
 | 卡片       | Card                             | ElCard                                    | vCard / vCardHeader / vCardBody / vCardFooter              |
-| 主题化容器 | —（Card 承担）                   | —（ElCard 承担）                          | vSurface、vThemeShell                                      |
+| 主题化容器 | —（Card 承担）                   | —（ElCard 承担）                          | vCard（面外观归皮肤 `[vn~='VCard']`）+ `--yoya-*` token    |
 | 分栏拖拽   | —                                | —                                         | vSplitPanel                                                |
 | 瀑布流     | —                                | —                                         | vMasonry                                                   |
 | 滚动区域   | —                                | ElScrollbar                               | vScroll                                                    |
@@ -122,7 +122,7 @@
 
 | 功能       | Ant Design               | Element Plus               | yoya-ui                               |
 | ---------- | ------------------------ | -------------------------- | ------------------------------------- |
-| 主题定制   | ConfigProvider（token）  | CSS 变量                   | 主题 token（--yoya-*）、vThemeShell   |
+| 主题定制   | ConfigProvider（token）  | CSS 变量                   | 主题 token（--yoya-*）                |
 | 国际化     | ConfigProvider（locale） | ElConfigProvider（locale） | createI18n（每请求实例）              |
 | 权限       | —                        | —                          | createAccess / installAccess 权限声明 |
 | 服务端渲染 | 依赖上层框架             | 依赖上层框架               | 内置 renderToString / hydrate         |

@@ -1,5 +1,5 @@
 import { vNode } from '../../index.js';
-import { AgGridDemoNode } from './ag-grid-glue.js';
+import { vAgGrid } from './ag-grid-glue.js';
 
 export function AgGridPerformanceExample(rowCount = 50000, colCount = 10) {
   const makeRows = (rows, cols) =>
@@ -41,7 +41,7 @@ export function AgGridPerformanceExample(rowCount = 50000, colCount = 10) {
   const state = { colCount, rowCount };
 
   return vNode((api) => {
-    const node = new AgGridDemoNode({
+    const node = vAgGrid({
       columnDefs: makeColumns(state.colCount),
       height: '480px',
       rowData: makeRows(state.rowCount, state.colCount)

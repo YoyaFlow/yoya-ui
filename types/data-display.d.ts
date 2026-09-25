@@ -1,8 +1,10 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
   KeyItem,
+  PropValue,
   SignalHandle,
   SetupCallback,
   SetupInput,
@@ -14,7 +16,24 @@ import type { HtmlElementNode } from './html.js';
 // Avatar / Badge / Card / Code
 // ---------------------------------------------------------------------------
 
-export class VAvatar extends HtmlElementNode {
+/** `VAvatar({ … })` 的**直接参数**（= 组件自己的 props；`...rest` 按键分类透传到视图根）。 */
+export interface AvatarOptions {
+  alt?: ChildInput;
+  children?: ChildInput;
+  color?: PropValue<string | null>;
+  content?: ChildInput;
+  icon?: ChildInput;
+  shape?: 'circle' | 'square' | string;
+  size?: number | string;
+  src?: PropValue<string | null>;
+  status?: PropValue<string | null>;
+  text?: ChildInput;
+  /** 元素级配置（`class` / `style` / `onXxx` / `data-*` / `attrs` …）照旧透传。 */
+  [key: string]: unknown;
+}
+
+/** 头像组件句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（见 `ComponentNode`）。 */
+export interface VAvatar extends ComponentNode {
   text(value?: ChildInput): this;
   content(value: ChildInput): VAvatar;
   icon(value: ChildInput): VAvatar;
@@ -28,7 +47,28 @@ export class VAvatar extends HtmlElementNode {
   status(value: string): VAvatar;
 }
 
-export class VBadge extends HtmlElementNode {
+export const VAvatar: { (props?: AvatarOptions): VAvatar };
+
+/** `VBadge({ … })` 的**直接参数**（= 组件自己的 props；`...rest` 按键分类透传到视图根）。 */
+export interface BadgeOptions {
+  children?: ChildInput;
+  color?: PropValue<string | null>;
+  content?: ChildInput;
+  count?: PropValue<number | string | null>;
+  dot?: PropValue<boolean>;
+  label?: ChildInput;
+  offset?: PropValue<Array<number | string> | { x?: number | string; y?: number | string }>;
+  overflowCount?: PropValue<number>;
+  showZero?: PropValue<boolean>;
+  status?: PropValue<string | null>;
+  text?: ChildInput;
+  title?: PropValue<ChildInput | null>;
+  /** 元素级配置（`class` / `style` / `onXxx` / `data-*` / `attrs` …）照旧透传。 */
+  [key: string]: unknown;
+}
+
+/** 徽标组件句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（见 `ComponentNode`）。 */
+export interface VBadge extends ComponentNode {
   child(...children: ChildInput[]): this;
   content(value: ChildInput): VBadge;
   count(): number;
@@ -46,12 +86,45 @@ export class VBadge extends HtmlElementNode {
   offset(value: Array<number | string>): VBadge;
 }
 
-export class VCard extends HtmlElementNode {}
-export class VCardHeader extends HtmlElementNode {}
-export class VCardBody extends HtmlElementNode {}
-export class VCardFooter extends HtmlElementNode {}
+/**
+ * 组件定义函数（身份名 = 导出名）：**直接参数 = 组件自己的 props**，调用即得到组件节点。
+ * **不给 `new` 签名**：`instanceof VBadge` 不是承诺的用法（身份判定用 `componentNameOf` /
+ * `hasComponentIdentity`），构造签名从 0.7.0 起退场。
+ */
+export const VBadge: { (props?: BadgeOptions): VBadge };
 
-export class VCode extends HtmlElementNode {
+/**
+ * 卡片句柄：部件投递命令 + 引擎委托的元素面。
+ *
+ * 定义函数**没有 props**（`VCard()` 只建结构）；元素级选项走快捷方法
+ * （`vCard({ class, style, onXxx })`），部件（header / body / footer）走命令投递、`vn_slot` 决定落位。
+ */
+export interface VCard extends ComponentNode {
+  child(...children: ChildInput[]): this;
+}
+
+/** 卡片部件（A 形态薄工厂，返回元素节点）：位置由自己的 `vn_slot` 定。 */
+export interface VCardHeader extends HtmlElementNode {}
+export interface VCardBody extends HtmlElementNode {}
+export interface VCardFooter extends HtmlElementNode {}
+
+export const VCard: { (): VCard };
+export const VCardHeader: { (): VCardHeader };
+export const VCardBody: { (): VCardBody };
+export const VCardFooter: { (): VCardFooter };
+
+/** `VCode({ … })` 的**直接参数**。 */
+export interface CodeOptions {
+  children?: ChildInput;
+  content?: ChildInput;
+  copyLabel?: ChildInput;
+  copyable?: PropValue<boolean>;
+  language?: PropValue<string | null>;
+  text?: ChildInput;
+  [key: string]: unknown;
+}
+
+export interface VCode extends ComponentNode {
   content(content: ChildInput): VCode;
   text(content?: ChildInput): this;
   language(value: string): VCode;
@@ -59,37 +132,77 @@ export class VCode extends HtmlElementNode {
   copyLabel(value: ChildInput): VCode;
 }
 
-export class CodeBlock extends VCode {}
+export const VCode: { (props?: CodeOptions): VCode };
+
+/** `CodeBlock` = `VCode` 的别名形态（多值身份 `CodeBlock VCode`），props 与命令面同 `VCode`。 */
+export interface CodeBlock extends VCode {}
+
+export const CodeBlock: { (props?: CodeOptions): CodeBlock };
 
 // ---------------------------------------------------------------------------
 // Detail / Digital board
 // ---------------------------------------------------------------------------
 
-export class VDetail extends HtmlElementNode {
+/** `vDetail({ … })` 的可派发键（定义函数无 props，键由节点 setupObject 分派到命令）。 */
+export interface DetailOptions {
+  column?: PropValue<number>;
+  columns?: PropValue<number>;
+  items?: Array<string | VDetailItem | DetailItemOptions>;
+  [key: string]: unknown;
+}
+
+export interface VDetail extends ComponentNode {
   columns(): number;
   columns(value: number): VDetail;
   column(value: number): VDetail;
   items(value: Array<string | VDetailItem | DetailItemOptions>): VDetail;
 }
 
+export const VDetail: { (): VDetail };
+
 export interface DetailItemOptions {
   label?: ChildInput;
   value?: ChildInput;
-  [key: string]: any;
+  text?: ChildInput;
+  content?: ChildInput;
+  children?: ChildInput;
+  [key: string]: unknown;
 }
 
-export class VDetailItem extends HtmlElementNode {
+export interface VDetailItem extends ComponentNode {
   label(content?: ChildInput): this;
   value(content: ChildInput): VDetailItem;
   content(content: ChildInput): VDetailItem;
 }
 
-export class VDigitalBoard extends HtmlElementNode {
+export const VDetailItem: { (): VDetailItem };
+
+/** `vDigitalBoard({ … })` 的可派发键。 */
+export interface DigitalBoardOptions {
+  columns?: PropValue<number>;
+  [key: string]: unknown;
+}
+
+export interface VDigitalBoard extends ComponentNode {
   columns(): number;
   columns(value: number): VDigitalBoard;
 }
 
-export class VDigitalBoardItem extends HtmlElementNode {
+export const VDigitalBoard: { (): VDigitalBoard };
+
+/** `vDigitalBoardItem({ … })` 的可派发键。 */
+export interface DigitalBoardItemOptions {
+  icon?: ChildInput;
+  label?: ChildInput;
+  tone?: PropValue<string>;
+  trend?: PropValue<number | string>;
+  trendUp?: PropValue<boolean>;
+  unit?: ChildInput;
+  value?: ChildInput;
+  [key: string]: unknown;
+}
+
+export interface VDigitalBoardItem extends ComponentNode {
   label(content?: ChildInput): this;
   value(content: ChildInput): VDigitalBoardItem;
   unit(content: ChildInput): VDigitalBoardItem;
@@ -100,11 +213,22 @@ export class VDigitalBoardItem extends HtmlElementNode {
   icon(content: ChildInput): VDigitalBoardItem;
 }
 
+export const VDigitalBoardItem: { (): VDigitalBoardItem };
+
 // ---------------------------------------------------------------------------
 // Charts / gauges / stats
 // ---------------------------------------------------------------------------
 
-export class VGauge extends HtmlElementNode {
+/** `VGauge({ … })` 的直接参数。 */
+export interface GaugeOptions {
+  max?: PropValue<number>;
+  tone?: PropValue<string>;
+  unit?: ChildInput;
+  value?: PropValue<number>;
+  [key: string]: unknown;
+}
+
+export interface VGauge extends ComponentNode {
   value(): number;
   value(value: number): VGauge;
   max(): number;
@@ -113,7 +237,20 @@ export class VGauge extends HtmlElementNode {
   tone(value: string): VGauge;
 }
 
-export class VRingStat extends HtmlElementNode {
+export const VGauge: { (props?: GaugeOptions): VGauge };
+
+/** `VRingStat({ … })` 的直接参数。 */
+export interface RingStatOptions {
+  label?: ChildInput;
+  percent?: PropValue<number>;
+  size?: PropValue<number | string>;
+  strokeWidth?: PropValue<number>;
+  tone?: PropValue<string>;
+  value?: PropValue<number>;
+  [key: string]: unknown;
+}
+
+export interface VRingStat extends ComponentNode {
   percent(): number;
   percent(value: number): VRingStat;
   value(): number;
@@ -126,14 +263,37 @@ export class VRingStat extends HtmlElementNode {
   tone(value: string): VRingStat;
 }
 
-export class VSparkline extends HtmlElementNode {
+export const VRingStat: { (props?: RingStatOptions): VRingStat };
+
+/** `VSparkline({ … })` 的直接参数。 */
+export interface SparklineOptions {
+  data?: PropValue<Array<number>>;
+  fill?: PropValue<boolean>;
+  strokeWidth?: PropValue<number>;
+  tone?: PropValue<string>;
+  [key: string]: unknown;
+}
+
+export interface VSparkline extends ComponentNode {
   data(values?: Array<number>): this;
   fill(value: boolean): VSparkline;
   strokeWidth(value: number): VSparkline;
   tone(value: string): VSparkline;
 }
 
-export class VChart extends HtmlElementNode {
+export const VSparkline: { (props?: SparklineOptions): VSparkline };
+
+/** `VChart({ … })` 的直接参数：适配器 + 数据 + 尺寸（第三方图表宿主）。 */
+export interface ChartOptions {
+  adapter?: PropValue<unknown>;
+  data?: ChildInput;
+  height?: PropValue<number | string>;
+  options?: PropValue<Record<string, unknown>>;
+  width?: PropValue<number | string>;
+  [key: string]: unknown;
+}
+
+export interface VChart extends ComponentNode {
   adapter(value: unknown): VChart;
   data(value?: unknown): this;
   options(value: Record<string, unknown>): VChart;
@@ -145,13 +305,32 @@ export class VChart extends HtmlElementNode {
   destroy(): this;
 }
 
+export const VChart: { (props?: ChartOptions): VChart };
+
 // ---------------------------------------------------------------------------
 // Timeline / Trend card
 // ---------------------------------------------------------------------------
 
-export class VTimeline extends HtmlElementNode {}
+/** `VTimeline({ … })` 的直接参数：条目走匿名内容通道（`timeline.vTimelineItem(…)`）。 */
+export interface TimelineOptions {
+  children?: ChildInput;
+  [key: string]: unknown;
+}
 
-export class VTimelineItem extends HtmlElementNode {
+export interface VTimeline extends ComponentNode {}
+
+export const VTimeline: { (props?: TimelineOptions): VTimeline };
+
+/** `VTimelineItem({ … })` 的直接参数。 */
+export interface TimelineItemOptions {
+  content?: ChildInput | SetupCallback<HtmlElementNode>;
+  status?: PropValue<string>;
+  time?: ChildInput;
+  title?: ChildInput;
+  [key: string]: unknown;
+}
+
+export interface VTimelineItem extends ComponentNode {
   status(): string;
   status(value: string): VTimelineItem;
   title(content?: ChildInput): this;
@@ -159,7 +338,21 @@ export class VTimelineItem extends HtmlElementNode {
   content(setup: ChildInput | SetupCallback<HtmlElementNode>): VTimelineItem;
 }
 
-export class VTrendCard extends HtmlElementNode {
+export const VTimelineItem: { (props?: TimelineItemOptions): VTimelineItem };
+
+/** `VTrendCard({ … })` 的直接参数。 */
+export interface TrendCardOptions {
+  data?: PropValue<Array<number>>;
+  delta?: PropValue<number>;
+  title?: ChildInput;
+  tone?: PropValue<string>;
+  unit?: ChildInput;
+  up?: PropValue<boolean>;
+  value?: ChildInput;
+  [key: string]: unknown;
+}
+
+export interface VTrendCard extends ComponentNode {
   title(content?: ChildInput): this;
   value(content: ChildInput): VTrendCard;
   unit(content: ChildInput): VTrendCard;
@@ -169,11 +362,29 @@ export class VTrendCard extends HtmlElementNode {
   tone(value: string): VTrendCard;
 }
 
+export const VTrendCard: { (props?: TrendCardOptions): VTrendCard };
+
 // ---------------------------------------------------------------------------
 // Carousel / Progress / Pagination / Scroll
 // ---------------------------------------------------------------------------
 
-export class VCarousel extends HtmlElementNode {
+/** `vCarousel({ … })` 的可派发键（定义函数无 props）。 */
+export interface CarouselOptions {
+  active?: PropValue<number>;
+  arrows?: PropValue<boolean>;
+  autoplay?: PropValue<boolean>;
+  children?: Array<unknown>;
+  dots?: PropValue<boolean>;
+  height?: PropValue<string | number>;
+  interval?: PropValue<number>;
+  items?: Array<unknown>;
+  loop?: PropValue<boolean>;
+  renderItem?: (item: unknown, index: number) => ChildInput;
+  slides?: Array<unknown>;
+  [key: string]: unknown;
+}
+
+export interface VCarousel extends ComponentNode {
   slides(value: Array<unknown>, render?: (item: unknown, index: number) => ChildInput): VCarousel;
   items(value: Array<unknown>, render?: (item: unknown, index: number) => ChildInput): VCarousel;
   renderItem(handler: (item: unknown, index: number) => ChildInput): VCarousel;
@@ -193,7 +404,27 @@ export class VCarousel extends HtmlElementNode {
   height(value: string | number): VCarousel;
 }
 
-export class VProgress extends HtmlElementNode {
+export const VCarousel: { (): VCarousel };
+
+/** `vProgress({ … })` 的可派发键（定义函数无 props）。 */
+export interface ProgressOptions {
+  active?: PropValue<boolean>;
+  ariaLabel?: ChildInput;
+  format?: (percent: number) => ChildInput;
+  indeterminate?: PropValue<boolean>;
+  label?: ChildInput;
+  max?: PropValue<number>;
+  percent?: PropValue<number>;
+  showText?: PropValue<boolean>;
+  size?: PropValue<string>;
+  status?: PropValue<string>;
+  strokeColor?: PropValue<string>;
+  text?: ChildInput;
+  value?: PropValue<number>;
+  [key: string]: unknown;
+}
+
+export interface VProgress extends ComponentNode {
   value(): number;
   value(value: number): VProgress;
   max(): number;
@@ -214,35 +445,38 @@ export class VProgress extends HtmlElementNode {
   ariaLabel(content: ChildInput): VProgress;
 }
 
+export const VProgress: { (): VProgress };
+
 export interface PaginationOptions {
-  page?: number;
-  pageSize?: number;
-  pageSizes?: Array<number | { label: string; value: number }>;
-  total?: number;
-  totalPages?: number;
+  page?: PropValue<number>;
+  pageSize?: PropValue<number>;
+  pageSizes?: PropValue<Array<number | { label: string; value: number }>>;
+  total?: PropValue<number>;
+  totalPages?: PropValue<number>;
   ariaLabel?: ChildInput;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
-/** Object component returned by vPagination(). */
-export interface PaginationComponent {
+/** 分页句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（见 `ComponentNode`）。 */
+export interface VPagination extends ComponentNode {
   change(): ((page: number, pageSize: number) => void) | null;
-  change(handler: ((page: number, pageSize: number) => void) | null): PaginationComponent;
-  onChange(handler: ((page: number, pageSize: number) => void) | null): PaginationComponent;
+  change(handler: ((page: number, pageSize: number) => void) | null): VPagination;
+  onChange(handler: ((page: number, pageSize: number) => void) | null): VPagination;
   page(): number;
-  page(value: number): PaginationComponent;
+  page(value: number): VPagination;
   pageSize(): number;
-  pageSize(value: number): PaginationComponent;
+  pageSize(value: number): VPagination;
   pageSizes(): Array<{ label: string; value: number }>;
-  pageSizes(value: Array<number | { label: string; value: number }>): PaginationComponent;
+  pageSizes(value: Array<number | { label: string; value: number }>): VPagination;
   total(): number;
-  total(value: number): PaginationComponent;
+  total(value: number): VPagination;
   totalPages(): number;
-  totalPages(value: number): PaginationComponent;
-  update(result?: Partial<PaginationOptions>): PaginationComponent;
-  render(): HtmlElementNode;
-  [key: string]: any;
+  totalPages(value: number): VPagination;
+  update(result?: Partial<PaginationOptions>): VPagination;
 }
+
+/** @deprecated 旧名（对象组件时代的叫法），等同 `VPagination`。 */
+export type PaginationComponent = VPagination;
 
 /**
  * `vScroll({ … })` 的 props——只收数据 + 元素选项；本组件的键走命令，其余按引擎的元素分派落视图根。
@@ -272,7 +506,7 @@ export interface ScrollOptions {
   [key: string]: unknown;
 }
 
-export class VScroll extends HtmlElementNode {
+export interface VScroll extends ComponentNode {
   content(setup: ChildInput | SetupCallback<HtmlElementNode>): VScroll;
   items(): Array<unknown>;
   items(value: Array<unknown>, render?: (item: unknown, index: number) => ChildInput): VScroll;
@@ -308,6 +542,8 @@ export class VScroll extends HtmlElementNode {
   load(): VScroll;
   check(): VScroll;
 }
+
+export const VScroll: { (props?: ScrollOptions): VScroll };
 
 // ---------------------------------------------------------------------------
 // Tree Ranger
@@ -376,7 +612,6 @@ export interface TreeRanger {
   back(): TreeRanger;
   reload(): TreeRanger;
   refresh(): TreeRanger;
-  render(): HtmlElementNode;
   change(handler: (payload: TreeRangerChangePayload) => void): TreeRanger;
   onChange(handler: (payload: TreeRangerChangePayload) => void): TreeRanger;
   [key: string]: any;
@@ -444,7 +679,13 @@ export interface TableWrapperOptions {
  * (the constant `caption` / `thead` / `tbody` / `tfoot`) are filled through commands:
  * `vTable((table) => table.vThead(…))` or `table.vThead(…)` at runtime.
  */
-export class VTable extends HtmlElementNode {
+/** `VTable({ … })` 的直接参数：只有 `caption` 是数据，结构键（`vThead` / `vTbody` / `vTr` …）走命令。 */
+export interface TableOptions {
+  caption?: ChildInput;
+  [key: string]: unknown;
+}
+
+export interface VTable extends ComponentNode {
   caption(content?: ChildInput): this;
   child(...children: ChildInput[]): this;
   vThead(setup?: SetupInput<VThead>): VTable;
@@ -453,8 +694,10 @@ export class VTable extends HtmlElementNode {
   vTr(setup?: SetupInput<VTr>): VTable;
 }
 
+export const VTable: { (props?: TableOptions): VTable };
+
 /** Data-driven table: owns columns / rows / emptyText and per-row state. */
-export class VTableWrapper extends HtmlElementNode {
+export interface VTableWrapper extends ComponentNode {
   caption(): ChildInput;
   caption(content: ChildInput): VTableWrapper;
   columns(): TableColumn[];
@@ -472,21 +715,30 @@ export class VTableWrapper extends HtmlElementNode {
   clearRows(): VTableWrapper;
 }
 
-export class VThead extends HtmlElementNode {
+export const VTableWrapper: { (): VTableWrapper };
+
+export interface VThead extends ComponentNode {
   vTr(setup?: SetupInput<VTr>): VThead;
 }
-export class VTbody extends HtmlElementNode {
+export interface VTbody extends ComponentNode {
   vTr(setup?: SetupInput<VTr>): VTbody;
 }
-export class VTfoot extends HtmlElementNode {
+export interface VTfoot extends ComponentNode {
   vTr(setup?: SetupInput<VTr>): VTfoot;
 }
-export class VTr extends HtmlElementNode {
+export interface VTr extends ComponentNode {
   vTh(setup?: SetupInput<VTh>): VTr;
   vTd(setup?: SetupInput<VTd>): VTr;
 }
-export class VTh extends HtmlElementNode {}
-export class VTd extends HtmlElementNode {}
+export interface VTh extends HtmlElementNode {}
+export interface VTd extends HtmlElementNode {}
+
+export const VThead: { (): VThead };
+export const VTbody: { (): VTbody };
+export const VTfoot: { (): VTfoot };
+export const VTr: { (): VTr };
+export const VTh: { (): VTh };
+export const VTd: { (): VTd };
 
 // ---------------------------------------------------------------------------
 // Tree
@@ -547,85 +799,141 @@ export interface TreeOptions {
   [key: string]: any;
 }
 
-/** Object component returned by vTree(). */
-export interface TreeComponent {
+/** 树句柄：自己的命令面 + 引擎委托的元素面 / 子工厂（见 `ComponentNode`）。 */
+export interface VTree extends ComponentNode {
   change(): ((keys: { checked: string[]; expanded: string[]; selected: string[] }) => void) | null;
   change(
     handler: ((keys: { checked: string[]; expanded: string[]; selected: string[] }) => void) | null
-  ): TreeComponent;
+  ): VTree;
   onChange(
     handler: ((keys: { checked: string[]; expanded: string[]; selected: string[] }) => void) | null
-  ): TreeComponent;
+  ): VTree;
   checked(id: string | number): boolean;
-  checked(id: string | number, value: boolean): TreeComponent;
+  checked(id: string | number, value: boolean): VTree;
   checkedKeys(): string[];
-  checkedKeys(value: Array<string | number>): TreeComponent;
-  check(id: string | number, value?: boolean): TreeComponent;
-  checkable(value: boolean): TreeComponent;
-  checkAll(value?: boolean): TreeComponent;
-  collapseAll(): TreeComponent;
-  collapseNode(id: string | number): TreeComponent;
-  data(value: Array<VTreeNode | TreeNodeOptions>): TreeComponent;
-  emptyText(value: ChildInput): TreeComponent;
-  expandAll(): TreeComponent;
+  checkedKeys(value: Array<string | number>): VTree;
+  check(id: string | number, value?: boolean): VTree;
+  checkable(value: boolean): VTree;
+  checkAll(value?: boolean): VTree;
+  collapseAll(): VTree;
+  collapseNode(id: string | number): VTree;
+  /** 命令 `data()` 与 HTML `<data>` 子工厂同名（运行期命令遮蔽它）：声明按两者并集写。 */
+  data(value: Array<VTreeNode | TreeNodeOptions> | SetupInput<HtmlElementNode>): VTree;
+  emptyText(value: ChildInput): VTree;
+  expandAll(): VTree;
   expandedKeys(): string[];
-  expandedKeys(value: Array<string | number>): TreeComponent;
-  expandNode(id: string | number, value?: boolean): TreeComponent;
-  multiple(value: boolean): TreeComponent;
-  nodes(value: Array<VTreeNode | TreeNodeOptions>): TreeComponent;
+  expandedKeys(value: Array<string | number>): VTree;
+  expandNode(id: string | number, value?: boolean): VTree;
+  multiple(value: boolean): VTree;
+  nodes(value: Array<VTreeNode | TreeNodeOptions>): VTree;
   vTreeNode(setup: VTreeNode | TreeNodeOptions): VTreeNode;
   node(setup: VTreeNode | TreeNodeOptions): VTreeNode;
   addNode(setup: VTreeNode | TreeNodeOptions): VTreeNode;
-  onCheck(handler: (id: string | number, checked: boolean, node: VTreeNode) => void): TreeComponent;
-  onSelect(handler: (id: string | number, node: VTreeNode) => void): TreeComponent;
-  onToggle(handler: (id: string | number, node: VTreeNode) => void): TreeComponent;
-  render(): HtmlElementNode;
-  select(id: string | number, value?: boolean): TreeComponent;
-  selectable(value: boolean): TreeComponent;
+  onCheck(handler: (id: string | number, checked: boolean, node: VTreeNode) => void): VTree;
+  onSelect(handler: (id: string | number, node: VTreeNode) => void): VTree;
+  onToggle(handler: (id: string | number, node: VTreeNode) => void): VTree;
+  /** 命令 `select()` 与 HTML `<select>` 子工厂同名（运行期命令遮蔽它）：声明按两者并集写。 */
+  select(id?: string | number, value?: boolean): VTree;
+  selectable(value: boolean): VTree;
   selected(id: string | number): boolean;
-  selected(id: string | number, value: boolean): TreeComponent;
+  selected(id: string | number, value: boolean): VTree;
   selectedKeys(): string[];
-  selectedKeys(value: Array<string | number>): TreeComponent;
-  toggleNode(id: string | number): TreeComponent;
-  toggleIcon(value: ChildInput, expandedValue?: ChildInput): TreeComponent;
-  update(value: Partial<TreeOptions>): TreeComponent;
-  destroy(): TreeComponent;
-  [key: string]: any;
+  selectedKeys(value: Array<string | number>): VTree;
+  toggleNode(id: string | number): VTree;
+  toggleIcon(value: ChildInput, expandedValue?: ChildInput): VTree;
+  update(value: Partial<TreeOptions>): VTree;
 }
+
+/** @deprecated 旧名（对象组件时代的叫法），等同 `VTree`。 */
+export type TreeComponent = VTree;
+
+export const VTree: { (): VTree };
 
 // ---------------------------------------------------------------------------
 // Factories
 // ---------------------------------------------------------------------------
 
-export const vAvatar: ElementFactory<VAvatar>;
-export const vBadge: ElementFactory<VBadge>;
+export const vAvatar: ElementFactory<VAvatar> & {
+  (first?: AvatarOptions | SetupInput<VAvatar> | null, callback?: SetupCallback<VAvatar>): VAvatar;
+};
+/** 快捷方法：建组件 + 按出现顺序分派调用方参数（对象 = props、函数 = 构建回调、文本 = 内容）。 */
+export const vBadge: ElementFactory<VBadge> & {
+  (first?: BadgeOptions | SetupInput<VBadge> | null, callback?: SetupCallback<VBadge>): VBadge;
+};
 export const vCard: ElementFactory<VCard>;
 export const vCardHeader: ElementFactory<VCardHeader>;
 export const vCardBody: ElementFactory<VCardBody>;
 export const vCardFooter: ElementFactory<VCardFooter>;
-export const vCarousel: ElementFactory<VCarousel>;
-export const vChart: ElementFactory<VChart>;
-export const vCode: ElementFactory<VCode>;
-export const codeBlock: ElementFactory<CodeBlock>;
-export const vDetail: ElementFactory<VDetail>;
-export const vDetailItem: ElementFactory<VDetailItem> & {
-  (setup?: SetupInput<VDetailItem> | null, value?: ChildInput): VDetailItem;
-};
-export const vDigitalBoard: ElementFactory<VDigitalBoard>;
-export const vDigitalBoardItem: ElementFactory<VDigitalBoardItem>;
-export const vGauge: ElementFactory<VGauge>;
-export const vPagination: ElementFactory<PaginationComponent> & {
+export const vCarousel: ElementFactory<VCarousel> & {
   (
-    first?: PaginationOptions | SetupCallback<PaginationComponent> | null,
-    callback?: SetupCallback<PaginationComponent>
-  ): PaginationComponent;
+    first?: CarouselOptions | SetupInput<VCarousel> | null,
+    callback?: SetupCallback<VCarousel>
+  ): VCarousel;
 };
-export const vProgress: ElementFactory<VProgress>;
-export const vRingStat: ElementFactory<VRingStat>;
+export const vChart: ElementFactory<VChart> & {
+  (first?: ChartOptions | SetupInput<VChart> | null, callback?: SetupCallback<VChart>): VChart;
+};
+export const vCode: ElementFactory<VCode> & {
+  (first?: CodeOptions | SetupInput<VCode> | null, callback?: SetupCallback<VCode>): VCode;
+};
+export const codeBlock: ElementFactory<CodeBlock> & {
+  (
+    first?: CodeOptions | SetupInput<CodeBlock> | null,
+    callback?: SetupCallback<CodeBlock>
+  ): CodeBlock;
+};
+export const vDetail: ElementFactory<VDetail> & {
+  (first?: DetailOptions | SetupInput<VDetail> | null, callback?: SetupCallback<VDetail>): VDetail;
+};
+export const vDetailItem: ElementFactory<VDetailItem> & {
+  (
+    first?: DetailItemOptions | SetupInput<VDetailItem> | null,
+    second?: SetupInput<VDetailItem>
+  ): VDetailItem;
+};
+export const vDigitalBoard: ElementFactory<VDigitalBoard> & {
+  (
+    first?: DigitalBoardOptions | SetupInput<VDigitalBoard> | null,
+    callback?: SetupCallback<VDigitalBoard>
+  ): VDigitalBoard;
+};
+export const vDigitalBoardItem: ElementFactory<VDigitalBoardItem> & {
+  (
+    first?: DigitalBoardItemOptions | SetupInput<VDigitalBoardItem> | null,
+    callback?: SetupCallback<VDigitalBoardItem>
+  ): VDigitalBoardItem;
+};
+export const vGauge: ElementFactory<VGauge> & {
+  (first?: GaugeOptions | SetupInput<VGauge> | null, callback?: SetupCallback<VGauge>): VGauge;
+};
+export const vPagination: ElementFactory<VPagination> & {
+  (
+    first?: PaginationOptions | SetupCallback<VPagination> | null,
+    callback?: SetupCallback<VPagination>
+  ): VPagination;
+};
+export const VPagination: typeof vPagination;
+export const vProgress: ElementFactory<VProgress> & {
+  (
+    first?: ProgressOptions | SetupInput<VProgress> | null,
+    callback?: SetupCallback<VProgress>
+  ): VProgress;
+};
+export const vRingStat: ElementFactory<VRingStat> & {
+  (
+    first?: RingStatOptions | SetupInput<VRingStat> | null,
+    callback?: SetupCallback<VRingStat>
+  ): VRingStat;
+};
 export const vScroll: {
   (first?: ScrollOptions | SetupInput<VScroll> | null, callback?: SetupCallback<VScroll>): VScroll;
 } & ElementFactory<VScroll>;
-export const vSparkline: ElementFactory<VSparkline>;
+export const vSparkline: ElementFactory<VSparkline> & {
+  (
+    first?: SparklineOptions | SetupInput<VSparkline> | null,
+    callback?: SetupCallback<VSparkline>
+  ): VSparkline;
+};
 export interface TreeTableColumn {
   key?: string;
   title?: ChildInput;
@@ -639,8 +947,21 @@ export interface TreeTableColumn {
   width?: string | number;
   [key: string]: any;
 }
+/** `VTreeTable({ … })` 的直接参数。 */
+export interface TreeTableOptions {
+  columns?: Array<string | number | TreeTableColumn>;
+  expandedKeys?: PropValue<Array<string | number>>;
+  lazyLoad?: (
+    node: Record<string, unknown>
+  ) => Array<Record<string, unknown>> | Promise<Array<Record<string, unknown>>>;
+  nodes?: PropValue<Array<Record<string, unknown>>>;
+  rowKey?: (node: Record<string, unknown>, index: number) => string | number;
+  rowSelection?: PropValue<boolean>;
+  [key: string]: unknown;
+}
+
 /** Tree table: flat rows with indent, expand/collapse, selection linkage, lazy load. */
-export class VTreeTable extends HtmlElementNode {
+export interface VTreeTable extends ComponentNode {
   columns(value?: Array<string | number | TreeTableColumn>): this;
   nodes(value?: Array<Record<string, any>>): this;
   rowKey(handler?: (node: Record<string, unknown>, index: number) => string | number): this;
@@ -658,8 +979,16 @@ export class VTreeTable extends HtmlElementNode {
   visibleRowCount(): number;
 }
 
-export const vTreeTable: ElementFactory<VTreeTable>;
-export const vTable: ElementFactory<VTable>;
+export const VTreeTable: { (props?: TreeTableOptions): VTreeTable };
+export const vTreeTable: ElementFactory<VTreeTable> & {
+  (
+    first?: TreeTableOptions | SetupInput<VTreeTable> | null,
+    callback?: SetupCallback<VTreeTable>
+  ): VTreeTable;
+};
+export const vTable: ElementFactory<VTable> & {
+  (first?: TableOptions | SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
+};
 export const vTableWrapper: {
   (
     first?: TableWrapperOptions | SetupCallback<VTableWrapper> | null,
@@ -673,20 +1002,40 @@ export const vTh: ElementFactory<VTh>;
 export const vThead: ElementFactory<VThead>;
 export const vTr: ElementFactory<VTr>;
 export const vTree: ElementFactory<TreeComponent> & {
-  (
-    first?: TreeOptions | SetupCallback<TreeComponent> | null,
-    callback?: SetupCallback<TreeComponent>
-  ): TreeComponent;
+  (first?: TreeOptions | SetupCallback<VTree> | null, callback?: SetupCallback<VTree>): VTree;
 };
 export const vTreeNode: ElementFactory<VTreeNode> & {
   (first?: TreeNodeOptions | SetupCallback<VTreeNode> | null): VTreeNode;
 };
-export const vTimeline: ElementFactory<VTimeline>;
-export const vTimelineItem: ElementFactory<VTimelineItem>;
-export const vTrendCard: ElementFactory<VTrendCard>;
+export const vTimeline: ElementFactory<VTimeline> & {
+  (
+    first?: TimelineOptions | SetupInput<VTimeline> | null,
+    callback?: SetupCallback<VTimeline>
+  ): VTimeline;
+};
+export const vTimelineItem: ElementFactory<VTimelineItem> & {
+  (
+    first?: TimelineItemOptions | SetupInput<VTimelineItem> | null,
+    callback?: SetupCallback<VTimelineItem>
+  ): VTimelineItem;
+};
+export const vTrendCard: ElementFactory<VTrendCard> & {
+  (
+    first?: TrendCardOptions | SetupInput<VTrendCard> | null,
+    callback?: SetupCallback<VTrendCard>
+  ): VTrendCard;
+};
+
+/** `vImagePreview({ … })` 的可派发键（定义函数无 props）。 */
+export interface ImagePreviewOptions {
+  alt?: PropValue<string>;
+  src?: PropValue<string | null>;
+  thumb?: PropValue<string | null>;
+  [key: string]: unknown;
+}
 
 /** Image lightbox with lazy large image, zoom / pan and ESC close. */
-export class VImagePreview extends HtmlElementNode {
+export interface VImagePreview extends ComponentNode {
   src(): string | null;
   src(value: string | null): VImagePreview;
   thumb(): string | null;
@@ -702,17 +1051,25 @@ export class VImagePreview extends HtmlElementNode {
   toggle(): VImagePreview;
 }
 
+export const VImagePreview: { (): VImagePreview };
+
 export const vImagePreview: ElementFactory<VImagePreview> & {
   (
-    first?: SetupInput<VImagePreview> | null,
+    first?: ImagePreviewOptions | SetupInput<VImagePreview> | null,
     callback?: SetupCallback<VImagePreview>
   ): VImagePreview;
 };
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface DataDisplayParentShortcuts {
-  vAvatar(first?: SetupInput<VAvatar> | null, callback?: SetupCallback<VAvatar>): VAvatar;
-  vBadge(first?: SetupInput<VBadge> | null, callback?: SetupCallback<VBadge>): VBadge;
+  vAvatar(
+    first?: AvatarOptions | SetupInput<VAvatar> | null,
+    callback?: SetupCallback<VAvatar>
+  ): VAvatar;
+  vBadge(
+    first?: BadgeOptions | SetupInput<VBadge> | null,
+    callback?: SetupCallback<VBadge>
+  ): VBadge;
   vCard(first?: SetupInput<VCard> | null, callback?: SetupCallback<VCard>): VCard;
   vCardHeader(
     first?: SetupInput<VCardHeader> | null,
@@ -723,59 +1080,80 @@ export interface DataDisplayParentShortcuts {
     first?: SetupInput<VCardFooter> | null,
     callback?: SetupCallback<VCardFooter>
   ): VCardFooter;
-  vCarousel(first?: SetupInput<VCarousel> | null, callback?: SetupCallback<VCarousel>): VCarousel;
-  vCode(first?: SetupInput<VCode> | null, callback?: SetupCallback<VCode>): VCode;
-  vDetail(first?: SetupInput<VDetail> | null, callback?: SetupCallback<VDetail>): VDetail;
-  vDetailItem(setup?: SetupInput<VDetailItem> | null, value?: ChildInput): VDetailItem;
+  vCarousel(
+    first?: CarouselOptions | SetupInput<VCarousel> | null,
+    callback?: SetupCallback<VCarousel>
+  ): VCarousel;
+  vCode(first?: CodeOptions | SetupInput<VCode> | null, callback?: SetupCallback<VCode>): VCode;
+  vDetail(
+    first?: DetailOptions | SetupInput<VDetail> | null,
+    callback?: SetupCallback<VDetail>
+  ): VDetail;
+  vDetailItem(
+    first?: DetailItemOptions | SetupInput<VDetailItem> | null,
+    second?: SetupInput<VDetailItem>
+  ): VDetailItem;
   vDigitalBoard(
-    first?: SetupInput<VDigitalBoard> | null,
+    first?: DigitalBoardOptions | SetupInput<VDigitalBoard> | null,
     callback?: SetupCallback<VDigitalBoard>
   ): VDigitalBoard;
   vDigitalBoardItem(
-    first?: SetupInput<VDigitalBoardItem> | null,
+    first?: DigitalBoardItemOptions | SetupInput<VDigitalBoardItem> | null,
     callback?: SetupCallback<VDigitalBoardItem>
   ): VDigitalBoardItem;
-  vGauge(first?: SetupInput<VGauge> | null, callback?: SetupCallback<VGauge>): VGauge;
+  vGauge(
+    first?: GaugeOptions | SetupInput<VGauge> | null,
+    callback?: SetupCallback<VGauge>
+  ): VGauge;
   vImagePreview(
-    first?: SetupInput<VImagePreview> | null,
+    first?: ImagePreviewOptions | SetupInput<VImagePreview> | null,
     callback?: SetupCallback<VImagePreview>
   ): VImagePreview;
   vPagination(
-    first?: SetupInput<PaginationComponent> | null,
-    callback?: SetupCallback<PaginationComponent>
-  ): PaginationComponent;
-  vProgress(first?: SetupInput<VProgress> | null, callback?: SetupCallback<VProgress>): VProgress;
-  vRingStat(first?: SetupInput<VRingStat> | null, callback?: SetupCallback<VRingStat>): VRingStat;
+    first?: PaginationOptions | SetupInput<VPagination> | null,
+    callback?: SetupCallback<VPagination>
+  ): VPagination;
+  vProgress(
+    first?: ProgressOptions | SetupInput<VProgress> | null,
+    callback?: SetupCallback<VProgress>
+  ): VProgress;
+  vRingStat(
+    first?: RingStatOptions | SetupInput<VRingStat> | null,
+    callback?: SetupCallback<VRingStat>
+  ): VRingStat;
   vScroll(
     first?: ScrollOptions | SetupInput<VScroll> | null,
     callback?: SetupCallback<VScroll>
   ): VScroll;
   vSparkline(
-    first?: SetupInput<VSparkline> | null,
+    first?: SparklineOptions | SetupInput<VSparkline> | null,
     callback?: SetupCallback<VSparkline>
   ): VSparkline;
   vTreeTable(
-    first?: SetupInput<VTreeTable> | null,
+    first?: TreeTableOptions | SetupInput<VTreeTable> | null,
     callback?: SetupCallback<VTreeTable>
   ): VTreeTable;
-  vTable(first?: SetupInput<VTable> | null, callback?: SetupCallback<VTable>): VTable;
+  vTable(
+    first?: TableOptions | SetupInput<VTable> | null,
+    callback?: SetupCallback<VTable>
+  ): VTable;
   vTableWrapper(
     first?: TableWrapperOptions | SetupInput<VTableWrapper> | null,
     callback?: SetupCallback<VTableWrapper>
   ): VTableWrapper;
-  vTimeline(first?: SetupInput<VTimeline> | null, callback?: SetupCallback<VTimeline>): VTimeline;
+  vTimeline(
+    first?: TimelineOptions | SetupInput<VTimeline> | null,
+    callback?: SetupCallback<VTimeline>
+  ): VTimeline;
   vTimelineItem(
-    first?: SetupInput<VTimelineItem> | null,
+    first?: TimelineItemOptions | SetupInput<VTimelineItem> | null,
     callback?: SetupCallback<VTimelineItem>
   ): VTimelineItem;
   vTrendCard(
-    first?: SetupInput<VTrendCard> | null,
+    first?: TrendCardOptions | SetupInput<VTrendCard> | null,
     callback?: SetupCallback<VTrendCard>
   ): VTrendCard;
-  vTree(
-    first?: SetupInput<TreeComponent> | null,
-    callback?: SetupCallback<TreeComponent>
-  ): TreeComponent;
+  vTree(first?: TreeOptions | SetupInput<VTree> | null, callback?: SetupCallback<VTree>): VTree;
 }
 
 export type { ElementOptions, ViewNode };

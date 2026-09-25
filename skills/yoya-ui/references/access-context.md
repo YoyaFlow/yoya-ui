@@ -93,7 +93,7 @@ renderToString(page, { state, access: createAccess({ permissions, roles }) });
 
 ## 跨组件共享：provide / inject
 
-**默认就用这一对。** 声明写在构建这一帧的代码里（setup 回调、组件 `render()`、页面工厂），后代直接读，不需要包一层闭包：
+**默认就用这一对。** 声明写在构建这一帧的代码里（setup 回调、组件定义函数、页面工厂），后代直接读，不需要包一层闭包：
 
 ```js
 import { inject, provide, div, vCard } from '@yoyaflow/yoya-ui';

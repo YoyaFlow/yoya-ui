@@ -12,15 +12,6 @@ export function StatusDot(props) {
   });
 }
 
-/** 形态 B：对象组件（只有 render，没有命令 / 状态）。 */
-export function StatusPill(props) {
-  return {
-    render() {
-      return span((pill) => pill.className('status-pill').child(vText(props.label)));
-    }
-  };
-}
-
 /** vNode 组件：setup 只 return 视图、不用 api（带命令方法的本轮不编）。 */
 export function StatusTag(props) {
   return vNode(() => span((tag) => tag.className('status-tag').child(vText(props.label))));

@@ -91,7 +91,7 @@ export function vConfirm(options = {}) {
 
     dialog.bindTo(document.body);
     dialog.open(true);
-    const trap = createFocusTrap(dialog.renderDom(), { onEscape: () => finish(false) });
+    const trap = createFocusTrap(dialog, { onEscape: () => finish(false) });
     trap.activate();
   });
 }

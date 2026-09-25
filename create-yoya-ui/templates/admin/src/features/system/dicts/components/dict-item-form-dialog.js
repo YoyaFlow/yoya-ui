@@ -1,4 +1,4 @@
-import { vDialog } from '@yoyaflow/yoya-ui';
+import { vDialog, vNode } from '@yoyaflow/yoya-ui';
 import { fieldValue } from '../../../../shared/state.rows.js';
 import { statusOptions } from '../utils/options.js';
 
@@ -74,13 +74,17 @@ export function DictItemFormDialog({ onSubmit }) {
     dialog.close();
   }
 
-  return {
-    render() {
-      return dialog;
-    },
-    open,
-    close() {
+  // 有对外命令方法（open / close）→ 形态 B：命令写在 api 上，视图就是自己的弹窗节点
+  return vNode((api) => {
+    api.open = (item = null) => {
+      open(item);
+      return api;
+    };
+    api.close = () => {
       dialog.close();
-    }
-  };
+      return api;
+    };
+
+    return dialog;
+  });
 }

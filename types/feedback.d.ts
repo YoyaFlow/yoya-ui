@@ -1,7 +1,9 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput,
   ViewNode
@@ -13,21 +15,41 @@ export type MessagePlacement =
   'top' | 'top-left' | 'top-right' | 'bottom' | 'bottom-left' | 'bottom-right';
 
 export interface MessageOptions {
-  duration?: number;
-  closable?: boolean;
-  type?: MessageType;
-  [key: string]: any;
+  duration?: PropValue<number>;
+  closable?: PropValue<boolean>;
+  type?: PropValue<MessageType>;
+  [key: string]: unknown;
+}
+
+/** `VDialog({ … })` 的直接参数。 */
+export interface DialogOptions {
+  children?: ChildInput;
+  closable?: PropValue<boolean>;
+  content?: ChildInput;
+  onClose?: (dialog: VDialog) => void;
+  open?: PropValue<boolean>;
+  [key: string]: unknown;
 }
 
 /** Modal dialog. */
-export class VDialog extends HtmlElementNode {
+export interface VDialog extends ComponentNode {
   content(value: ChildInput): VDialog;
   open(value?: boolean): VDialog;
   close(): VDialog;
 }
 
+export const VDialog: { (props?: DialogOptions): VDialog };
+
+/** `VMessage({ … })` 的直接参数。 */
+export interface MessageComponentOptions extends MessageOptions {
+  children?: ChildInput;
+  content?: ChildInput;
+  countdown?: PropValue<number>;
+  text?: ChildInput;
+}
+
 /** Single toast/message entry. */
-export class VMessage extends HtmlElementNode {
+export interface VMessage extends ComponentNode {
   content(content: ChildInput): VMessage;
   type(): MessageType;
   type(value: MessageType): VMessage;
@@ -37,8 +59,17 @@ export class VMessage extends HtmlElementNode {
   close(): VMessage;
 }
 
+export const VMessage: { (props?: MessageComponentOptions): VMessage };
+
+/** `VMessageContainer({ … })` 的直接参数。 */
+export interface MessageContainerOptions {
+  inline?: PropValue<boolean>;
+  placement?: PropValue<MessagePlacement>;
+  [key: string]: unknown;
+}
+
 /** Message container that stacks messages. */
-export class VMessageContainer extends HtmlElementNode {
+export interface VMessageContainer extends ComponentNode {
   placement(): MessagePlacement;
   placement(value: MessagePlacement): VMessageContainer;
   inline(value?: boolean): VMessageContainer;
@@ -50,6 +81,8 @@ export class VMessageContainer extends HtmlElementNode {
   close(id: unknown): VMessageContainer;
   clear(): VMessageContainer;
 }
+
+export const VMessageContainer: { (props?: MessageContainerOptions): VMessageContainer };
 
 /** Owns an explicitly bound message container and its lifecycle. */
 export class VMessageManager extends ViewNode {
@@ -67,8 +100,19 @@ export class VMessageManager extends ViewNode {
   clear(): VMessageManager;
 }
 
+/** `VTooltip({ … })` 的直接参数。 */
+export interface TooltipOptions {
+  children?: ChildInput;
+  content?: ChildInput;
+  open?: PropValue<boolean>;
+  placement?: PropValue<string>;
+  target?: SetupInput<HtmlElementNode>;
+  trigger?: PropValue<'hover' | 'focus' | 'click' | 'manual'>;
+  [key: string]: unknown;
+}
+
 /** Tooltip anchored to a target. */
-export class VTooltip extends HtmlElementNode {
+export interface VTooltip extends ComponentNode {
   target(setup: SetupInput<HtmlElementNode>): VTooltip;
   content(setup: SetupInput<HtmlElementNode>): VTooltip;
   placement(): string;
@@ -79,6 +123,8 @@ export class VTooltip extends HtmlElementNode {
   close(): VTooltip;
   toggle(): VTooltip;
 }
+
+export const VTooltip: { (props?: TooltipOptions): VTooltip };
 
 /** Default toast singleton. */
 export const toast: {
@@ -106,10 +152,27 @@ export interface ConfirmOptions {
 /** 命令式确认弹窗：resolves true on confirm, false on cancel / danger. */
 export function vConfirm(options?: ConfirmOptions): Promise<boolean>;
 
-export const vDialog: ElementFactory<VDialog>;
-export const vMessage: ElementFactory<VMessage>;
-export const vMessageContainer: ElementFactory<VMessageContainer>;
-export const vTooltip: ElementFactory<VTooltip>;
+export const vDialog: ElementFactory<VDialog> & {
+  (first?: DialogOptions | SetupInput<VDialog> | null, callback?: SetupCallback<VDialog>): VDialog;
+};
+export const vMessage: ElementFactory<VMessage> & {
+  (
+    first?: MessageComponentOptions | SetupInput<VMessage> | null,
+    callback?: SetupCallback<VMessage>
+  ): VMessage;
+};
+export const vMessageContainer: ElementFactory<VMessageContainer> & {
+  (
+    first?: MessageContainerOptions | SetupInput<VMessageContainer> | null,
+    callback?: SetupCallback<VMessageContainer>
+  ): VMessageContainer;
+};
+export const vTooltip: ElementFactory<VTooltip> & {
+  (
+    first?: TooltipOptions | SetupInput<VTooltip> | null,
+    callback?: SetupCallback<VTooltip>
+  ): VTooltip;
+};
 export const vMessageManager: ElementFactory<VMessageManager> & {
   (
     first?:
@@ -120,13 +183,22 @@ export const vMessageManager: ElementFactory<VMessageManager> & {
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface FeedbackParentShortcuts {
-  vDialog(first?: SetupInput<VDialog> | null, callback?: SetupCallback<VDialog>): VDialog;
-  vMessage(first?: SetupInput<VMessage> | null, callback?: SetupCallback<VMessage>): VMessage;
+  vDialog(
+    first?: DialogOptions | SetupInput<VDialog> | null,
+    callback?: SetupCallback<VDialog>
+  ): VDialog;
+  vMessage(
+    first?: MessageComponentOptions | SetupInput<VMessage> | null,
+    callback?: SetupCallback<VMessage>
+  ): VMessage;
   vMessageContainer(
-    first?: SetupInput<VMessageContainer> | null,
+    first?: MessageContainerOptions | SetupInput<VMessageContainer> | null,
     callback?: SetupCallback<VMessageContainer>
   ): VMessageContainer;
-  vTooltip(first?: SetupInput<VTooltip> | null, callback?: SetupCallback<VTooltip>): VTooltip;
+  vTooltip(
+    first?: TooltipOptions | SetupInput<VTooltip> | null,
+    callback?: SetupCallback<VTooltip>
+  ): VTooltip;
 }
 
 export type { ElementOptions };

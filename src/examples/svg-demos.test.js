@@ -1,12 +1,32 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it } from 'vitest';
-import { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText } from '../index.js';
+import {
+  bindWindowEvent,
+  computed,
+  div,
+  ref,
+  svg,
+  svgs,
+  SvgElementNode,
+  vNode,
+  vText
+} from '../index.js';
 
 /**
  * 三个单文件 SVG 演示是自包含 HTML：内联模块从 CDN 引库，因此测试抽出台本，
  * 注入本仓库的库符号后执行，验证「能启动 + 关键交互生效」。
  */
-const demoLibrary = { bindWindowEvent, computed, div, ref, svg, svgs, SvgElementNode, vText };
+const demoLibrary = {
+  bindWindowEvent,
+  computed,
+  div,
+  ref,
+  svg,
+  svgs,
+  SvgElementNode,
+  vNode,
+  vText
+};
 const demoLibraryNames = Object.keys(demoLibrary);
 
 function bootDemo(file) {

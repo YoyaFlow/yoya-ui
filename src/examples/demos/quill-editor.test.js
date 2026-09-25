@@ -33,14 +33,29 @@ vi.mock('quill', () => ({ default: FakeQuill }));
 
 import { QuillEditorExample } from './quill-editor.js';
 
+/** 集成在 `whenMount` 里初始化：先落地再断言（挂到 body，销毁时一并摘掉）。 */
+function mountDemo(demo) {
+  demo.bindTo(document.body);
+  return document.body.lastElementChild;
+}
+
 describe('Quill editor interop demo', () => {
   beforeEach(() => {
     quillInstances.length = 0;
   });
 
+  it('does not create the editor before the host lands', () => {
+    const demo = QuillEditorExample();
+
+    demo.renderDom();
+
+    expect(quillInstances).toHaveLength(0);
+    demo.destroy();
+  });
+
   it('mounts Quill on the rendered container with a rich toolbar', () => {
     const demo = QuillEditorExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
     const editorEl = el.querySelector('[data-quill-editor]');
     const toolbar = quillInstances[0].options.modules.toolbar;
     const flat = toolbar.flat(Infinity).map((item) =>
@@ -57,35 +72,36 @@ describe('Quill editor interop demo', () => {
     expect(flat).toContain('image');
     expect(flat.some((item) => item.includes('align'))).toBe(true);
     expect(flat.some((item) => item.includes('indent'))).toBe(true);
-    el.remove();
+    demo.destroy();
   });
 
   it('exposes html and text from the editor instance', () => {
     const demo = QuillEditorExample();
-    const el = demo.renderDom();
+    mountDemo(demo);
     quillInstances[0].htmlValue = '<p>updated</p>';
     quillInstances[0].textValue = 'updated';
 
     expect(demo.html()).toBe('<p>updated</p>');
     expect(demo.text()).toBe('updated');
-    el.remove();
+    demo.destroy();
   });
 
   it('does not re-initialize Quill when renderDom runs again', () => {
     const demo = QuillEditorExample();
-    const node = demo;
+    mountDemo(demo);
 
-    node.renderDom();
-    node.renderDom();
+    demo.renderDom();
+    demo.renderDom();
 
     expect(quillInstances).toHaveLength(1);
+    demo.destroy();
   });
 
   it('adds the standalone quill-dark class when the docs mode is dark', () => {
     const root = document.documentElement;
     root.dataset.yoyaMode = 'dark';
     const demo = QuillEditorExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     try {
       expect(el.classList.contains('quill-dark')).toBe(true);
@@ -93,14 +109,12 @@ describe('Quill editor interop demo', () => {
     } finally {
       demo.destroy();
       delete root.dataset.yoyaMode;
-      el.remove();
     }
   });
 
   it('clears the editor reference after destroy', () => {
     const demo = QuillEditorExample();
-    const el = demo.renderDom();
-    document.body.appendChild(el);
+    const el = mountDemo(demo);
 
     demo.destroy();
 

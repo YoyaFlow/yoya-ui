@@ -73,25 +73,19 @@ export function RoleListPage() {
     }
   }
 
-  return {
-    render() {
-      return vstack({ gap: '16px' }, (stack) => {
-        stack.h2('角色管理');
-        stack.vCard((card) => {
-          card.vCardHeader('角色列表');
-          card.vCardBody((body) => {
-            body.vstack({ gap: '12px' }, (content) => {
-              content.child(toolbar);
-              content.child(table);
-              content.child(pagination);
-            });
-          });
+  // 页面也是组件：没有对外命令方法 → 形态 A 薄工厂，直接返回视图节点
+  return vstack({ gap: '16px' }, (stack) => {
+    stack.h2('角色管理');
+    stack.vCard((card) => {
+      card.vCardHeader('角色列表');
+      card.vCardBody((body) => {
+        body.vstack({ gap: '12px' }, (content) => {
+          content.child(toolbar);
+          content.child(table);
+          content.child(pagination);
         });
-        stack.child(dialog);
       });
-    },
-    refresh() {
-      return load();
-    }
-  };
+    });
+    stack.child(dialog);
+  });
 }

@@ -98,40 +98,28 @@ function SliderVerticalExample() {
 function SliderBasicDemo() {
   const content = SliderBasicExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('vSlider 提供 min/max/step 约束，change 回调返回当前数值。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('vSlider 提供 min/max/step 约束，change 回调返回当前数值。');
+    stack.child(content);
+  });
 }
 
 function SliderStateDemo() {
   const content = SliderStateExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('动态切换禁用状态和数值标签显示。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('动态切换禁用状态和数值标签显示。');
+    stack.child(content);
+  });
 }
 
 function SliderVerticalDemo() {
   const content = SliderVerticalExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('设置 vertical 后滑动条竖向排列，适合音量、温度等纵向取值场景。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('设置 vertical 后滑动条竖向排列，适合音量、温度等纵向取值场景。');
+    stack.child(content);
+  });
 }
 
 const sliderDemos = [
@@ -202,27 +190,19 @@ function CascaderStateExample() {
 function CascaderBasicDemo() {
   const content = CascaderBasicExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('vCascader 按层级逐级选择，选中路径以数组形式返回。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('vCascader 按层级逐级选择，选中路径以数组形式返回。');
+    stack.child(content);
+  });
 }
 
 function CascaderStateDemo() {
   const content = CascaderStateExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('通过 value 数组回填选中路径，并支持禁用整个控件。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('通过 value 数组回填选中路径，并支持禁用整个控件。');
+    stack.child(content);
+  });
 }
 
 const cascaderDemos = [
@@ -276,26 +256,18 @@ function TagsPresetExample() {
 function TagsBasicDemo() {
   const content = TagsBasicExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('输入后回车或逗号添加标签，change 回调返回标签数组。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('输入后回车或逗号添加标签，change 回调返回标签数组。');
+    stack.child(content);
+  });
 }
 
 function TagsPresetDemo() {
   const content = TagsPresetExample();
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.child(content);
-      });
-    }
-  };
+  return vstack((body) => {
+    body.child(content);
+  });
 }
 
 const tagsDemos = [
@@ -355,26 +327,18 @@ function AutocompleteFilterExample() {
 function AutocompleteBasicDemo() {
   const content = AutocompleteBasicExample();
 
-  return {
-    render() {
-      return vstack((stack) => {
-        stack.p('输入时从 source 过滤建议，键盘上下选择、回车或鼠标点选确认。');
-        stack.child(content);
-      });
-    }
-  };
+  return vstack((stack) => {
+    stack.p('输入时从 source 过滤建议，键盘上下选择、回车或鼠标点选确认。');
+    stack.child(content);
+  });
 }
 
 function AutocompleteFilterDemo() {
   const content = AutocompleteFilterExample();
 
-  return {
-    render() {
-      return vstack((body) => {
-        body.child(content);
-      });
-    }
-  };
+  return vstack((body) => {
+    body.child(content);
+  });
 }
 
 const autocompleteDemos = [
@@ -407,77 +371,69 @@ function createDemoSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-form-demo');
-        example.attr('data-form-demo', demo.id);
-        example.h3(demo.title);
-        example.div((live) => {
-          live.className('components-form-demo-live');
-          live.child(
-            vCard((card) => {
-              card.vCardBody((body) => body.child(liveDemo));
-            })
-          );
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-form-demo');
+    example.attr('data-form-demo', demo.id);
+    example.h3(demo.title);
+    example.div((live) => {
+      live.className('components-form-demo-live');
+      live.child(
+        vCard((card) => {
+          card.vCardBody((body) => body.child(liveDemo));
+        })
+      );
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function createDocsPage({ apiRows, demos, docsKey, heading, intro, routeKey }) {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page');
-        page.attr('data-form-docs', docsKey);
-        page.attr('data-component-route-item', routeKey);
-        page.h1(heading);
-        page.p(intro);
+  return section((page) => {
+    page.className('components-route-page');
+    page.attr('data-form-docs', docsKey);
+    page.attr('data-component-route-item', routeKey);
+    page.h1(heading);
+    page.p(intro);
 
-        page.section((usage) => {
-          usage.attr('data-form-usage', docsKey);
-          usage.h2('何时使用');
-          usage.ul((list) => {
-            [
-              '需要让用户在一组连续或离散取值中选择时。',
-              '选项存在多级层级关系、需要逐级定位时。',
-              '需要让用户自由追加多个短文本条目时。',
-              '需要在输入过程中即时给出可选建议时。'
-            ].forEach((item) => list.li(item));
-          });
-        });
-
-        page.section((api) => {
-          api.className('components-form-api');
-          api.attr('data-form-api', docsKey);
-          api.h2('常用 API');
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
-            });
-            table.tbody((body) => {
-              apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        demos.forEach((demo) => page.child(createDemoSection(demo)));
+    page.section((usage) => {
+      usage.attr('data-form-usage', docsKey);
+      usage.h2('何时使用');
+      usage.ul((list) => {
+        [
+          '需要让用户在一组连续或离散取值中选择时。',
+          '选项存在多级层级关系、需要逐级定位时。',
+          '需要让用户自由追加多个短文本条目时。',
+          '需要在输入过程中即时给出可选建议时。'
+        ].forEach((item) => list.li(item));
       });
-    }
-  };
+    });
+
+    page.section((api) => {
+      api.className('components-form-api');
+      api.attr('data-form-api', docsKey);
+      api.h2('常用 API');
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
+          });
+        });
+        table.tbody((body) => {
+          apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
+            });
+          });
+        });
+      });
+    });
+
+    demos.forEach((demo) => page.child(createDemoSection(demo)));
+  });
 }
 
 export function SliderDocumentationPage() {

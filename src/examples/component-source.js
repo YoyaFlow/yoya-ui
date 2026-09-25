@@ -49,25 +49,19 @@ export function ComponentSource({
   // source 用于展示真实文件的原文（如 "?raw" 导入的适配器源码）：不补 import、不补 export。
   const fullSource = source ?? `${importBlock}${extraBlock}export ${functionSource}`;
 
-  return {
-    source() {
-      return fullSource;
-    },
-    render() {
-      return aside((panel) => {
-        panel.className('source-panel');
-        panel.style('width', '100%');
-        panel.h2(title);
-        panel.pre((pre) => {
-          pre.className('source-code');
-          pre.code((code) => {
-            code.attr('data-source-example', title);
-            code.child(fullSource);
-          });
-        });
+  // 形态 A 薄工厂（票 07：对象组件退场）：源码面板就是一段结构，没有状态 / 命令 / 钩子。
+  return aside((panel) => {
+    panel.className('source-panel');
+    panel.style('width', '100%');
+    panel.h2(title);
+    panel.pre((pre) => {
+      pre.className('source-code');
+      pre.code((code) => {
+        code.attr('data-source-example', title);
+        code.child(fullSource);
       });
-    }
-  };
+    });
+  });
 }
 
 function dedentFunctionSource(source) {

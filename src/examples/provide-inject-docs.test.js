@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ProvideInjectDocumentationPage } from './provide-inject-docs.js';
 
 function mountPage() {
-  const view = ProvideInjectDocumentationPage().render();
+  const view = ProvideInjectDocumentationPage();
   const element = view.renderDom();
   return { element, view };
 }

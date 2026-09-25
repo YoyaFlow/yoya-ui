@@ -12,6 +12,7 @@ import {
   svg,
   vBadge,
   vCard,
+  vNode,
   vText
 } from '../index.js';
 
@@ -201,33 +202,27 @@ describe('ViewNode core', () => {
     expect(root.renderDom().innerHTML).toBe('before<p>after</p>');
   });
 
-  it('supports component objects with render and public methods', () => {
-    let renderCalls = 0;
-    function StatusPanel() {
-      const message = vText('Waiting');
-      return {
-        setStatus(value) {
+  it('supports definition-function components with public commands', () => {
+    const message = vText('Waiting');
+    const StatusPanel = () =>
+      vNode((api) => {
+        api.setStatus = (value) => {
           message.textContent(value);
-        },
-        render() {
-          renderCalls += 1;
-          return div((panel) => panel.className('status-panel').child(message));
-        }
-      };
-    }
+          return api;
+        };
+        return div((panel) => panel.className('status-panel').child(message));
+      });
 
     const panel = StatusPanel();
     const root = div().child(panel);
     panel.setStatus('Ready');
 
-    expect(renderCalls).toBe(0);
     expect(root.renderDom().textContent).toBe('Ready');
     expect(root.toHTML()).toBe('<div><div class="status-panel">Ready</div></div>');
-    expect(renderCalls).toBe(1);
   });
 
-  it('rejects component objects whose render does not return a ViewNode', () => {
-    const root = div().child({ render: () => ({}) });
+  it('rejects a definition whose render does not return a ViewNode', () => {
+    const root = div().child(() => ({}));
 
     expect(() => root.renderDom()).toThrow('Component render must return a ViewNode');
   });
@@ -241,10 +236,10 @@ describe('ViewNode core', () => {
   });
 
   it('reports which component and parent produced an invalid render result', () => {
-    const root = div().child({ render: () => ({}) });
+    const root = div().child(() => ({}));
 
     expect(() => root.renderDom()).toThrow(
-      /render\(\) of component object.*returned Object instance.*added as a child of HtmlElementNode <div>.*attach it with parent\.child/
+      /render\(\) of function .*returned Object instance.*added as a child of HtmlElementNode <div>/
     );
   });
 

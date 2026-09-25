@@ -37,6 +37,9 @@ const MODE_ICONS = {
   system: MonitorOutlined
 };
 
+/** 开关自己给图标的尺寸（皮肤里的圆钮是 34px，图标 16px 保持轻盈）。 */
+const ICON_SIZE = { height: '16px', width: '16px' };
+
 /** 模式归一：字符串 = 内置模式；对象形按 `ThemeModeEntry` 原样用。 */
 function normalizeModes(value) {
   return value.map((entry) =>
@@ -61,7 +64,9 @@ export function VThemeModeSwitch({ modes = DEFAULT_MODES, persist = true, ...res
   const buildButtons = () => {
     buttons.value = modeList.value.map(({ mode, label, icon }) => {
       const Icon = icon || MODE_ICONS[mode] || null;
-      const button = vButton({ label: Icon ? Icon() : label });
+      // 图标按开关自己的尺寸来：库内图标的默认尺寸是行内写的（24px），不显式收一次
+      // 就会盖过皮肤里 `[vn~='VThemeModeSwitch'] svg { 18px }`（票 16 第 97 条的图标默认尺寸）
+      const button = vButton({ label: Icon ? Icon().styles(ICON_SIZE) : label });
 
       button.attr({
         'aria-label': label,

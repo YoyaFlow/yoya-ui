@@ -1,9 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import * as yoyaRouter from '../../src/yoya.router.js';
+import * as yoyaApi from '../../src/yoya.api.js';
+import * as yoyaCore from '../../src/yoya.core.js';
+import * as yoyaUi from '../../src/index.js';
 import '../../create-yoya-ui/templates/admin/src/api/domain.api.js';
 import '../../create-yoya-ui/templates/admin/src/features/system/members/api/member.mock.js';
 import '../../create-yoya-ui/templates/admin/src/features/system/dicts/api/dict.mock.js';
@@ -35,6 +39,7 @@ import { AdminShell } from '../../create-yoya-ui/templates/admin/src/shell/compo
 // 脚手架模板的「ref 口径」校验：生成物把视图字段放 ref、列表按 key 合并行模型，
 // 页面不再用 subscribe + refresh() 手动驱动视图。
 const ROOT = resolve(import.meta.dirname, '../..');
+const TEMPLATES = join(ROOT, 'create-yoya-ui/templates');
 const TEMPLATE = join(ROOT, 'create-yoya-ui/templates/admin');
 const SCAFFOLDER = join(ROOT, 'create-yoya-ui/bin/create-yoya-ui.js');
 const read = (relative) => readFileSync(join(TEMPLATE, relative), 'utf8');
@@ -56,7 +61,100 @@ const featureFile = (module, file) => `src/features/system/${module}/${file}`;
 const stateFile = (feature) => featureFile(feature.key, `api/${feature.name}.state.js`);
 const pageFile = (feature) => featureFile(feature.key, `pages/${feature.name}-list-page.js`);
 
+function collectJsFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === 'node_modules') {
+      return [];
+    }
+
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return collectJsFiles(full);
+    }
+
+    return entry.name.endsWith('.js') && !entry.name.endsWith('.test.js') ? [full] : [];
+  });
+}
+
+/** 子入口 → 本仓库入口模块（`@yoyaflow/yoya-ui/core` → `src/yoya.core.js`）。 */
+const ENTRY_MODULES = new Map([
+  ['@yoyaflow/yoya-ui', yoyaUi],
+  ['@yoyaflow/yoya-ui/core', yoyaCore],
+  ['@yoyaflow/yoya-ui/api', yoyaApi],
+  ['@yoyaflow/yoya-ui/router', yoyaRouter]
+]);
+
 describe('create-yoya-ui admin template', () => {
+  it('maps yoya-ui sub-entries to local sources so templates run inside the repo', () => {
+    const failures = [];
+
+    collectJsFiles(TEMPLATES).forEach((file) => {
+      const relative = file.slice(TEMPLATES.length + 1).replace(/\\/g, '/');
+      const source = readFileSync(file, 'utf8');
+      const used = new Set(
+        [...source.matchAll(/from\s*'(@yoyaflow\/yoya-ui\/[^']+)'/g)]
+          .map((match) => match[1])
+          .filter((specifier) => !specifier.endsWith('.css'))
+      );
+
+      if (used.size === 0) {
+        return;
+      }
+
+      // 模板的 vite 配置：仓库内跑时把子入口指到 `src/yoya.<子入口>.js`
+      // （少了别名就是 `Failed to resolve import "@yoyaflow/yoya-ui/api"`，模板直接白屏）
+      const templateDir = file.slice(0, file.indexOf('\\src\\'));
+      const config = readFileSync(join(templateDir, 'vite.config.js'), 'utf8');
+
+      if (!/find:\s*\/\^@yoyaflow\\\/yoya-ui\\\/\(\[\\w\.-\]\+\)\$\//.test(config)) {
+        failures.push(
+          `${relative}: 模板用了子入口 ${[...used].join(' / ')}，但 ${templateDir.replace(`${TEMPLATES}\\`, '')}/vite.config.js 没有子入口本地别名`
+        );
+      }
+    });
+
+    expect(failures.join('\n')).toBe('');
+  });
+
+  it('keeps every template import backed by a real export', () => {
+    const failures = [];
+
+    collectJsFiles(TEMPLATES).forEach((file) => {
+      const relative = file.slice(TEMPLATES.length + 1).replace(/\\/g, '/');
+      const source = readFileSync(file, 'utf8');
+      const pattern = /import\s*\{([^}]*)\}\s*from\s*'(@yoyaflow\/yoya-ui[^']*)'/g;
+
+      for (const match of source.matchAll(pattern)) {
+        const specifier = match[2];
+        const entry = ENTRY_MODULES.get(specifier);
+
+        if (!entry) {
+          failures.push(
+            `${relative}: 子入口 ${specifier} 未纳入自检映射（模板导入必须指向真实导出）`
+          );
+          continue;
+        }
+
+        match[1]
+          .split(',')
+          .map((name) =>
+            name
+              .trim()
+              .split(/\s+as\s+/)[0]
+              .trim()
+          )
+          .filter(Boolean)
+          .forEach((name) => {
+            if (!(name in entry)) {
+              failures.push(`${relative}: 导入了 ${specifier} 里不存在的 ${name}`);
+            }
+          });
+      }
+    });
+
+    expect(failures.join('\n')).toBe('');
+  });
+
   const workdir = mkdtempSync(join(tmpdir(), 'yoya-scaffold-'));
   const generated = join(workdir, 'admin-app');
 
@@ -119,6 +217,24 @@ describe('create-yoya-ui admin template', () => {
       );
     }
   });
+
+  it('keeps every template component in shape A or B instead of object components', () => {
+    const failures = [];
+
+    collectJsFiles(join(TEMPLATE, 'src')).forEach((file) => {
+      const source = readFileSync(file, 'utf8');
+
+      // 对象组件（`return { render(), … }`）已退场：模板里出现就是教错写法
+      if (/return \{\s*\n\s*render\(\) \{/.test(source)) {
+        failures.push(
+          `${file.slice(TEMPLATE.length + 1)}: 不要再写对象组件——没有命令方法就返回 ViewNode（形态 A），` +
+            '有命令方法就写 vNode((api) => 视图)（形态 B）'
+        );
+      }
+    });
+
+    expect(failures.join('\n')).toBe('');
+  });
 });
 
 describe('generated admin page state', () => {
@@ -173,7 +289,7 @@ describe('generated admin page state', () => {
   it('drives shell navigation from signals', async () => {
     const state = new ShellState();
     await state.load();
-    const element = AdminShell({ state }).render().renderDom();
+    const element = AdminShell({ state }).renderDom();
 
     expect(state.menus.value.length).toBeGreaterThan(0);
     expect(element.textContent).toContain('工作台');
@@ -185,6 +301,24 @@ describe('generated admin page state', () => {
     // 侧栏是读信号的区域：当前模块 / 路径变化后自行重建
     expect(element.textContent).toContain('成员管理');
     expect(element.textContent).toContain('角色管理');
+  });
+
+  it('draws the dashboard charts through the adapter into the view tree', () => {
+    const holder = document.createElement('div');
+    document.body.appendChild(holder);
+
+    // 适配器在 whenMount 里初始化：先落地再断言节点真的画出内容（不是只多了个空宿主）
+    DashboardOverviewPage().bindTo(holder);
+
+    const charts = holder.querySelectorAll("[vn~='VChart']");
+    expect(charts.length).toBe(2);
+    charts.forEach((chart) => {
+      expect(chart.querySelector('svg')).not.toBeNull();
+      expect(chart.querySelectorAll('rect, polyline').length).toBeGreaterThan(0);
+    });
+    expect(holder.textContent).toContain('请求量');
+
+    holder.remove();
   });
 
   it('renders every generated page', async () => {
@@ -200,10 +334,8 @@ describe('generated admin page state', () => {
     ];
 
     for (const Page of pages) {
-      // 页面也是组件：列表页返回 { render() }，占位页直接返回 ViewNode
-      const page = Page();
-      const node = typeof page.render === 'function' ? page.render() : page;
-      const element = node.renderDom();
+      // 页面也是组件：形态 A 直接返回 ViewNode（没有页面壳层）
+      const element = Page().renderDom();
       expect(element.textContent.length, `${Page.name} 未渲染出内容`).toBeGreaterThan(0);
       element.remove?.();
     }
@@ -220,21 +352,23 @@ describe('generated admin page state', () => {
     // 行模型：热字段是句柄，弹窗回填要读字段值
     const firstMember = members.items.value[0];
     memberDialog.open(firstMember);
-    const memberForm = memberDialog.render().renderDom();
+    const memberForm = memberDialog.renderDom();
     expect(memberForm.querySelector('input[name="name"]').value).toBe(firstMember.name.value);
+    // 邮箱这类热字段同样要回填（组件口径：写进去；浏览器清"身份字段"是另一回事）
+    expect(memberForm.querySelector('input[name="email"]').value).toBe(firstMember.email.peek());
 
     const roleState = new RolesPageState();
     await roleState.load();
     const roleDialog = RoleFormDialog({ onSubmit: () => {} });
     roleDialog.open(roleState.items.value[0]);
-    const roleForm = roleDialog.render().renderDom();
+    const roleForm = roleDialog.renderDom();
     expect(roleForm.querySelector('input[name="name"]').value.length).toBeGreaterThan(0);
 
     const permissionDialog = PermissionFormDialog({ onSubmit: () => {} });
     permissionDialog.open({
       node: { id: 7, name: '成员管理', code: 'system:member', type: 'menu' }
     });
-    const permissionForm = permissionDialog.render().renderDom();
+    const permissionForm = permissionDialog.renderDom();
     expect(permissionForm.querySelector('input[name="code"]').value).toBe('system:member');
 
     const dictState = new DictsPageState();
@@ -242,13 +376,13 @@ describe('generated admin page state', () => {
     const dictDialog = DictEditorDialog({ state: dictState, onSubmit: () => {} });
     dictDialog.open(dictState.types.value[0]);
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 250));
-    const dictElement = dictDialog.render().renderDom();
+    const dictElement = dictDialog.renderDom();
     expect(dictElement.querySelector('input[name="code"]').value.length).toBeGreaterThan(0);
     expect(dictElement.textContent).toContain('共');
 
     const itemDialog = DictItemFormDialog({ onSubmit: () => {} });
     itemDialog.open({ id: 9, label: '启用', value: '1', sort: 1, status: 'active' });
-    const itemForm = itemDialog.render().renderDom();
+    const itemForm = itemDialog.renderDom();
     expect(itemForm.querySelector('input[name="label"]').value).toBe('启用');
   });
 });

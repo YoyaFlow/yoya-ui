@@ -37,49 +37,64 @@ vi.mock('@codemirror/lang-javascript', () => ({
 
 import { CodeMirrorExample } from './codemirror-editor.js';
 
+/** 集成在 `whenMount` 里初始化：先落地再断言（挂到 body，销毁时一并摘掉）。 */
+function mountDemo(demo) {
+  demo.bindTo(document.body);
+  return document.body.lastElementChild;
+}
+
 describe('CodeMirror 6 interop demo', () => {
   beforeEach(() => {
     editorViewInstances.length = 0;
     vi.clearAllMocks();
   });
 
+  it('does not create the editor view before the host lands', () => {
+    const demo = CodeMirrorExample();
+
+    demo.renderDom();
+
+    expect(editorViewInstances).toHaveLength(0);
+    demo.destroy();
+  });
+
   it('creates the editor view with the document and extensions', () => {
     const demo = CodeMirrorExample('const greeting = "hi";');
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     expect(el.dataset.codemirrorHost).toBe('true');
     expect(editorViewInstances).toHaveLength(1);
     expect(editorViewInstances[0].config.parent).toBe(el);
     expect(editorViewInstances[0].config.doc).toBe('const greeting = "hi";');
     expect(editorViewInstances[0].config.extensions.length).toBeGreaterThan(1);
-    el.remove();
+    demo.destroy();
   });
 
   it('exposes and replaces the document value', () => {
     const demo = CodeMirrorExample();
-    const el = demo.renderDom();
+    mountDemo(demo);
 
     demo.setValue('export const mode = "prod";');
 
     expect(editorViewInstances[0].dispatch).toHaveBeenCalledOnce();
     expect(demo.value()).toBe('export const mode = "prod";');
-    el.remove();
+    demo.destroy();
   });
 
   it('does not create a second EditorView on repeated renderDom', () => {
     const demo = CodeMirrorExample();
-    const node = demo;
+    mountDemo(demo);
 
-    node.renderDom();
-    node.renderDom();
+    demo.renderDom();
+    demo.renderDom();
 
     expect(editorViewInstances).toHaveLength(1);
+    demo.destroy();
   });
 
   it('destroys the editor view on destroy', () => {
     const demo = CodeMirrorExample();
-    const el = demo.renderDom();
-    document.body.appendChild(el);
+    const el = mountDemo(demo);
 
     demo.destroy();
 

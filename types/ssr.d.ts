@@ -1,14 +1,7 @@
-import type {
-  AccessContext,
-  ComponentLike,
-  ContextProviders,
-  ElementNode,
-  I18n,
-  ViewNode
-} from './core.js';
+import type { AccessContext, ContextProviders, ElementNode, I18n, ViewNode } from './core.js';
 import type { HtmlElementNode } from './html.js';
 
-export type PageFactory<S = unknown> = (state: S) => ViewNode | ComponentLike | PageFactory<S>;
+export type PageFactory<S = unknown> = (state: S) => ViewNode | PageFactory<S>;
 
 /**
  * Optional i18n binding for render/mount/hydrate: an I18n instance, or a
@@ -73,7 +66,7 @@ export function resolveLocale(input?: LocaleInput | null, options?: ResolveLocal
  * state. Exceeds maxNodes, falls back to client rendering.
  */
 export function renderToString<S = unknown>(
-  component: ViewNode | ComponentLike | PageFactory<S>,
+  component: ViewNode | PageFactory<S>,
   options?: RenderOptions<S>
 ): RenderResult;
 
@@ -85,7 +78,7 @@ export function parseState(serialized: string | null | undefined): unknown;
 
 /** Client-side full mount: rebuilds the tree and replaces the target content. */
 export function mount<S = unknown>(
-  component: ViewNode | ComponentLike | PageFactory<S>,
+  component: ViewNode | PageFactory<S>,
   target: string | ParentNode,
   state?: S | null,
   options?: SsrI18nOption<S> & SsrAccessOption & SsrContextOption
@@ -93,7 +86,7 @@ export function mount<S = unknown>(
 
 /** Hydrates server-rendered DOM: adopts elements and binds pending events. */
 export function hydrate<S = unknown>(
-  component: ViewNode | ComponentLike | PageFactory<S>,
+  component: ViewNode | PageFactory<S>,
   target: string | ParentNode,
   state?: S | null,
   options?: SsrI18nOption<S> & SsrAccessOption & SsrContextOption
@@ -141,6 +134,6 @@ export interface HydrateOrMountOptions<S = unknown>
 
 /** Client bootstrap: reads state and hydrates or mounts in one call. */
 export function hydrateOrMount<S = unknown>(
-  component: ViewNode | ComponentLike | PageFactory<S>,
+  component: ViewNode | PageFactory<S>,
   options?: HydrateOrMountOptions<S>
 ): ViewNode | null;

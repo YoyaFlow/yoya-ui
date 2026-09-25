@@ -1,6 +1,13 @@
-import type { ElementFactory, ElementOptions, SetupCallback, SetupInput } from './core.js';
+import type {
+  ComponentNode,
+  ElementFactory,
+  ElementOptions,
+  PropValue,
+  SetupCallback,
+  SetupInput
+} from './core.js';
 import type { HtmlElementNode } from './html.js';
-import type { VButton } from './actions.js';
+import type { ButtonOptions, VButton } from './actions.js';
 
 export type GlowMotion = 'auto' | 'sweep' | 'pulse' | 'none' | string;
 export type GlowDirection = 'ltr' | 'rtl' | string;
@@ -12,11 +19,22 @@ export interface GlowOptions {
   speed?: number | string;
   strength?: number | string;
   ripple?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+/** `VGlowButton({ … })` 的直接参数（`VButton` 的全部 props + 发光特效键）。 */
+export interface GlowButtonOptions extends ButtonOptions {
+  direction?: PropValue<GlowDirection>;
+  glow?: GlowOptions;
+  motion?: PropValue<GlowMotion>;
+  play?: PropValue<boolean>;
+  ripple?: PropValue<boolean>;
+  speed?: PropValue<number | string>;
+  strength?: PropValue<number | string>;
 }
 
 /** Button with animated glow and click ripple effects. */
-export class VGlowButton extends VButton {
+export interface VGlowButton extends VButton {
   glow(options: GlowOptions): VGlowButton;
   play(value: boolean): VGlowButton;
   speed(value: number | string): VGlowButton;
@@ -26,14 +44,19 @@ export class VGlowButton extends VButton {
   ripple(value: boolean): VGlowButton;
 }
 
+export const VGlowButton: { (props?: GlowButtonOptions): VGlowButton };
+
 export const vGlowButton: ElementFactory<VGlowButton> & {
-  (first?: SetupInput<VGlowButton> | null, callback?: SetupCallback<VGlowButton>): VGlowButton;
+  (
+    first?: GlowButtonOptions | SetupInput<VGlowButton> | null,
+    callback?: SetupCallback<VGlowButton>
+  ): VGlowButton;
 };
 
 export type TransitionMotion = 'auto' | 'always';
 
 /** Generic enter / leave transition wrapper driven by CSS or Web Animations API. */
-export interface VTransition extends HtmlElementNode {
+export interface VTransition extends ComponentNode {
   show(): boolean;
   show(value: boolean): VTransition;
   enter(): VTransition;
@@ -46,12 +69,11 @@ export interface VTransition extends HtmlElementNode {
 }
 
 /**
- * Component handle: the runtime value is the component node returned by the factory.
+ * Component definition + shortcut in one value (`VTransition` is the alias of `vTransition`).
  * Identity is the `vn` object fact + DOM attribute (`hasComponentIdentity` / `componentNameOf`);
- * the construct signature exists only so `instanceof` keeps type-checking.
+ * there is no construct signature (`new VTransition()` retired with the other `new` signatures).
  */
 export const VTransition: {
-  new (first?: SetupInput<VTransition> | null): VTransition;
   (first?: SetupInput<VTransition> | null, callback?: SetupCallback<VTransition>): VTransition;
 };
 
@@ -62,7 +84,7 @@ export const vTransition: ElementFactory<VTransition> & {
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface EffectsParentShortcuts {
   vGlowButton(
-    first?: SetupInput<VGlowButton> | null,
+    first?: GlowButtonOptions | SetupInput<VGlowButton> | null,
     callback?: SetupCallback<VGlowButton>
   ): VGlowButton;
   vTransition(

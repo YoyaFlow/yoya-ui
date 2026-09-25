@@ -56,7 +56,7 @@ src/
     dashboard/                  工作台
       overview/                 数据概览
         pages/dashboard-overview-page.js 页面编排：核心指标看板 + 趋势卡 + 图表 + 资源使用
-        components/dashboard-chart.js     vChart 内置 SVG 适配器（柱状图 / 折线图）
+        components/dashboard-chart.js     DashboardChart 图表卡片 + 模板自带的 SVG 适配器（柱状图 / 折线图）
       todos/                    待办审批（简单页示例）
         pages/todo-approval-page.js
     ops/                        运维

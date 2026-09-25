@@ -663,19 +663,4 @@ describe('CSS style contract', () => {
       /\[vn~='VCheckboxes'\] \{\s*grid-template-columns: repeat\(var\(--yoya-checkboxes-columns, 1\), minmax\(0, 1fr\)\);/
     );
   });
-
-  it('composes the theme shell background from the data the command writes', () => {
-    // 票 01 / D11：`backgroundOpacity()` 只写 `--yoya-shell-bg` / `--yoya-shell-alpha`，
-    // 合成（含默认 100% 的恒等情形）归皮肤。少了这条规则，行内 `background: var(…)` 就落空。
-    expect(css).toMatch(
-      /\[vn~='VThemeShell'\] \{\s*--yoya-shell-composed:\s*color-mix\(\s*in srgb,\s*var\(--yoya-shell-bg, var\(--yoya-color-surface, #ffffff\)\)\s*var\(--yoya-shell-alpha, 100%\),\s*transparent\s*\);\s*\}/
-    );
-  });
-
-  it('keeps the shell background correct where color-mix() is missing', () => {
-    // 兜底只丢透明度，不丢背景：低基线浏览器里外壳仍是不透明基色。
-    expect(css).toMatch(
-      /@supports not \(color: color-mix\(in srgb, #fff, #000\)\) \{\s*\[vn~='VThemeShell'\] \{\s*--yoya-shell-composed:\s*var\(--yoya-shell-bg, var\(--yoya-color-surface, #ffffff\)\);\s*\}\s*\}/
-    );
-  });
 });

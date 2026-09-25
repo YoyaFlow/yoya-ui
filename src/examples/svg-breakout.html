@@ -283,6 +283,7 @@
         ref,
         svg,
         svgs,
+        vNode,
         vText
       } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.6.6/dist/yoya.ui.full.min.js';
 
@@ -856,61 +857,59 @@
           state.advance(input);
         }
 
-        return {
-          render() {
-            return div((page) => {
-              page.div((card) => {
-                card.className('demo-card');
-                card.h1('SVG 打砖块：← → 控制球拍');
-                card.div((bar) => {
-                  bar.className('hud-bar');
-                  bar.child(Hud(state));
-                  bar.child(Controls(state));
-                });
-                // 只在这里用一次：就地组合，不提前建到工厂作用域
-                card.child(
-                  Playfield({
-                    wall: BrickWall(state.bricks),
-                    paddle: Paddle(state.paddleX),
-                    ball: Ball(state),
-                    overlay: Overlay(state),
-                    onPointer: (event) => {
-                      const box = event.currentTarget.getBoundingClientRect();
-                      if (!box.width) {
-                        return;
-                      }
-                      state.movePaddle(((event.clientX - box.left) / box.width) * VIEW.width);
-                    }
-                  })
-                );
-                card.p(
-                  '键盘用方向键 / WASD，手机两手分持 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
-                );
-                card.child(PaddlePad({ input, state }));
-              });
-            });
-          },
+        // 形态 B（`vNode`）：命令只写状态 / 归属节点，视图走读值绑定（票 07：对象组件退场）。
+        return vNode((api, self) => {
+          api.start = () => {
+            pageNode = self.node();
+            hostElement = pageNode.renderDom();
+            input.bind(pageNode); // window 监听显式归属页面节点
+            pageNode.bindAnimationFrameLoop(tick); // 帧循环随节点 destroy() 自动停
+            return api;
+          };
 
-          start(rootNode) {
-            pageNode = rootNode;
-            hostElement = rootNode.renderDom();
-            input.bind(rootNode); // window 监听显式归属页面节点
-            rootNode.bindAnimationFrameLoop(tick); // 帧循环随节点 destroy() 自动停
-          },
-
-          destroy() {
-            // 页面对象销毁 = 销毁自己渲染出来的节点：帧循环与 window 监听随 _cleanup 自动清理
-            pageNode?.destroy();
-            input.clear(); // “按住”状态在输入对象上，节点清理管不到
+          api.whenDestroy = () => {
+            // 节点 destroy() 会自动停帧循环与 window 监听；"按住"状态在输入对象上，自己清
+            input.clear();
             hostElement = null;
             pageNode = null;
-          }
-        };
+          };
+
+          return div((page) => {
+            page.div((card) => {
+              card.className('demo-card');
+              card.h1('SVG 打砖块：← → 控制球拍');
+              card.div((bar) => {
+                bar.className('hud-bar');
+                bar.child(Hud(state));
+                bar.child(Controls(state));
+              });
+              // 只在这里用一次：就地组合，不提前建到工厂作用域
+              card.child(
+                Playfield({
+                  wall: BrickWall(state.bricks),
+                  paddle: Paddle(state.paddleX),
+                  ball: Ball(state),
+                  overlay: Overlay(state),
+                  onPointer: (event) => {
+                    const box = event.currentTarget.getBoundingClientRect();
+                    if (!box.width) {
+                      return;
+                    }
+                    state.movePaddle(((event.clientX - box.left) / box.width) * VIEW.width);
+                  }
+                })
+              );
+              card.p(
+                '键盘用方向键 / WASD，手机两手分持 ◀ ▶ 手柄（也可以直接拖动球拍）；空格或按钮暂停，回车重开。球速随分数越来越快。'
+              );
+              card.child(PaddlePad({ input, state }));
+            });
+          });
+        });
       }
 
-      const demo = BreakoutPage();
-      const root = demo.render().bindTo('#app');
-      demo.start(root);
+      const root = BreakoutPage().bindTo('#app');
+      root.start();
     </script>
   </body>
 </html>

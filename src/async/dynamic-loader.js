@@ -131,9 +131,7 @@ function loadDynamicModule(cacheKey, loader) {
 }
 
 function renderState(node, views, status, payload) {
-  node.children().forEach((child) => child.destroy());
-  node._children = [];
-  if (node._el) node._el.replaceChildren();
+  node.replaceChildren();
 
   const source = views[status];
   // 视图在挂到树上之前就构建完了：以 loader 节点为构建帧，祖先的 provide

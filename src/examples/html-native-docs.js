@@ -309,39 +309,37 @@ const htmlNativeSetupForms = [
 ];
 
 function HtmlNativeSetupSection() {
-  return {
-    render() {
-      return section((setup) => {
-        setup.className('components-html-native-setup');
-        setup.attr('data-html-native-setup', 'true');
-        setup.h2('三种 setup 形态');
-        setup.p(
-          '原生工厂的 setup 参数支持三种形态：字符串快照、配置对象、回调函数；' +
-            '文本与回调还可以同时传入，先落地文本再继续配置。'
-        );
-        setup.table((table) => {
-          table.thead((head) => {
-            head.tr((row) => {
-              row.th('形态');
-              row.th('写法');
-              row.th('行为');
-              row.th('示例');
-            });
-          });
-          table.tbody((body) => {
-            htmlNativeSetupForms.forEach((form) => {
-              body.tr((row) => {
-                row.td((cell) => cell.code(form.name));
-                row.td((cell) => cell.code(form.usage));
-                row.td(form.behavior);
-                row.td((cell) => cell.code(form.example));
-              });
-            });
+  return section((setup) => {
+    setup.className('components-html-native-setup');
+    setup.attr('data-html-native-setup', 'true');
+    setup.h2('三种 setup 形态');
+    setup.p(
+      '原生工厂的 setup 参数支持三种形态：字符串快照、配置对象、回调函数；' +
+        '文本与回调还可以同时传入，先落地文本再继续配置。'
+    );
+    setup.table((table) => {
+      table.thead((head) => {
+        head.tr((row) => {
+          row.th('形态');
+          row.th('写法');
+          row.th('行为');
+          row.th('示例');
+        });
+      });
+      table.tbody((body) => {
+        htmlNativeSetupForms.forEach((form) => {
+          body.tr((row) => {
+            row.td((cell) => cell.code(form.name));
+            row.td((cell) => cell.code(form.usage));
+            row.td(form.behavior);
+            row.td((cell) => cell.code(form.example));
           });
         });
-        setup.pre((pre) => {
-          pre.className('guide-code');
-          pre.code(`// setupString：静态文本，构建期就是最终值
+      });
+    });
+    setup.pre((pre) => {
+      pre.className('guide-code');
+      pre.code(`// setupString：静态文本，构建期就是最终值
 div('服务运行中');
 
 // setupObject：配置按键分发；值位置传句柄 → 属性原地更新
@@ -361,77 +359,67 @@ div((el) => {
 
 // 组合写法：文本先落地，回调继续配置
 div('标题', (el) => el.className('title'));`);
-        });
-      });
-    }
-  };
+    });
+  });
 }
 
 function HtmlNativeApiSection() {
-  return {
-    render() {
-      return section((api) => {
-        api.className('components-html-native-api');
-        api.attr('data-html-native-api', 'true');
-        api.h2('常用 API');
-        api.p(
-          '原生元素节点在通用节点能力之上提供以下方法，全部返回节点本身、可继续链式调用；' +
-            '文本有两套语义，text() 是追加、textContent() 才是替换。'
-        );
-        htmlNativeApiGroups.forEach((group) => {
-          api.h3(group.title);
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
-            });
-            table.tbody((body) => {
-              group.rows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
+  return section((api) => {
+    api.className('components-html-native-api');
+    api.attr('data-html-native-api', 'true');
+    api.h2('常用 API');
+    api.p(
+      '原生元素节点在通用节点能力之上提供以下方法，全部返回节点本身、可继续链式调用；' +
+        '文本有两套语义，text() 是追加、textContent() 才是替换。'
+    );
+    htmlNativeApiGroups.forEach((group) => {
+      api.h3(group.title);
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
+          });
+        });
+        table.tbody((body) => {
+          group.rows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
           });
-          if (group.sample) {
-            api.pre((pre) => {
-              pre.className('guide-code');
-              pre.code(group.sample);
-            });
-          }
         });
       });
-    }
-  };
+      if (group.sample) {
+        api.pre((pre) => {
+          pre.className('guide-code');
+          pre.code(group.sample);
+        });
+      }
+    });
+  });
 }
 
 function HtmlNativeUsageNote() {
-  return {
-    render() {
-      return section((usage) => {
-        usage.className('components-html-native-usage');
-        usage.attr('data-html-native-usage', 'true');
-        usage.h2('事件绑定约定');
-        usage.p(
-          'box.button(...) 这类子工厂快捷方法返回父节点，用于继续追加元素；' +
-            'click 等事件要绑定在按钮自身，使用回调参数，不要在快捷方法后面链 .on()。'
-        );
-        usage.pre((pre) => {
-          pre.className('guide-code');
-          pre.code(`// 正确：回调参数里绑定按钮自身的事件
+  return section((usage) => {
+    usage.className('components-html-native-usage');
+    usage.attr('data-html-native-usage', 'true');
+    usage.h2('事件绑定约定');
+    usage.p(
+      'box.button(...) 这类子工厂快捷方法返回父节点，用于继续追加元素；' +
+        'click 等事件要绑定在按钮自身，使用回调参数，不要在快捷方法后面链 .on()。'
+    );
+    usage.pre((pre) => {
+      pre.className('guide-code');
+      pre.code(`// 正确：回调参数里绑定按钮自身的事件
 box.button('保存', (btn) => btn.on('click', save));
 
 // 错误：.on() 实际挂到了 box 容器上，点击容器内任意按钮都会触发
 box.button('保存').on('click', save);`);
-        });
-      });
-    }
-  };
+    });
+  });
 }
 
 function KeyedTableDemoSection() {
@@ -443,24 +431,20 @@ function KeyedTableDemoSection() {
     title: 'keyed 表格协调源码'
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-html-native-demo components-html-native-keyed-demo');
-        example.attr('data-native-demo', 'keyed');
-        example.h2('keyed 表格协调');
-        example.p(
-          'table.keyed(rows, keyFn, build) 用信号驱动原生表格：状态列是 ref 字段，写句柄只刷那一格；' +
-            '任务 / 负责人是普通字段，换新行对象才刷新。追加 / 反转按 key 对账，行节点身份保持。'
-        );
-        example.div((live) => {
-          live.className('components-html-native-demo-live');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-html-native-demo components-html-native-keyed-demo');
+    example.attr('data-native-demo', 'keyed');
+    example.h2('keyed 表格协调');
+    example.p(
+      'table.keyed(rows, keyFn, build) 用信号驱动原生表格：状态列是 ref 字段，写句柄只刷那一格；' +
+        '任务 / 负责人是普通字段，换新行对象才刷新。追加 / 反转按 key 对账，行节点身份保持。'
+    );
+    example.div((live) => {
+      live.className('components-html-native-demo-live');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }
 
 function HtmlNativeDemoSection() {
@@ -472,38 +456,30 @@ function HtmlNativeDemoSection() {
     title: 'HTML 原生源码'
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-html-native-demo');
-        example.h2('实时演示');
-        example.div((live) => {
-          live.className('components-html-native-demo-live');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-html-native-demo');
+    example.h2('实时演示');
+    example.div((live) => {
+      live.className('components-html-native-demo-live');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }
 
 export function HtmlNativeDocumentationPage() {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-html-native-page');
-        page.attr('data-html-native-page', 'true');
-        page.h1('HTML 原生元素');
-        page.p('原生元素可以直接组合，适合底层自由拼装；所有组件最终都建立在原生元素节点之上。');
-        page.ul((list) => {
-          htmlNativeNotes.forEach((note) => list.li(note));
-        });
-        page.child(HtmlNativeSetupSection());
-        page.child(HtmlNativeApiSection());
-        page.child(HtmlNativeUsageNote());
-        page.child(HtmlNativeDemoSection());
-        page.child(KeyedTableDemoSection());
-      });
-    }
-  };
+  return section((page) => {
+    page.className('components-route-page components-html-native-page');
+    page.attr('data-html-native-page', 'true');
+    page.h1('HTML 原生元素');
+    page.p('原生元素可以直接组合，适合底层自由拼装；所有组件最终都建立在原生元素节点之上。');
+    page.ul((list) => {
+      htmlNativeNotes.forEach((note) => list.li(note));
+    });
+    page.child(HtmlNativeSetupSection());
+    page.child(HtmlNativeApiSection());
+    page.child(HtmlNativeUsageNote());
+    page.child(HtmlNativeDemoSection());
+    page.child(KeyedTableDemoSection());
+  });
 }

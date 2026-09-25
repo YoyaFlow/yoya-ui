@@ -141,16 +141,11 @@ export function applyElementOptions(node, options) {
     return applyCoreElementOptions(node, options);
   }
 
-  if (typeof node.render === 'function') {
-    applyCoreElementOptions(node.render(), options);
-  }
-
   return node;
 }
 
 /**
  * 执行构建回调：节点会记录 builder 以支持区域重建；
- * render-backed 组件 API（回调收到的是组件对象）直接调用。
  */
 function runBuilder(node, builder) {
   if (typeof node.setup === 'function') {
@@ -256,17 +251,8 @@ export function createListItemKey(prefix = 'item') {
 }
 
 export function replaceChildren(node, children) {
-  node.children().forEach((child) => child.destroy());
-  node._children = [];
-
-  if (node._el) {
-    node._el.replaceChildren();
-  }
-
-  if (children.length > 0) {
-    node.child(children);
-  }
-
+  // 引擎的元素级口子：真清空（连带 DOM）+ 落新内容（组件代码不碰 `_el`）
+  node.replaceChildren(children);
   return node;
 }
 

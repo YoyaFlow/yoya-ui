@@ -65,9 +65,6 @@ but not `light-dark()`** the interface is complete; only the palette drops back 
   whose primary value needs those two functions — forget to cover a new token and `src/theme-tokens.test.js` fails on
   the spot. Inside there are three mode blocks: light, `[data-yoya-mode='dark']`, and `system` at night
   (`@media (prefers-color-scheme: dark)`).
-- **Shell background opacity**: `backgroundOpacity()` writes only two pieces of data (`--yoya-shell-bg` base color,
-  `--yoya-shell-alpha` percentage); composition happens in `--yoya-shell-composed`, which the skin computes, and where
-  `color-mix()` is missing the same variable resolves to the **opaque base color**.
 - **Do not treat `var(--token, fallback)` as a degradation strategy**: a CSS variable fallback only applies when the
   variable is **undefined**. Here the token _is_ defined (with a value that is only invalid at substitution time), so
   those fallbacks are never used — the library writes that form in 140+ inline styles in JS and 370+ reads in CSS, and
@@ -76,10 +73,6 @@ but not `light-dark()`** the interface is complete; only the palette drops back 
   build time. Following `--yoya-raw-*` overrides would move the base color while the derived shades stayed on the
   default brand — a "red button with a blue hover" kind of break. Baking the default palette stays at least coherent.
   For branded older-browser support, see §5.
-- **Known residual — shell opacity in virtual mode**: `vThemeShell(...).virtual()` projects the shell styles onto its
-  single child; the target node has no `VThemeShell` identity, so the skin's composition rule cannot reach it and that
-  path still composes in JS. Where `color-mix()` is missing, that background turns transparent (**only the combination
-  of virtual mode and `backgroundOpacity()`**).
 - **Layering as it stands (recorded, not changed)**: the preset skin sits inside `@layer yoya`, so consumer styles need
   no specificity fight (that is also where the `@layer` cliff in §3 comes from). But the two `prefers-reduced-motion`
   blocks and the `split-panel` rules deliberately stay **outside** the layer — they have to win over rules inside it;

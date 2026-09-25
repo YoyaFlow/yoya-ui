@@ -34,7 +34,8 @@ const asList = (value) =>
  *   重复的行内样式删掉；虚拟行的几何（高度 / 位置）走 `--yoya-scroll-item-height` +
  *   每行的 `--yoya-scroll-index`（CSS 用 `calc()` 算，JS 只写变量）；
  * - 元素级时机：`whenMount` 按落地收口（按真实尺寸重算窗口 + 订阅尺寸变化 + 补一次触底检查）、
- *   `whenDestroy` 解绑观察者；读元素只读 `_el` 判定"建没建"；props 进参数表（`api.setupObject` 退场）。
+ *   `whenDestroy` 解绑观察者；落地判定 / 滚动量测走引擎口子（`isLanded()` / `prop()`），
+ *   props 进参数表（`api.setupObject` 退场）。
  */
 export function VScroll({
   block,
@@ -82,6 +83,8 @@ export function VScroll({
         : null;
   let staticContent = false;
   let sizeObserver = null;
+  /** 引擎钩子给的真元素（`ResizeObserver` 要元素本身，组件代码不读 `_el`） */
+  let sizeElement = null;
 
   const itemHeightValue = computed(() => {
     const parsed = Number(itemHeightState.value);
@@ -142,8 +145,8 @@ export function VScroll({
 
     const visibleRange = (count) => {
       const pitch = itemHeightValue.value + VIRTUAL_GAP;
-      const scrollTop = view._el ? Number(view._el.scrollTop) || 0 : 0;
-      const clientHeight = view._el ? Number(view._el.clientHeight) || 0 : 0;
+      const scrollTop = Number(view.prop('scrollTop')) || 0;
+      const clientHeight = Number(view.prop('clientHeight')) || 0;
       const start = Math.max(
         0,
         Math.floor((scrollTop - VIRTUAL_PADDING) / pitch) - overscanValue.value
@@ -196,14 +199,14 @@ export function VScroll({
         return;
       }
 
-      if (!sizeObserver && view._el) {
+      if (!sizeObserver && sizeElement) {
         sizeObserver = new ResizeObserver(() => {
           if (view._deleted || !virtualActive.value) {
             return;
           }
           renderItems();
         });
-        sizeObserver.observe(view._el);
+        sizeObserver.observe(sizeElement);
       }
     };
 
@@ -240,18 +243,20 @@ export function VScroll({
 
       // 命令自收口（「构建 → 落地」窗口里写进来的数据要手动刷一次）：行的对账登记在列表上、
       // 首评发生在构建期，落地前写完必须求值一次——SSR（没有落地）才拿得到确定性的初始窗口。
-      if (!view._el) {
+      if (!view.isLanded()) {
         list.flush();
       }
     };
 
     const checkLoad = () => {
-      if (loadingState.value || blockedState.value || !view._el) {
+      if (loadingState.value || blockedState.value || !view.isLanded()) {
         return api;
       }
 
       const distance =
-        (view._el.scrollHeight || 0) - (view._el.scrollTop || 0) - (view._el.clientHeight || 0);
+        (view.prop('scrollHeight') || 0) -
+        (view.prop('scrollTop') || 0) -
+        (view.prop('clientHeight') || 0);
 
       if (distance <= thresholdValue.value) {
         api.load();
@@ -586,8 +591,10 @@ export function VScroll({
       }
     );
 
-    /** 落地后按真实尺寸重算窗口、订阅尺寸变化、补一次触底检查。 */
-    api.whenMount = () => {
+    /** 落地后按真实尺寸重算窗口、订阅尺寸变化、补一次触底检查（真元素由钩子给）。 */
+    api.whenMount = (host) => {
+      sizeElement = host.element() ?? sizeElement;
+
       if (virtualActive.value) {
         renderItems();
       }

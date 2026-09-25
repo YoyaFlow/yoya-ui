@@ -461,10 +461,10 @@ export function VTableWrapper() {
      * 数据写入收口：**首屏之前**绑定只求值不订阅（服务端同理），这一窗里写进来的数据要靠
      * `flush()` 手动刷成快照——`vTableWrapper({ columns, rows })` 的 options 正好落在这个窗里。
      * 渲染之后订阅已经接上，写入自己就会到 DOM，不必再整树重扫。
-     * 判据是视图根元素有没有落地（库内组件读 `_el` 的既有用法，如 svg / menu / chart）。
+     * 判据是视图根元素有没有落地（引擎口子 `isLanded()`）。
      */
     const syncView = () => {
-      if (view !== null && !view._el) {
+      if (view !== null && !view.isLanded()) {
         view.flush();
       }
 

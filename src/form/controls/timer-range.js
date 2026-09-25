@@ -62,17 +62,7 @@ export function VTimerRange() {
     const handleTimerChange = (event) => {
       event.stopPropagation();
       validate();
-
-      if (node._el) {
-        const CustomEventClass = node._el.ownerDocument.defaultView.CustomEvent;
-
-        node._el.dispatchEvent(
-          new CustomEventClass('change', {
-            bubbles: true,
-            detail: api.value()
-          })
-        );
-      }
+      node.emit('change', api.value());
     };
 
     startTimer.on('change', (event) => handleTimerChange(event));

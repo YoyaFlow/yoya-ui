@@ -41,7 +41,7 @@ function createClearButton(identity, position = {}) {
 }
 
 function syncClearButton(control, inputNode, clearButton) {
-  const value = inputNode._el?.value ?? control.value();
+  const value = inputNode.prop('value') ?? control.value();
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== '' && value !== null && value !== undefined;
@@ -212,10 +212,7 @@ export function createBooleanControl(
 
     const next = Boolean(value);
     indeterminateState.value = next;
-
-    if (inputView._el) {
-      inputView._el.indeterminate = next;
-    }
+    inputView.prop('indeterminate', next);
 
     return api;
   };
@@ -265,8 +262,8 @@ export function createBooleanControl(
 
   // SSR 回读：挂在**内层 `<input>` 节点**上（渲染路径按节点调用；与 input / select / textarea 同口径）
   inputView.hydrateSnapshot = () => {
-    if (inputView._el) {
-      api.checked(inputView._el.checked);
+    if (inputView.isLanded()) {
+      api.checked(inputView.prop('checked'));
     }
 
     return inputView;

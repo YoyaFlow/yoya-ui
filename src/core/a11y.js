@@ -25,9 +25,13 @@ export function getFocusableElements(root) {
  * Generic focus trap: keeps Tab/Shift+Tab cycling inside `root`, fires
  * onEscape on Escape, and restores the previously focused element on destroy().
  * SSR-safe (no-ops when document is unavailable).
+ *
+ * `root` 收**真元素或视图节点**（节点用它的元素，未落地 = 陷阱空转）——组件侧不必为了
+ * 拿元素去调 `renderDom()`（票 16 第 114 / 115 条）。
  */
 export function createFocusTrap(root, options = {}) {
   const { onEscape = null, restoreFocus = true } = options;
+  const rootOf = () => (root?.nodeType ? root : (root?._el ?? null));
 
   if (typeof document === 'undefined' || !root) {
     return { activate() {}, destroy() {} };
@@ -51,7 +55,7 @@ export function createFocusTrap(root, options = {}) {
       return;
     }
 
-    const focusables = getFocusableElements(root);
+    const focusables = getFocusableElements(rootOf());
     if (focusables.length === 0) {
       event.preventDefault();
       return;
@@ -79,7 +83,7 @@ export function createFocusTrap(root, options = {}) {
     active = true;
     previous = document.activeElement;
     removeKeydown = bindDocumentEvent('keydown', handleKeydown);
-    const first = getFocusableElements(root)[0];
+    const first = getFocusableElements(rootOf())[0];
     if (first) {
       first.focus();
     }

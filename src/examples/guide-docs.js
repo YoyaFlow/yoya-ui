@@ -1,40 +1,36 @@
 import { section } from '../index.js';
 
 function createGuidePage(config) {
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-guide-page');
-        page.attr('data-guide-page', config.id);
-        page.h2(config.title);
-        page.p(config.intro);
+  return section((page) => {
+    page.className('components-route-page components-guide-page');
+    page.attr('data-guide-page', config.id);
+    page.h2(config.title);
+    page.p(config.intro);
 
-        config.sections.forEach((item) => {
-          page.section((block) => {
-            block.className('components-guide-section');
-            block.h3(item.title);
+    config.sections.forEach((item) => {
+      page.section((block) => {
+        block.className('components-guide-section');
+        block.h3(item.title);
 
-            if (item.paragraphs) {
-              item.paragraphs.forEach((paragraph) => block.p(paragraph));
-            }
+        if (item.paragraphs) {
+          item.paragraphs.forEach((paragraph) => block.p(paragraph));
+        }
 
-            if (item.points) {
-              block.ul((list) => {
-                item.points.forEach((point) => list.li(point));
-              });
-            }
-
-            if (item.code) {
-              block.pre((pre) => {
-                pre.className('guide-code');
-                pre.code(item.code);
-              });
-            }
+        if (item.points) {
+          block.ul((list) => {
+            item.points.forEach((point) => list.li(point));
           });
-        });
+        }
+
+        if (item.code) {
+          block.pre((pre) => {
+            pre.className('guide-code');
+            pre.code(item.code);
+          });
+        }
       });
-    }
-  };
+    });
+  });
 }
 
 export function GuideOverviewPage() {

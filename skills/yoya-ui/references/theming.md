@@ -55,4 +55,6 @@ initYoyaTheme({ persist: true }); // 恢复上次 mode/theme
 
 ## 页面壳
 
-`vBody` 是页面级主题化接入点（背景/文字/字体），`vThemeShell` 是区域级容器（surface 背景/边框/圆角），均消费 token，明暗/品牌/密度切换自动跟随。
+`vBody` 是页面级主题化接入点（背景/文字/字体），消费 token，明暗/品牌/密度切换自动跟随。
+区域级外观由**提供面的组件**负责（`vCard` 是样板：静态规则写在 `[vn~='VCard']` 作用域里）；
+没有"主题化容器"这种通用组件——需要自定义面就在自己的结构上写 `style` / `class`，token 照旧消费。

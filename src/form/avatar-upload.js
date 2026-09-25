@@ -113,13 +113,7 @@ export function VAvatarUpload() {
     };
 
     const emitChange = () => {
-      if (!node._el) {
-        return;
-      }
-
-      const EventClass = node._el.ownerDocument?.defaultView?.Event || Event;
-
-      node._el.dispatchEvent(new EventClass('change', { bubbles: true }));
+      node.emit('change');
     };
 
     const setDragging = (dragging) => {
@@ -128,7 +122,7 @@ export function VAvatarUpload() {
 
     const openPicker = () => {
       if (!state.disabled) {
-        input._el?.click();
+        input.invoke('click');
       }
     };
 
@@ -167,12 +161,13 @@ export function VAvatarUpload() {
     };
 
     input.on('change', () => {
-      if (input._el?.files) {
-        addFiles(input._el.files);
+      const files = input.prop('files');
+
+      if (files) {
+        addFiles(files);
       }
-      if (input._el) {
-        input._el.value = '';
-      }
+
+      input.prop('value', '');
     });
     preview.on('click', () => openPicker());
     preview.on('keydown', (event) => {

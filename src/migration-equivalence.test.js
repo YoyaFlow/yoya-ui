@@ -728,24 +728,6 @@ const CASES = [
     probe: (image) => ({ alt: image.alt(), defer: image.defer(), state: image.loadState() })
   },
   {
-    name: 'vThemeShell / 常规容器',
-    build: () =>
-      api.vThemeShell((shell) => {
-        shell.background('#0f172a').radius('10px').scrollable();
-        shell.child(api.p('内容'));
-      }),
-    probe: (shell) => ({ background: shell.background(), radius: shell.radius() })
-  },
-  {
-    name: 'vThemeShell / 虚拟节点模式',
-    build: () =>
-      api.vThemeShell((shell) => {
-        shell.virtual().background('#ffffff');
-        shell.child(api.div((inner) => inner.p('子节点')));
-      }),
-    probe: (shell) => ({ background: shell.background(), virtual: true })
-  },
-  {
     name: 'vTreeRanger / 两列（未加载）',
     build: () =>
       api.vTreeRanger({

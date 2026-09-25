@@ -26,10 +26,6 @@ const tooltipPlacementAliases = {
 
 const tooltipTriggers = ['click', 'focus', 'manual'];
 
-/** Esc 之后把焦点还给目标区里第一个可聚焦元素（迁移前 `_focusTarget` 的选择器）。 */
-const focusableSelector =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 /**
  * 文字提示（形态 B；2026-09-24 按 `VBadge` 的写法规格（R1–R12）重写）。
  *
@@ -67,14 +63,12 @@ export function VTooltip({ children, content, open, placement, target, trigger, 
 
   return vNode((api) => {
     const focusTarget = () => {
-      const element = targetBox?._el;
-      const focusable = element?.querySelector?.(focusableSelector);
-
-      (focusable || element)?.focus?.();
+      // 目标区里可聚焦的第一个后代（没有就退回目标区自己）——引擎口子，不自己查 DOM
+      targetBox?.focusFirst?.();
     };
 
     const handlePointer = (event) => {
-      if (!view?._el?.contains(event.target)) {
+      if (!view?.owns(event.target)) {
         api.close();
       }
     };
@@ -84,7 +78,7 @@ export function VTooltip({ children, content, open, placement, target, trigger, 
         return;
       }
 
-      const shouldRestoreFocus = Boolean(view?._el?.contains(event.target));
+      const shouldRestoreFocus = Boolean(view?.owns(event.target));
       api.close();
 
       if (shouldRestoreFocus) {
@@ -219,7 +213,7 @@ export function VTooltip({ children, content, open, placement, target, trigger, 
                 return;
               }
 
-              if (event.relatedTarget && box._el?.contains(event.relatedTarget)) {
+              if (event.relatedTarget && box.owns(event.relatedTarget)) {
                 return;
               }
 

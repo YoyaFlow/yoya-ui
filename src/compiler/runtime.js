@@ -149,9 +149,6 @@ export function instantiateComponentNode(entry, values) {
     );
   }
   let node = entry.render(...values);
-  if (node && typeof node.render === 'function' && typeof node.renderDom !== 'function') {
-    node = node.render();
-  }
   node.renderDom?.();
   return node;
 }
@@ -784,11 +781,7 @@ export function bindComponent(entry, slot, values = [], expectedHash = null, opt
   }
 
   if (entry && typeof entry.render === 'function') {
-    let node = entry.render(...values);
-    // 形态 B 的组件对象：render() 才拿得到视图
-    if (node && typeof node.render === 'function' && typeof node.renderDom !== 'function') {
-      node = node.render();
-    }
+    const node = entry.render(...values);
     const element = typeof node?.renderDom === 'function' ? node.renderDom() : node;
     if (slot && element && slot.parentNode) {
       slot.replaceWith(element);

@@ -82,53 +82,47 @@ export function DictListPage() {
     });
   }
 
-  return {
-    render() {
-      return vstack({ gap: '16px' }, (stack) => {
-        stack.h2('字典管理');
-        stack.vCard((card) => {
-          card.vCardHeader((header) => {
-            header.hstack({ alignItems: 'center', gap: '10px' }, (toolbar) => {
-              toolbar.vButton('新增字典', (btn) => {
-                btn.variant('primary');
-                btn.on('click', () => editorDialog.open(null));
-              });
-              toolbar.spacer();
-              toolbar.span((hint) => {
-                hint.style('color', 'var(--yoya-color-text-muted, #64748b)');
-                hint.child('点击「编辑」可在弹窗中维护基本信息与字典值');
-              });
-            });
+  // 页面也是组件：没有对外命令方法 → 形态 A 薄工厂，直接返回视图节点
+  return vstack({ gap: '16px' }, (stack) => {
+    stack.h2('字典管理');
+    stack.vCard((card) => {
+      card.vCardHeader((header) => {
+        header.hstack({ alignItems: 'center', gap: '10px' }, (toolbar) => {
+          toolbar.vButton('新增字典', (btn) => {
+            btn.variant('primary');
+            btn.on('click', () => editorDialog.open(null));
           });
-          card.vCardBody((body) => {
-            body.vstack({ gap: '12px' }, (content) => {
-              content.vTable((table) => {
-                table.vThead((head) => {
-                  head.vTr((row) => {
-                    row.vTh('名称');
-                    row.vTh('编码');
-                    row.vTh('状态');
-                    row.vTh('备注');
-                    row.vTh('操作');
-                  });
-                });
-                table.vTbody((tbody) => {
-                  tbody.keyed(
-                    state.types,
-                    (type) => type.id,
-                    (type) => buildTypeRow(type)
-                  );
-                });
-              });
-              content.child(pagination);
-            });
+          toolbar.spacer();
+          toolbar.span((hint) => {
+            hint.style('color', 'var(--yoya-color-text-muted, #64748b)');
+            hint.child('点击「编辑」可在弹窗中维护基本信息与字典值');
           });
         });
-        stack.child(editorDialog);
       });
-    },
-    refresh() {
-      return load();
-    }
-  };
+      card.vCardBody((body) => {
+        body.vstack({ gap: '12px' }, (content) => {
+          content.vTable((table) => {
+            table.vThead((head) => {
+              head.vTr((row) => {
+                row.vTh('名称');
+                row.vTh('编码');
+                row.vTh('状态');
+                row.vTh('备注');
+                row.vTh('操作');
+              });
+            });
+            table.vTbody((tbody) => {
+              tbody.keyed(
+                state.types,
+                (type) => type.id,
+                (type) => buildTypeRow(type)
+              );
+            });
+          });
+          content.child(pagination);
+        });
+      });
+    });
+    stack.child(editorDialog);
+  });
 }

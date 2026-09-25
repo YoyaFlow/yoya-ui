@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { div, p, ref, ul, vClientOnly } from '../index.js';
+import { div, p, ref, ul, vClientOnly, vNode } from '../index.js';
 
 let errorSpy = null;
 
@@ -205,13 +205,13 @@ describe('whenFailed error boundary', () => {
   });
 
   it('supports the component protocol member', () => {
-    const widget = {
-      render: () =>
-        div((node) => {
-          node.child(failingNode('widget boom'));
-        }),
-      whenFailed: (error) => p(`组件降级：${error.message}`)
-    };
+    const widget = vNode((api) => {
+      api.whenFailed = (error) => p(`组件降级：${error.message}`);
+
+      return div((node) => {
+        node.child(failingNode('widget boom'));
+      });
+    });
     const host = div((page) => {
       page.child(widget);
     });

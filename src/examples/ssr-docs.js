@@ -1,4 +1,4 @@
-import { ref, section, vButton, vCard, vText } from '../index.js';
+import { ref, section, vButton, vCard, vNode, vText } from '../index.js';
 import { hydrate, mount, parseState, renderToString } from '../yoya.ssr.js';
 import { echarts } from '../chart/echarts-loader.js';
 import { ComponentSource } from './component-source.js';
@@ -183,95 +183,95 @@ function SsrLiveDemo() {
     requestAnimationFrame(sync);
   }
 
-  const component = {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('SSR 演示');
-        card.vCardBody((body) => {
-          body.div((controls) => {
-            controls.className('ssr-demo-controls');
-            controls.styles({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
-            controls.vButton('SSR 模式', (button) => {
-              button.variant(state.renderMode === 'ssr' ? 'primary' : 'secondary');
-              button.on('click', () => component.setRenderMode('ssr'));
-            });
-            controls.vButton('非 SSR 模式', (button) => {
-              button.variant(state.renderMode === 'client' ? 'primary' : 'secondary');
-              button.on('click', () => component.setRenderMode('client'));
-            });
-            controls.vButton('中文', (button) => {
-              button.variant(state.locale === 'zh-CN' ? 'primary' : 'secondary');
-              button.on('click', () => component.setLocale('zh-CN'));
-            });
-            controls.vButton('English', (button) => {
-              button.variant(state.locale === 'en-US' ? 'primary' : 'secondary');
-              button.on('click', () => component.setLocale('en-US'));
-            });
-            controls.vButton('首页路由', (button) => {
-              button.variant(state.path === '/home' ? 'primary' : 'secondary');
-              button.on('click', () => component.setPath('/home'));
-            });
-            controls.vButton('图表路由', (button) => {
-              button.variant(state.path === '/chart' ? 'primary' : 'secondary');
-              button.on('click', () => component.setPath('/chart'));
-            });
-          });
-
-          body.p(vText(modeText));
-          body.h3('renderToString 输出的 HTML');
-          body.pre((pre) => {
-            pre.className('ssr-demo-output');
-            pre.attr('data-ssr-live-output', 'true');
-            pre.styles(outputStyles);
-            pre.code(vText(htmlText));
-          });
-
-          body.h3('序列化状态 __YOYA_DATA__');
-          body.pre((pre) => {
-            pre.className('ssr-demo-output');
-            pre.attr('data-ssr-live-output', 'true');
-            pre.styles(outputStyles);
-            pre.code(vText(stateText));
-          });
-
-          body.h3('Hydration 后的实时应用');
-          body.div((host) => {
-            host.id(hostId);
-            host.className('ssr-live-host');
-            host.styles({
-              border: '1px solid var(--yoya-color-border, #d8dee8)',
-              borderRadius: '8px',
-              boxSizing: 'border-box',
-              minHeight: '120px',
-              overflow: 'auto',
-              padding: '12px',
-              width: '100%'
-            });
-            host.span('等待 hydration…');
-          });
-          body.p('填写邮箱可清除服务端烘焙的必填错误；点击导航链接切换路由。');
-          body.p(
-            '图表是局部客户端加载模块：服务端 HTML 只有占位 div，hydration 后浏览器加载并初始化柱状图。'
-          );
-        });
-      });
-    },
-    setLocale(locale) {
+  // 形态 B（`vNode`）：命令只改状态 + 收口一次重渲染，结构写在 setup 返回的那棵树里（票 07）。
+  const component = vNode((api) => {
+    api.setLocale = (locale) => {
       state.locale = locale;
       sync();
-      return component;
-    },
-    setPath(path) {
+      return api;
+    };
+    api.setPath = (path) => {
       state.path = path;
       sync();
-      return component;
-    },
-    setRenderMode(mode) {
+      return api;
+    };
+    api.setRenderMode = (mode) => {
       state.renderMode = mode === 'client' ? 'client' : 'ssr';
       sync();
-      return component;
-    }
-  };
+      return api;
+    };
+
+    return vCard((card) => {
+      card.vCardHeader('SSR 演示');
+      card.vCardBody((body) => {
+        body.div((controls) => {
+          controls.className('ssr-demo-controls');
+          controls.styles({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
+          controls.vButton('SSR 模式', (button) => {
+            button.variant(state.renderMode === 'ssr' ? 'primary' : 'secondary');
+            button.on('click', () => api.setRenderMode('ssr'));
+          });
+          controls.vButton('非 SSR 模式', (button) => {
+            button.variant(state.renderMode === 'client' ? 'primary' : 'secondary');
+            button.on('click', () => api.setRenderMode('client'));
+          });
+          controls.vButton('中文', (button) => {
+            button.variant(state.locale === 'zh-CN' ? 'primary' : 'secondary');
+            button.on('click', () => api.setLocale('zh-CN'));
+          });
+          controls.vButton('English', (button) => {
+            button.variant(state.locale === 'en-US' ? 'primary' : 'secondary');
+            button.on('click', () => api.setLocale('en-US'));
+          });
+          controls.vButton('首页路由', (button) => {
+            button.variant(state.path === '/home' ? 'primary' : 'secondary');
+            button.on('click', () => api.setPath('/home'));
+          });
+          controls.vButton('图表路由', (button) => {
+            button.variant(state.path === '/chart' ? 'primary' : 'secondary');
+            button.on('click', () => api.setPath('/chart'));
+          });
+        });
+
+        body.p(vText(modeText));
+        body.h3('renderToString 输出的 HTML');
+        body.pre((pre) => {
+          pre.className('ssr-demo-output');
+          pre.attr('data-ssr-live-output', 'true');
+          pre.styles(outputStyles);
+          pre.code(vText(htmlText));
+        });
+
+        body.h3('序列化状态 __YOYA_DATA__');
+        body.pre((pre) => {
+          pre.className('ssr-demo-output');
+          pre.attr('data-ssr-live-output', 'true');
+          pre.styles(outputStyles);
+          pre.code(vText(stateText));
+        });
+
+        body.h3('Hydration 后的实时应用');
+        body.div((host) => {
+          host.id(hostId);
+          host.className('ssr-live-host');
+          host.styles({
+            border: '1px solid var(--yoya-color-border, #d8dee8)',
+            borderRadius: '8px',
+            boxSizing: 'border-box',
+            minHeight: '120px',
+            overflow: 'auto',
+            padding: '12px',
+            width: '100%'
+          });
+          host.span('等待 hydration…');
+        });
+        body.p('填写邮箱可清除服务端烘焙的必填错误；点击导航链接切换路由。');
+        body.p(
+          '图表是局部客户端加载模块：服务端 HTML 只有占位 div，hydration 后浏览器加载并初始化柱状图。'
+        );
+      });
+    });
+  });
 
   return component;
 }

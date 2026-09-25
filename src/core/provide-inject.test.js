@@ -170,18 +170,12 @@ describe('provide / inject (core)', () => {
 
   it('exposes provided values to nested components resolved lazily', () => {
     function Inner() {
-      return {
-        render: () => vCardBody((body) => body.p(`内层：${inject('tenant', 'none')}`))
-      };
+      return vCardBody((body) => body.p(`内层：${inject('tenant', 'none')}`));
     }
 
     function Outer() {
-      return {
-        render: () => {
-          provide('tenant', 'acme');
-          return div((root) => root.child(Inner()));
-        }
-      };
+      provide('tenant', 'acme');
+      return div((root) => root.child(Inner()));
     }
 
     const page = div((root) => root.child(Outer()));
@@ -222,12 +216,10 @@ describe('provide / inject (core)', () => {
     expect(out).toContain('sibling:none');
   });
 
-  it('scopes declarations made inside a component render to its own subtree', () => {
-    const panel = {
-      render: () => {
-        provide('slot', 'panel');
-        return div(`panel:${inject('slot', 'none')}`);
-      }
+  it('scopes declarations made inside a component definition to its own subtree', () => {
+    const panel = () => {
+      provide('slot', 'panel');
+      return div(`panel:${inject('slot', 'none')}`);
     };
     const page = div((root) => {
       root.child(panel);
@@ -243,7 +235,7 @@ describe('provide / inject (core)', () => {
 describe('component build environment survives deferred render', () => {
   it('keeps the withContext snapshot for a component rendered later', () => {
     function Card() {
-      return { render: () => div(`card:${currentContext('user', 'MISSING')}`) };
+      return div(`card:${currentContext('user', 'MISSING')}`);
     }
 
     const page = withContext({ user: 'ada' }, () => div((root) => root.child(Card())));
@@ -253,7 +245,7 @@ describe('component build environment survives deferred render', () => {
 
   it('keeps the i18n shortcut scope for a component rendered later', () => {
     function Card() {
-      return { render: () => div('你好'.s('greeting')) };
+      return div('你好'.s('greeting'));
     }
 
     const i18n = createI18n({ language: 'en', messages: { en: { greeting: 'hello' } } });

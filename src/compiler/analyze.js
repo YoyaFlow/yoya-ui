@@ -2876,40 +2876,10 @@ export function analyzeSource(source, options = {}) {
       }
     }
 
-    // 形态 B：`return { render() { return <工厂>(…) }, …命令 / 状态 }`
-    // 其余成员原样留在源码里（`this` 语义因此不变），不再要求"只有 render 一个成员"。
-    if (returned?.type === 'ObjectExpression') {
-      const members = returned.properties ?? [];
-      const render = members.find((member) => (member.key?.name ?? member.key?.value) === 'render');
-      const renderBody = render?.type === 'ObjectMethod' ? render.body : render?.value?.body;
-      const renderReturn =
-        renderBody?.type === 'BlockStatement'
-          ? resolveElementBlock(
-              renderBody.body.find((item) => item.type === 'ReturnStatement')?.argument,
-              renderBody.body,
-              // 票 21 §2.1.10：`render(){ …; return view }` 里的名字可能声明在组件体里
-              // （`const view = …` 写在 render 之外），所以把外层语句一并纳入定位范围。
-              { outer: statements }
-            )
-          : renderBody;
-      if (!renderReturn) {
-        recordBail('组件对象的 render() 不是单一 return 视图', fn);
-        return null;
-      }
-      structure = { shape: 'render', start: renderReturn.start, end: renderReturn.end };
-      const renderReturnArgument =
-        renderBody?.type === 'BlockStatement'
-          ? renderBody.body.find((item) => item.type === 'ReturnStatement')?.argument
-          : null;
-      if (renderReturnArgument?.type === 'Identifier') {
-        needsNodeProduct = aliasReadElsewhere(renderReturnArgument.name, fn, renderReturnArgument);
-      }
-      returned = renderReturn;
-    }
-
     // vNode：`return vNode((api) => { …命令…; return <工厂>(…) })`
     // setup 里的命令赋值原样留在源码里（组件节点仍由 `vNode` 建），只替换视图表达式。
-    else if (
+    // （票 07：对象组件 `{ render() { … } }` 已退场，这里不再有那条形状分支——认不出就整体回落。）
+    if (
       returned?.type === 'CallExpression' &&
       returned.callee.type === 'Identifier' &&
       coreNameOf(returned.callee.name) === 'vNode' &&

@@ -49,18 +49,18 @@ function readControlValue(control) {
   if (tagName === 'input') {
     const type = resolveTextValue(control.attr('type') || 'text').toLowerCase();
     if (type === 'checkbox' || type === 'radio') {
-      return control._el?.checked ?? Boolean(control.attr('checked'));
+      return control.prop('checked') ?? Boolean(control.attr('checked'));
     }
 
-    return control._el?.value ?? control.attr('value') ?? '';
+    return control.prop('value') ?? control.attr('value') ?? '';
   }
 
   if (tagName === 'select') {
-    return control._el?.value ?? control.attr('value') ?? '';
+    return control.prop('value') ?? control.attr('value') ?? '';
   }
 
   if (tagName === 'textarea') {
-    return control._el?.value ?? control.textContent();
+    return control.prop('value') ?? control.textContent();
   }
 
   if (typeof control.value === 'function') {
@@ -98,9 +98,7 @@ function applyControlValue(control, value) {
 
   if (tagName === 'textarea') {
     replaceChildren(control, normalizeChildren(resolveTextValue(value)));
-    if (control._el) {
-      control._el.value = resolveTextValue(value);
-    }
+    control.prop('value', resolveTextValue(value));
     return;
   }
 

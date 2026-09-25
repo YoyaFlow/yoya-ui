@@ -275,12 +275,12 @@ describe('bindComponent', () => {
     expect(host.innerHTML).toBe('<span>v2</span>');
   });
 
-  it('renders shape B component objects on the fallback path', () => {
+  it('renders definition-function components on the fallback path', () => {
     const { host, slot } = mountSlot('<span class="stale"></span>');
     const entry = {
       hash: 'h1',
       bind: () => null,
-      render: (props) => ({ render: () => span((pill) => pill.child(props.label)) })
+      render: (props) => span((pill) => pill.child(props.label))
     };
 
     bindComponent(entry, slot, [{ label: 'pill' }], 'h1');

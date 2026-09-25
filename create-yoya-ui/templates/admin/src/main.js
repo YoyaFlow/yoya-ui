@@ -17,7 +17,7 @@ async function bootstrap() {
   const state = new ShellState();
   await state.load();
   const shell = AdminShell({ state });
-  shell.render().bindTo('#app');
+  shell.bindTo('#app');
   state.start();
 }
 

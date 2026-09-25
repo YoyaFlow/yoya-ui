@@ -1,7 +1,9 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput
 } from './core.js';
@@ -36,16 +38,32 @@ export interface UploadFileEntry {
   [key: string]: any;
 }
 
+/** `vUpload({ … })` 的可派发键（定义函数无 props）。 */
 export interface UploadOptions {
-  name?: string;
   accept?: string;
-  multiple?: boolean;
+  children?: ChildInput;
   disabled?: boolean;
-  [key: string]: any;
+  dropZone?: SetupInput<HtmlElementNode>;
+  files?: Array<File | UploadFileEntry>;
+  items?: Array<File | UploadFileEntry>;
+  multiple?: boolean;
+  name?: string;
+  [key: string]: unknown;
+}
+
+/** `vColorPicker({ … })` 的可派发键（定义函数无 props）。 */
+export interface ColorPickerOptions {
+  alpha?: PropValue<number>;
+  color?: PropValue<string | null>;
+  onChange?: (color: string | null, alpha: number, picker: VColorPicker) => void;
+  open?: PropValue<boolean>;
+  palette?: PropValue<Array<string>>;
+  value?: PropValue<string | null>;
+  [key: string]: unknown;
 }
 
 /** Color picker with a custom popup: palette, alpha slider and effect preview. */
-export class VColorPicker extends HtmlElementNode {
+export interface VColorPicker extends ComponentNode {
   value(): string | null;
   value(next: string | null): VColorPicker;
   alpha(): number;
@@ -66,8 +84,21 @@ export class VColorPicker extends HtmlElementNode {
   ): VColorPicker;
 }
 
+export const VColorPicker: { (): VColorPicker };
+
+/** `vSvgIconPicker({ … })` 的可派发键（定义函数无 props）。 */
+export interface SvgIconPickerOptions {
+  disabled?: PropValue<boolean>;
+  icons?: PropValue<Array<string | { icon: () => unknown; name: string }>>;
+  onChange?: (name: string | null, picker: VSvgIconPicker) => void;
+  open?: PropValue<boolean>;
+  required?: PropValue<boolean>;
+  value?: PropValue<string | null>;
+  [key: string]: unknown;
+}
+
 /** SVG icon picker with a dialog: opens an icon grid for selection. */
-export class VSvgIconPicker extends HtmlElementNode {
+export interface VSvgIconPicker extends ComponentNode {
   value(): string | null;
   value(next: string | null): VSvgIconPicker;
   clearValue(): VSvgIconPicker;
@@ -87,8 +118,24 @@ export class VSvgIconPicker extends HtmlElementNode {
   onChange(handler: (name: string | null, picker: VSvgIconPicker) => void): VSvgIconPicker;
 }
 
+export const VSvgIconPicker: { (): VSvgIconPicker };
+
+/** `vSlider({ … })` 的可派发键（定义函数无 props）。 */
+export interface SliderOptions {
+  disabled?: PropValue<boolean>;
+  max?: PropValue<number>;
+  min?: PropValue<number>;
+  onChange?: (value: number, slider: VSlider) => void;
+  required?: PropValue<boolean>;
+  showValue?: PropValue<boolean>;
+  step?: PropValue<number>;
+  value?: PropValue<number>;
+  vertical?: PropValue<boolean>;
+  [key: string]: unknown;
+}
+
 /** Slider input with min/max/step constraints. */
-export class VSlider extends HtmlElementNode {
+export interface VSlider extends ComponentNode {
   value(): number;
   value(next: number): VSlider;
   min(): number;
@@ -110,14 +157,27 @@ export class VSlider extends HtmlElementNode {
   onChange(handler: (value: number, slider: VSlider) => void): VSlider;
 }
 
+export const VSlider: { (): VSlider };
+
 export interface CascaderOption {
   label: string;
   value: string | number;
   children?: CascaderOption[];
 }
 
+/** `vCascader({ … })` 的可派发键（定义函数无 props）。 */
+export interface CascaderOptions {
+  disabled?: PropValue<boolean>;
+  onChange?: (value: Array<string | number>, cascader: VCascader) => void;
+  options?: PropValue<Array<CascaderOption>>;
+  placeholder?: PropValue<string>;
+  required?: PropValue<boolean>;
+  value?: PropValue<Array<string | number> | string | number | null>;
+  [key: string]: unknown;
+}
+
 /** Cascader: multi-level selection from an option tree. */
-export class VCascader extends HtmlElementNode {
+export interface VCascader extends ComponentNode {
   options(): CascaderOption[];
   options(next: Array<CascaderOption>): VCascader;
   value(): Array<string | number>;
@@ -136,8 +196,20 @@ export class VCascader extends HtmlElementNode {
   onChange(handler: (value: Array<string | number>, cascader: VCascader) => void): VCascader;
 }
 
+export const VCascader: { (): VCascader };
+
+/** `vTagsInput({ … })` 的可派发键（定义函数无 props）。 */
+export interface TagsInputOptions {
+  disabled?: PropValue<boolean>;
+  onChange?: (value: string[], tagsInput: VTagsInput) => void;
+  placeholder?: PropValue<string>;
+  required?: PropValue<boolean>;
+  value?: PropValue<Array<string | number>>;
+  [key: string]: unknown;
+}
+
 /** Tags input: enter/comma adds tags, backspace/× removes. */
-export class VTagsInput extends HtmlElementNode {
+export interface VTagsInput extends ComponentNode {
   value(): string[];
   value(next: Array<string | number>): VTagsInput;
   disabled(): boolean;
@@ -151,13 +223,29 @@ export class VTagsInput extends HtmlElementNode {
   onChange(handler: (value: string[], tagsInput: VTagsInput) => void): VTagsInput;
 }
 
+export const VTagsInput: { (): VTagsInput };
+
 export interface AutocompleteOption {
   label: string;
   value: string | number;
 }
 
+/** `vAutocomplete({ … })` 的可派发键（定义函数无 props）。 */
+export interface AutocompleteOptions {
+  disabled?: PropValue<boolean>;
+  limit?: PropValue<number>;
+  onChange?: (value: string, autocomplete: VAutocomplete) => void;
+  options?:
+    | PropValue<Array<AutocompleteOption | string | number>>
+    | ((query: string) => Array<AutocompleteOption | string | number>);
+  placeholder?: PropValue<string>;
+  required?: PropValue<boolean>;
+  value?: PropValue<string | number | null>;
+  [key: string]: unknown;
+}
+
 /** Autocomplete input with a suggestion list. */
-export class VAutocomplete extends HtmlElementNode {
+export interface VAutocomplete extends ComponentNode {
   value(): string;
   value(next: string | number | null): VAutocomplete;
   options(
@@ -180,8 +268,24 @@ export class VAutocomplete extends HtmlElementNode {
   onChange(handler: (value: string, autocomplete: VAutocomplete) => void): VAutocomplete;
 }
 
+export const VAutocomplete: { (): VAutocomplete };
+
+/** `vInput({ … })` 的可派发键（定义函数无 props；元素级配置按控件语义路由到内层 input）。 */
+export interface InputOptions {
+  clearable?: PropValue<boolean>;
+  disabled?: PropValue<boolean>;
+  error?: PropValue<string | boolean | null>;
+  name?: string;
+  placeholder?: PropValue<string>;
+  readonly?: PropValue<boolean>;
+  required?: PropValue<boolean>;
+  type?: PropValue<string>;
+  value?: PropValue<string | number | null>;
+  [key: string]: unknown;
+}
+
 /** Text input control. */
-export class VInput extends HtmlElementNode {
+export interface VInput extends ComponentNode {
   type(): string;
   type(value: string): VInput;
   value(): string | number | null;
@@ -199,16 +303,38 @@ export class VInput extends HtmlElementNode {
   inputUnit(): HtmlElementNode;
 }
 
+export const VInput: { (): VInput };
+
+/** `vTimer({ … })` 的可派发键（`VInput` 的全部 props + `mode`）。 */
+export interface TimerOptions extends InputOptions {
+  mode?: PropValue<string>;
+}
+
 /** Time input with mode support. */
-export class VTimer extends VInput {
+export interface VTimer extends VInput {
   mode(): string;
   mode(value: string): VTimer;
   type(): string;
   type(value: string): this;
 }
 
+export const VTimer: { (): VTimer };
+
+/** `vTimerRange({ … })` 的可派发键（定义函数无 props）。 */
+export interface TimerRangeOptions {
+  disabled?: PropValue<boolean>;
+  end?: PropValue<string>;
+  mode?: PropValue<string>;
+  name?: string;
+  readonly?: PropValue<boolean>;
+  required?: PropValue<boolean>;
+  start?: PropValue<string>;
+  value?: PropValue<{ start?: string; end?: string }>;
+  [key: string]: unknown;
+}
+
 /** Time range input (start/end). */
-export class VTimerRange extends HtmlElementNode {
+export interface VTimerRange extends ComponentNode {
   mode(): string;
   mode(value: string): VTimerRange;
   start(): string;
@@ -222,8 +348,24 @@ export class VTimerRange extends HtmlElementNode {
   required(value: boolean): VTimerRange;
 }
 
+export const VTimerRange: { (): VTimerRange };
+
+/** `vTextarea({ … })` 的可派发键（定义函数无 props）。 */
+export interface TextareaOptions {
+  clearable?: PropValue<boolean>;
+  disabled?: PropValue<boolean>;
+  error?: PropValue<string | boolean | null>;
+  name?: string;
+  placeholder?: PropValue<string>;
+  readonly?: PropValue<boolean>;
+  required?: PropValue<boolean>;
+  rows?: PropValue<number>;
+  value?: PropValue<string | number | null>;
+  [key: string]: unknown;
+}
+
 /** Multi-line textarea. */
-export class VTextarea extends HtmlElementNode {
+export interface VTextarea extends ComponentNode {
   value(): string | number | null;
   value(value: string | number | null): VTextarea;
   text(value?: ChildInput): this;
@@ -240,8 +382,23 @@ export class VTextarea extends HtmlElementNode {
   inputUnit(): HtmlElementNode;
 }
 
+export const VTextarea: { (): VTextarea };
+
+/** `vSelect({ … })` 的可派发键（定义函数无 props）。 */
+export interface SelectOptions {
+  clearable?: PropValue<boolean>;
+  disabled?: PropValue<boolean>;
+  error?: PropValue<string | boolean | null>;
+  name?: string;
+  options?: PropValue<Array<string | number | SelectOption>>;
+  placeholder?: PropValue<string>;
+  required?: PropValue<boolean>;
+  value?: PropValue<unknown>;
+  [key: string]: unknown;
+}
+
 /** Select control. */
-export class VSelect extends HtmlElementNode {
+export interface VSelect extends ComponentNode {
   value(): unknown;
   value(value: unknown): VSelect;
   text(value?: ChildInput): this;
@@ -254,6 +411,8 @@ export class VSelect extends HtmlElementNode {
   clearable(value: boolean): VSelect;
   clear(): VSelect;
 }
+
+export const VSelect: { (): VSelect };
 
 /** Shared boolean control (checkbox/switch/radio) surface. */
 export interface BooleanControl extends HtmlElementNode {
@@ -271,7 +430,28 @@ export interface BooleanControl extends HtmlElementNode {
   indeterminate(value: boolean): BooleanControl;
 }
 
-export class VCheckbox extends HtmlElementNode {
+/** `VCheckbox({ … })` / `VSwitch({ … })` / `VRadio({ … })` 的直接参数。 */
+export interface BooleanControlOptions {
+  checked?: PropValue<boolean>;
+  children?: ChildInput;
+  content?: ChildInput;
+  description?: ChildInput;
+  disabled?: PropValue<boolean>;
+  label?: ChildInput;
+  name?: string;
+  optionValue?: unknown;
+  required?: PropValue<boolean>;
+  text?: ChildInput;
+  value?: unknown;
+  [key: string]: unknown;
+}
+
+/** `VCheckbox` 独有的 props（`indeterminate` 只有它和 `VCheckboxes` 有）。 */
+export interface CheckboxOptions extends BooleanControlOptions {
+  indeterminate?: PropValue<boolean>;
+}
+
+export interface VCheckbox extends ComponentNode {
   label(content?: ChildInput): this;
   text(content?: ChildInput): this;
   content(content: ChildInput): VCheckbox;
@@ -286,7 +466,12 @@ export class VCheckbox extends HtmlElementNode {
   indeterminate(value: boolean): VCheckbox;
 }
 
-export class VSwitch extends HtmlElementNode {
+export const VCheckbox: { (props?: CheckboxOptions): VCheckbox };
+
+/** `VSwitch({ … })` 的直接参数。 */
+export interface SwitchOptions extends BooleanControlOptions {}
+
+export interface VSwitch extends ComponentNode {
   label(content?: ChildInput): this;
   text(content?: ChildInput): this;
   content(content: ChildInput): VSwitch;
@@ -300,7 +485,12 @@ export class VSwitch extends HtmlElementNode {
   required(value: boolean): VSwitch;
 }
 
-export class VRadio extends HtmlElementNode {
+export const VSwitch: { (props?: SwitchOptions): VSwitch };
+
+/** `VRadio({ … })` 的直接参数。 */
+export interface RadioOptions extends BooleanControlOptions {}
+
+export interface VRadio extends ComponentNode {
   label(content?: ChildInput): this;
   text(content?: ChildInput): this;
   content(content: ChildInput): VRadio;
@@ -314,8 +504,23 @@ export class VRadio extends HtmlElementNode {
   required(value: boolean): VRadio;
 }
 
+export const VRadio: { (props?: RadioOptions): VRadio };
+
+/** `VCheckboxes({ … })` 的直接参数。 */
+export interface CheckboxesOptions {
+  children?: PropValue<Array<string | number | CheckboxOption>>;
+  columns?: PropValue<number | null>;
+  disabled?: PropValue<boolean>;
+  multiple?: PropValue<boolean>;
+  name?: string;
+  options?: PropValue<Array<string | number | CheckboxOption>>;
+  required?: PropValue<boolean>;
+  value?: PropValue<Array<unknown>>;
+  [key: string]: unknown;
+}
+
 /** Checkbox group. */
-export class VCheckboxes extends HtmlElementNode {
+export interface VCheckboxes extends ComponentNode {
   name(): string;
   name(value: string | null): this;
   multiple(): boolean;
@@ -336,8 +541,22 @@ export class VCheckboxes extends HtmlElementNode {
   clear(): VCheckboxes;
 }
 
+export const VCheckboxes: { (props?: CheckboxesOptions): VCheckboxes };
+
+/** `VRadios({ … })` 的直接参数。 */
+export interface RadiosOptions {
+  change?: (value: unknown, radios: VRadios) => void;
+  children?: PropValue<Array<string | number | RadioOption>>;
+  disabled?: PropValue<boolean>;
+  name?: string;
+  options?: PropValue<Array<string | number | RadioOption>>;
+  required?: PropValue<boolean>;
+  value?: PropValue<unknown>;
+  [key: string]: unknown;
+}
+
 /** Radio group. */
-export class VRadios extends HtmlElementNode {
+export interface VRadios extends ComponentNode {
   name(): string;
   name(value: string | null): this;
   required(): boolean;
@@ -355,8 +574,27 @@ export class VRadios extends HtmlElementNode {
   clear(): VRadios;
 }
 
+export const VRadios: { (props?: RadiosOptions): VRadios };
+
+/** `vField({ … })` 的可派发键（定义函数无 props）。 */
+export interface FieldOptions {
+  children?: ChildInput;
+  control?: ChildInput | SetupCallback<HtmlElementNode>;
+  display?: ChildInput;
+  displayClass?: string;
+  displayStyle?: Record<string, string | number | null>;
+  editor?: ChildInput | SetupCallback<HtmlElementNode>;
+  error?: PropValue<string | boolean | null>;
+  formatter?: ((value: unknown, field: VField) => ChildInput) | null;
+  hint?: ChildInput;
+  label?: ChildInput;
+  mode?: PropValue<'view' | 'edit'>;
+  value?: PropValue<unknown>;
+  [key: string]: unknown;
+}
+
 /** Field wrapper with view/edit modes. */
-export class VField extends HtmlElementNode {
+export interface VField extends ComponentNode {
   label(value?: ChildInput): this;
   hint(value: ChildInput): VField;
   error(value: string | boolean | null): VField;
@@ -375,13 +613,31 @@ export class VField extends HtmlElementNode {
   cancel(): VField;
 }
 
+export const VField: { (): VField };
+
 export type FormItemRule = (
   value: unknown,
   values: Record<string, unknown>
 ) => string | boolean | undefined | void;
 
+/** `vFormItem({ … })` 的可派发键（定义函数无 props）。 */
+export interface FormItemOptions {
+  children?: ChildInput;
+  control?: ChildInput | SetupCallback<HtmlElementNode>;
+  editor?: ChildInput | SetupCallback<HtmlElementNode>;
+  error?: PropValue<string | boolean | null>;
+  hint?: ChildInput;
+  label?: ChildInput;
+  name?: string | number;
+  required?: PropValue<boolean>;
+  rules?: FormItemRule | FormItemRule[];
+  validate?: (error: string | null, value: unknown) => void;
+  value?: PropValue<unknown>;
+  [key: string]: unknown;
+}
+
 /** Form item with name/label/validation. */
-export class VFormItem extends HtmlElementNode {
+export interface VFormItem extends ComponentNode {
   name(): string;
   name(value: string | number): this;
   label(value?: ChildInput): this;
@@ -398,8 +654,17 @@ export class VFormItem extends HtmlElementNode {
   check(formValues?: Record<string, unknown>): boolean;
 }
 
+export const VFormItem: { (): VFormItem };
+
+/** `vForm({ … })` 的可派发键（定义函数无 props）。 */
+export interface FormOptions {
+  children?: ChildInput;
+  values?: PropValue<Record<string, unknown>>;
+  [key: string]: unknown;
+}
+
 /** Form with values/validation/reset/submit. */
-export class VForm extends HtmlElementNode {
+export interface VForm extends ComponentNode {
   values(): Record<string, unknown>;
   values(value: Record<string, unknown>): VForm;
   value(name: string): unknown;
@@ -407,6 +672,8 @@ export class VForm extends HtmlElementNode {
   reset(): VForm;
   submit(): boolean;
 }
+
+export const VForm: { (): VForm };
 
 /**
  * `vRate({ … })` 的 props——只收数据 + 元素选项：本组件的键走命令，其余按引擎的元素分派落视图根。
@@ -431,7 +698,7 @@ export interface RateOptions {
 }
 
 /** Star rating control. */
-export class VRate extends HtmlElementNode {
+export interface VRate extends ComponentNode {
   value(): number;
   value(value: number): VRate;
   count(): number;
@@ -461,8 +728,10 @@ export class VRate extends HtmlElementNode {
   isEmptyValue(value: unknown): boolean;
 }
 
+export const VRate: { (props?: RateOptions): VRate };
+
 /** File upload with dropzone. */
-export class VUpload extends HtmlElementNode {
+export interface VUpload extends ComponentNode {
   accept(value: string): VUpload;
   multiple(value: boolean): VUpload;
   disabled(value: boolean): VUpload;
@@ -481,8 +750,22 @@ export class VUpload extends HtmlElementNode {
   dropZone(setup: SetupInput<HtmlElementNode>): VUpload;
 }
 
+export const VUpload: { (): VUpload };
+
+/** `vAvatarUpload({ … })` 的可派发键（定义函数无 props）。 */
+export interface AvatarUploadOptions {
+  accept?: PropValue<string>;
+  disabled?: PropValue<boolean>;
+  files?: Array<File | UploadFileEntry>;
+  name?: string;
+  shape?: 'circle' | 'square' | string;
+  size?: PropValue<number | string>;
+  value?: File | UploadFileEntry | null;
+  [key: string]: unknown;
+}
+
 /** Avatar upload with preview. */
-export class VAvatarUpload extends HtmlElementNode {
+export interface VAvatarUpload extends ComponentNode {
   accept(value: string): VAvatarUpload;
   shape(): string;
   shape(value: 'circle' | 'square' | string): VAvatarUpload;
@@ -500,71 +783,180 @@ export class VAvatarUpload extends HtmlElementNode {
   clear(): VAvatarUpload;
 }
 
-export const vInput: ElementFactory<VInput>;
-export const vTimer: ElementFactory<VTimer>;
-export const vTimerRange: ElementFactory<VTimerRange>;
-export const vTextarea: ElementFactory<VTextarea>;
-export const vSelect: ElementFactory<VSelect>;
-export const vCheckbox: ElementFactory<VCheckbox>;
-export const vSwitch: ElementFactory<VSwitch>;
-export const vRadio: ElementFactory<VRadio>;
-export const vCheckboxes: ElementFactory<VCheckboxes>;
-export const vRadios: ElementFactory<VRadios>;
-export const vField: ElementFactory<VField>;
-export const vFormItem: ElementFactory<VFormItem>;
-export const vForm: ElementFactory<VForm>;
+export const VAvatarUpload: { (): VAvatarUpload };
+
+export const vInput: ElementFactory<VInput> & {
+  (first?: InputOptions | SetupInput<VInput> | null, callback?: SetupCallback<VInput>): VInput;
+};
+export const vTimer: ElementFactory<VTimer> & {
+  (first?: TimerOptions | SetupInput<VTimer> | null, callback?: SetupCallback<VTimer>): VTimer;
+};
+export const vTimerRange: ElementFactory<VTimerRange> & {
+  (
+    first?: TimerRangeOptions | SetupInput<VTimerRange> | null,
+    callback?: SetupCallback<VTimerRange>
+  ): VTimerRange;
+};
+export const vTextarea: ElementFactory<VTextarea> & {
+  (
+    first?: TextareaOptions | SetupInput<VTextarea> | null,
+    callback?: SetupCallback<VTextarea>
+  ): VTextarea;
+};
+export const vSelect: ElementFactory<VSelect> & {
+  (first?: SelectOptions | SetupInput<VSelect> | null, callback?: SetupCallback<VSelect>): VSelect;
+};
+export const vCheckbox: ElementFactory<VCheckbox> & {
+  (
+    first?: CheckboxOptions | SetupInput<VCheckbox> | null,
+    callback?: SetupCallback<VCheckbox>
+  ): VCheckbox;
+};
+export const vSwitch: ElementFactory<VSwitch> & {
+  (first?: SwitchOptions | SetupInput<VSwitch> | null, callback?: SetupCallback<VSwitch>): VSwitch;
+};
+export const vRadio: ElementFactory<VRadio> & {
+  (first?: RadioOptions | SetupInput<VRadio> | null, callback?: SetupCallback<VRadio>): VRadio;
+};
+export const vCheckboxes: ElementFactory<VCheckboxes> & {
+  (
+    first?: CheckboxesOptions | SetupInput<VCheckboxes> | null,
+    callback?: SetupCallback<VCheckboxes>
+  ): VCheckboxes;
+};
+export const vRadios: ElementFactory<VRadios> & {
+  (first?: RadiosOptions | SetupInput<VRadios> | null, callback?: SetupCallback<VRadios>): VRadios;
+};
+export const vField: ElementFactory<VField> & {
+  (first?: FieldOptions | SetupInput<VField> | null, callback?: SetupCallback<VField>): VField;
+};
+export const vFormItem: ElementFactory<VFormItem> & {
+  (
+    first?: FormItemOptions | SetupInput<VFormItem> | null,
+    callback?: SetupCallback<VFormItem>
+  ): VFormItem;
+};
+export const vForm: ElementFactory<VForm> & {
+  (first?: FormOptions | SetupInput<VForm> | null, callback?: SetupCallback<VForm>): VForm;
+};
 export const vRate: {
   (first?: RateOptions | SetupInput<VRate> | null, callback?: SetupCallback<VRate>): VRate;
 } & ElementFactory<VRate>;
-export const vUpload: ElementFactory<VUpload>;
-export const vAvatarUpload: ElementFactory<VAvatarUpload>;
-export const vColorPicker: ElementFactory<VColorPicker> & {
-  (first?: SetupInput<VColorPicker> | null, callback?: SetupCallback<VColorPicker>): VColorPicker;
+export const vUpload: ElementFactory<VUpload> & {
+  (first?: UploadOptions | SetupInput<VUpload> | null, callback?: SetupCallback<VUpload>): VUpload;
 };
-export const vSlider: ElementFactory<VSlider>;
-export const vCascader: ElementFactory<VCascader>;
-export const vTagsInput: ElementFactory<VTagsInput>;
-export const vAutocomplete: ElementFactory<VAutocomplete>;
+export const vAvatarUpload: ElementFactory<VAvatarUpload> & {
+  (
+    first?: AvatarUploadOptions | SetupInput<VAvatarUpload> | null,
+    callback?: SetupCallback<VAvatarUpload>
+  ): VAvatarUpload;
+};
+export const vColorPicker: ElementFactory<VColorPicker> & {
+  (
+    first?: ColorPickerOptions | SetupInput<VColorPicker> | null,
+    callback?: SetupCallback<VColorPicker>
+  ): VColorPicker;
+};
+export const vSlider: ElementFactory<VSlider> & {
+  (first?: SliderOptions | SetupInput<VSlider> | null, callback?: SetupCallback<VSlider>): VSlider;
+};
+export const vCascader: ElementFactory<VCascader> & {
+  (
+    first?: CascaderOptions | SetupInput<VCascader> | null,
+    callback?: SetupCallback<VCascader>
+  ): VCascader;
+};
+export const vTagsInput: ElementFactory<VTagsInput> & {
+  (
+    first?: TagsInputOptions | SetupInput<VTagsInput> | null,
+    callback?: SetupCallback<VTagsInput>
+  ): VTagsInput;
+};
+export const vAutocomplete: ElementFactory<VAutocomplete> & {
+  (
+    first?: AutocompleteOptions | SetupInput<VAutocomplete> | null,
+    callback?: SetupCallback<VAutocomplete>
+  ): VAutocomplete;
+};
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
 export interface FormParentShortcuts {
-  vInput(first?: SetupInput<VInput> | null, callback?: SetupCallback<VInput>): VInput;
-  vTimer(first?: SetupInput<VTimer> | null, callback?: SetupCallback<VTimer>): VTimer;
+  vInput(
+    first?: InputOptions | SetupInput<VInput> | null,
+    callback?: SetupCallback<VInput>
+  ): VInput;
+  vTimer(
+    first?: TimerOptions | SetupInput<VTimer> | null,
+    callback?: SetupCallback<VTimer>
+  ): VTimer;
   vTimerRange(
-    first?: SetupInput<VTimerRange> | null,
+    first?: TimerRangeOptions | SetupInput<VTimerRange> | null,
     callback?: SetupCallback<VTimerRange>
   ): VTimerRange;
-  vTextarea(first?: SetupInput<VTextarea> | null, callback?: SetupCallback<VTextarea>): VTextarea;
-  vSelect(first?: SetupInput<VSelect> | null, callback?: SetupCallback<VSelect>): VSelect;
-  vCheckbox(first?: SetupInput<VCheckbox> | null, callback?: SetupCallback<VCheckbox>): VCheckbox;
-  vSwitch(first?: SetupInput<VSwitch> | null, callback?: SetupCallback<VSwitch>): VSwitch;
-  vRadio(first?: SetupInput<VRadio> | null, callback?: SetupCallback<VRadio>): VRadio;
+  vTextarea(
+    first?: TextareaOptions | SetupInput<VTextarea> | null,
+    callback?: SetupCallback<VTextarea>
+  ): VTextarea;
+  vSelect(
+    first?: SelectOptions | SetupInput<VSelect> | null,
+    callback?: SetupCallback<VSelect>
+  ): VSelect;
+  vCheckbox(
+    first?: CheckboxOptions | SetupInput<VCheckbox> | null,
+    callback?: SetupCallback<VCheckbox>
+  ): VCheckbox;
+  vSwitch(
+    first?: SwitchOptions | SetupInput<VSwitch> | null,
+    callback?: SetupCallback<VSwitch>
+  ): VSwitch;
+  vRadio(
+    first?: RadioOptions | SetupInput<VRadio> | null,
+    callback?: SetupCallback<VRadio>
+  ): VRadio;
   vCheckboxes(
-    first?: SetupInput<VCheckboxes> | null,
+    first?: CheckboxesOptions | SetupInput<VCheckboxes> | null,
     callback?: SetupCallback<VCheckboxes>
   ): VCheckboxes;
-  vRadios(first?: SetupInput<VRadios> | null, callback?: SetupCallback<VRadios>): VRadios;
-  vField(first?: SetupInput<VField> | null, callback?: SetupCallback<VField>): VField;
-  vFormItem(first?: SetupInput<VFormItem> | null, callback?: SetupCallback<VFormItem>): VFormItem;
-  vForm(first?: SetupInput<VForm> | null, callback?: SetupCallback<VForm>): VForm;
+  vRadios(
+    first?: RadiosOptions | SetupInput<VRadios> | null,
+    callback?: SetupCallback<VRadios>
+  ): VRadios;
+  vField(
+    first?: FieldOptions | SetupInput<VField> | null,
+    callback?: SetupCallback<VField>
+  ): VField;
+  vFormItem(
+    first?: FormItemOptions | SetupInput<VFormItem> | null,
+    callback?: SetupCallback<VFormItem>
+  ): VFormItem;
+  vForm(first?: FormOptions | SetupInput<VForm> | null, callback?: SetupCallback<VForm>): VForm;
   vRate(first?: RateOptions | SetupInput<VRate> | null, callback?: SetupCallback<VRate>): VRate;
-  vUpload(first?: SetupInput<VUpload> | null, callback?: SetupCallback<VUpload>): VUpload;
+  vUpload(
+    first?: UploadOptions | SetupInput<VUpload> | null,
+    callback?: SetupCallback<VUpload>
+  ): VUpload;
   vAvatarUpload(
-    first?: SetupInput<VAvatarUpload> | null,
+    first?: AvatarUploadOptions | SetupInput<VAvatarUpload> | null,
     callback?: SetupCallback<VAvatarUpload>
   ): VAvatarUpload;
   vColorPicker(
-    first?: SetupInput<VColorPicker> | null,
+    first?: ColorPickerOptions | SetupInput<VColorPicker> | null,
     callback?: SetupCallback<VColorPicker>
   ): VColorPicker;
-  vSlider(first?: SetupInput<VSlider> | null, callback?: SetupCallback<VSlider>): VSlider;
-  vCascader(first?: SetupInput<VCascader> | null, callback?: SetupCallback<VCascader>): VCascader;
+  vSlider(
+    first?: SliderOptions | SetupInput<VSlider> | null,
+    callback?: SetupCallback<VSlider>
+  ): VSlider;
+  vCascader(
+    first?: CascaderOptions | SetupInput<VCascader> | null,
+    callback?: SetupCallback<VCascader>
+  ): VCascader;
   vTagsInput(
-    first?: SetupInput<VTagsInput> | null,
+    first?: TagsInputOptions | SetupInput<VTagsInput> | null,
     callback?: SetupCallback<VTagsInput>
   ): VTagsInput;
   vAutocomplete(
-    first?: SetupInput<VAutocomplete> | null,
+    first?: AutocompleteOptions | SetupInput<VAutocomplete> | null,
     callback?: SetupCallback<VAutocomplete>
   ): VAutocomplete;
 }

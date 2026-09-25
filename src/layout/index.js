@@ -1354,6 +1354,4 @@ function isPlainObject(value) {
   return Object.prototype.toString.call(value) === '[object Object]';
 }
 
-export * from './theme-shell.js';
-
 export { VSlot, vSlot } from './v-slot.js';

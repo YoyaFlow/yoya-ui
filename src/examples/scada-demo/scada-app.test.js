@@ -187,7 +187,7 @@ describe('scada twin standalone', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
     const app = ScadaTwinStandalone();
-    const node = app.render();
+    const node = app;
     const element = node.renderDom();
     document.body.appendChild(element);
 
@@ -226,7 +226,7 @@ describe('scada twin standalone', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
     const app = ScadaTwinStandalone();
-    const node = app.render();
+    const node = app;
     const element = node.renderDom();
     document.body.appendChild(element);
     frames.shift()();
@@ -271,7 +271,7 @@ describe('scada twin standalone', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
     const app = ScadaTwinStandalone();
-    const node = app.render();
+    const node = app;
     const element = node.renderDom();
     document.body.appendChild(element);
     frames.shift()();
@@ -303,7 +303,7 @@ describe('scada twin standalone', () => {
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
 
     const app = ScadaTwinStandalone();
-    const node = app.render();
+    const node = app;
     const element = node.renderDom();
     document.body.appendChild(element);
     frames.shift()();

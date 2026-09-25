@@ -1,7 +1,9 @@
 import type {
+  ComponentNode,
   ChildInput,
   ElementFactory,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput,
   YoyaMode
@@ -12,26 +14,28 @@ export interface ThemeModeEntry {
   mode: YoyaMode;
   label?: ChildInput;
   icon?: unknown;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /** `vThemeModeSwitch({ … })` 的 props。 */
 export interface ThemeModeSwitchOptions {
   /** 模式子集（字符串 = 内置 light / dark / system）。 */
-  modes?: Array<YoyaMode | ThemeModeEntry>;
+  modes?: PropValue<Array<YoyaMode | ThemeModeEntry>>;
   /** 是否持久化到 localStorage（默认 true）。 */
-  persist?: boolean;
+  persist?: PropValue<boolean>;
   [key: string]: unknown;
 }
 
 /** Theme light/dark/system mode switcher. */
-export class VThemeModeSwitch extends HtmlElementNode {
+export interface VThemeModeSwitch extends ComponentNode {
   modes(): YoyaMode[];
   modes(value: Array<YoyaMode | ThemeModeEntry>): VThemeModeSwitch;
   persist(): boolean;
   persist(value: boolean): VThemeModeSwitch;
   sync(): VThemeModeSwitch;
 }
+
+export const VThemeModeSwitch: { (props?: ThemeModeSwitchOptions): VThemeModeSwitch };
 
 export const vThemeModeSwitch: ElementFactory<VThemeModeSwitch> & {
   (

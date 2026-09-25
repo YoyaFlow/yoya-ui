@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { div, span, HtmlElementNode } from '../html/index.js';
-import { ComponentNode, componentNameOf, hasComponentIdentity, viewRootOf } from './node.js';
+import { componentNameOf, hasComponentIdentity, viewRootOf } from './node.js';
 import { vNode } from './v-node.js';
 
 /** 形态 A：薄工厂，直接返回 ViewNode。 */
@@ -36,15 +36,6 @@ function Panel() {
 /** 多根组件：任一视图根带身份即算命中。 */
 function SplitPanel() {
   return vNode(() => [div('left'), div({ vn: 'SplitPanel' }, 'right')]);
-}
-
-/** render 又会抛的对象组件（票 03 的兼容路径）：判定应当返回 false，而不是把调用方炸掉。 */
-function Broken() {
-  return {
-    render() {
-      throw new Error('boom');
-    }
-  };
 }
 
 describe('component identity (vn)', () => {
@@ -101,18 +92,22 @@ describe('component identity (vn)', () => {
     expect(hasComponentIdentity(root, 'UserCard')).toBe(true);
   });
 
-  it('类名与裸组件对象都不参与判定', () => {
+  it('类名与裸对象都不参与判定', () => {
     // 只有 yoya-* 类名、没有 vn → 不算
     expect(componentNameOf(div((node) => node.className('yoya-card')))).toBeNull();
 
-    // 裸对象不是节点 → 不算
-    expect(componentNameOf({ render: () => div('x') })).toBeNull();
+    // 裸对象不是节点 → 不算（对象组件已退场，这里只验"非节点不参与判定"）
+    expect(componentNameOf({ kind: 'not-a-node' })).toBeNull();
     expect(componentNameOf(null)).toBeNull();
     expect(componentNameOf(undefined)).toBeNull();
   });
 
-  it('render 抛错时不炸判定，也不误报身份', () => {
-    const broken = div((root) => root.child(new ComponentNode(Broken())));
+  it('视图构建抛错时不炸判定，也不误报身份', () => {
+    const broken = div((root) =>
+      root.child(() => {
+        throw new Error('boom');
+      })
+    );
     const member = broken.children()[0];
 
     expect(componentNameOf(member)).toBeNull();

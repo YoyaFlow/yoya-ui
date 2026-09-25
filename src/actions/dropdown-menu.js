@@ -1,16 +1,16 @@
 import { asSignal, computed, ref } from '../core/signals/handle.js';
 import { vNode } from '../core/v-node.js';
-import { MenuNode } from '../navigation/menu.js';
+import { VMenu } from '../navigation/menu.js';
 import { div } from '../html/index.js';
 import { vButton } from './button.js';
 import { bindDocumentEvent } from '../core/document-events.js';
 import { allocateId } from '../core/id.js';
 import {
+  applyComponentSetup,
   createComponentShortcut,
   delegateNodeCommands,
   elementHasIdentity,
-  setupButtonSlot,
-  setupContentSlot
+  setupButtonSlot
 } from '../components/shared.js';
 
 /**
@@ -23,7 +23,8 @@ import {
  *   触发器的 `aria-expanded`、面板的 `aria-hidden` 全是读值绑定（R4 / R6），命令只写状态；
  * - 面板定位按 `data-placement` 交给 CSS 规则（R5，JS 不写行内 placement 样式）；
  * - **触发器 / 内层菜单各留一个取用器**（`trigger(setup)` / `menuContent(setup)`，运行期可替换，
- *   见 16 号第 103 条）；内层菜单用菜单族的 `MenuNode`，聚焦走它的**公开命令** `enabledItems()`
+ *   见 16 号第 103 条）；内层菜单用菜单族的 `vMenu`（组件，内容走它的 `replaceContent`），
+ *   聚焦走它的**公开命令** `enabledItems()`
  *   （不再读私有方法，见 16 号第 27 条）；
  * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 触发器文案
  *   （迁移前 `_setupDropdownMenu` 的兜底分支同口径）。
@@ -69,7 +70,7 @@ export function VDropdownMenu({
       }
 
       const handlePointer = (event) => {
-        if (!view?._el?.contains(event.target)) {
+        if (!view?.owns(event.target)) {
           api.close();
         }
       };
@@ -78,7 +79,7 @@ export function VDropdownMenu({
           return;
         }
 
-        const shouldRestoreFocus = Boolean(view?._el?.contains(event.target));
+        const shouldRestoreFocus = Boolean(view?.owns(event.target));
         api.close();
 
         if (shouldRestoreFocus) {
@@ -117,7 +118,8 @@ export function VDropdownMenu({
         return menuBox;
       }
 
-      setupContentSlot(menuBox, setup);
+      // 替换语义（迁移前 `setupContentSlot`）：菜单是组件了，内容走它自己的内容命令
+      menuBox.replaceContent(setup);
       return api;
     };
 
@@ -201,7 +203,7 @@ export function VDropdownMenu({
             }
           });
 
-        menuBox = new MenuNode().setup({ vn: 'VDropdownContent VMenu' });
+        menuBox = applyComponentSetup(VMenu(), { vn: 'VDropdownContent VMenu' });
         menuBox.on('click', (event) => {
           const menuItem = event.target?.closest?.('[vn~="VMenuItem"]');
 

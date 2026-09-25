@@ -131,13 +131,7 @@ export function VRate({
     };
 
     const emitChange = () => {
-      if (!view._el) {
-        return;
-      }
-
-      const EventClass = view._el.ownerDocument?.defaultView?.CustomEvent || CustomEvent;
-
-      view._el.dispatchEvent(new EventClass('change', { bubbles: true, detail: valueValue.value }));
+      view.emit('change', valueValue.value);
     };
 
     const setValue = (next, emit) => {

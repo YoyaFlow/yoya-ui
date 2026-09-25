@@ -4,9 +4,8 @@ import { vTbody, vTr } from '../data-display/table.js';
 
 describe('multi-root fragments', () => {
   it('mounts multiple component roots as direct children without a wrapper', () => {
-    const Group = {
-      render: () => ['Ada', 'Bob'].map((name) => vTr((tr) => tr.vTd(name)))
-    };
+    // 形态 A 薄工厂（票 07）：多根 = 直接返回节点数组
+    const Group = () => ['Ada', 'Bob'].map((name) => vTr((tr) => tr.vTd(name)));
     const element = vTbody().child(Group).renderDom();
 
     expect(element.children.length).toBe(2);
@@ -21,10 +20,8 @@ describe('multi-root fragments', () => {
       ele.rebuildable();
       // 构建期直读信号：写入才会重建这块区域
       ele.attr('data-size', String(count.value));
-      // 每次重建都新建组件对象：ComponentNode 缓存自己那份 render() 结果
-      ele.child({
-        render: () => (count.value === 0 ? [div('a'), div('b')] : [div('c'), div('d'), div('e')])
-      });
+      // 每次重建都新建组件：ComponentNode 缓存自己那份视图结果
+      ele.child(() => (count.value === 0 ? [div('a'), div('b')] : [div('c'), div('d'), div('e')]));
     });
     const container = host.renderDom();
     const first = container.children[0];
@@ -49,9 +46,7 @@ describe('multi-root fragments', () => {
   });
 
   it('serializes multi-root fragments inline for SSR', () => {
-    const Group = {
-      render: () => [span('x'), span('y')]
-    };
+    const Group = () => [span('x'), span('y')];
     const html = div().child(Group).toHTML();
 
     expect(html).toContain('<span>x</span><span>y</span>');

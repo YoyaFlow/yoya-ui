@@ -28,15 +28,30 @@ vi.mock('leaflet', () => ({ default: fakeMap }));
 
 import { LeafletMapExample } from './leaflet-map.js';
 
+/** 集成在 `whenMount` 里初始化：先落地再断言（挂到 body，销毁时一并摘掉）。 */
+function mountDemo(demo) {
+  demo.bindTo(document.body);
+  return document.body.lastElementChild;
+}
+
 describe('Leaflet map interop demo', () => {
   beforeEach(() => {
     mapInstances.length = 0;
     vi.clearAllMocks();
   });
 
+  it('does not create the map before the host lands', () => {
+    const demo = LeafletMapExample();
+
+    demo.renderDom();
+
+    expect(fakeMap.map).not.toHaveBeenCalled();
+    demo.destroy();
+  });
+
   it('initializes the map with tile layer and a marker on the container', () => {
     const demo = LeafletMapExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     expect(el.dataset.leafletHost).toBe('true');
     expect(fakeMap.map).toHaveBeenCalledWith(
@@ -45,33 +60,33 @@ describe('Leaflet map interop demo', () => {
     );
     expect(fakeMap.tileLayer).toHaveBeenCalledOnce();
     expect(fakeMap.circleMarker).toHaveBeenCalledOnce();
-    el.remove();
+    demo.destroy();
   });
 
   it('delegates flyTo to the map instance', () => {
     const demo = LeafletMapExample();
-    const el = demo.renderDom();
+    mountDemo(demo);
 
     demo.flyTo([31.23, 121.47], 12);
 
     expect(mapApi.flyTo).toHaveBeenCalledWith([31.23, 121.47], 12);
-    el.remove();
+    demo.destroy();
   });
 
   it('does not initialize the map twice when renderDom runs again', () => {
     const demo = LeafletMapExample();
-    const node = demo;
+    mountDemo(demo);
 
-    node.renderDom();
-    node.renderDom();
+    demo.renderDom();
+    demo.renderDom();
 
     expect(mapInstances).toHaveLength(1);
+    demo.destroy();
   });
 
   it('removes the map instance on destroy', () => {
     const demo = LeafletMapExample();
-    const el = demo.renderDom();
-    document.body.appendChild(el);
+    const el = mountDemo(demo);
 
     demo.destroy();
 

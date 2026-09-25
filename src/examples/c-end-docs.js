@@ -227,240 +227,192 @@ function ImagePreviewBasicExample() {
 function SkeletonBasicDemo() {
   const content = SkeletonBasicExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('基础骨架屏');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('段落骨架屏用于内容区块加载占位，数据到达后替换为真实内容。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('基础骨架屏');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('段落骨架屏用于内容区块加载占位，数据到达后替换为真实内容。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function SkeletonVariantsDemo() {
   const content = SkeletonVariantsExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('形态与尺寸');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('avatar、paragraph、block 三种形态可组合，avatarSize 控制头像尺寸。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('形态与尺寸');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('avatar、paragraph、block 三种形态可组合，avatarSize 控制头像尺寸。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function SkeletonToggleDemo() {
   const content = SkeletonToggleExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('加载完成切换');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('active(false) 移除占位并挂载真实内容，active(true) 回到骨架屏。');
-            stack.child(content);
-          });
+  return vCard((card) => {
+    card.vCardHeader('加载完成切换');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('active(false) 移除占位并挂载真实内容，active(true) 回到骨架屏。');
+        stack.child(content);
+      });
+    });
+    card.vCardFooter((footer) => {
+      footer.hstack({ gap: '10px' }, (row) => {
+        row.vButton('切换为真实内容', (button) => {
+          button.variant('primary');
+          button.on('click', () => content.loaded());
         });
-        card.vCardFooter((footer) => {
-          footer.hstack({ gap: '10px' }, (row) => {
-            row.vButton('切换为真实内容', (button) => {
-              button.variant('primary');
-              button.on('click', () => content.loaded());
-            });
-            row.vButton('回到骨架屏', (button) => {
-              button.on('click', () => content.loading());
-            });
-          });
+        row.vButton('回到骨架屏', (button) => {
+          button.on('click', () => content.loading());
         });
       });
-    }
-  };
+    });
+  });
 }
 
 function LazyImageBasicDemo() {
   const content = LazyImageBasicExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('基础懒加载');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('进入视口才加载，加载中显示占位，加载完成淡入显示。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('基础懒加载');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('进入视口才加载，加载中显示占位，加载完成淡入显示。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function LazyImageErrorDemo() {
   const content = LazyImageErrorExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('失败与重试');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('加载失败显示失败态，点击“加载失败，点击重试”可重新请求。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('失败与重试');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('加载失败显示失败态，点击“加载失败，点击重试”可重新请求。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function TransitionToggleDemo() {
   const content = TransitionToggleExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('进出场切换');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('show(false) 播放离开动画后隐藏，show(true) 重新进入。');
-            stack.child(content);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('切换显示', (button) => {
-            button.variant('primary');
-            button.on('click', () => content.toggle());
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('进出场切换');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('show(false) 播放离开动画后隐藏，show(true) 重新进入。');
+        stack.child(content);
       });
-    }
-  };
+    });
+    card.vCardFooter((footer) => {
+      footer.vButton('切换显示', (button) => {
+        button.variant('primary');
+        button.on('click', () => content.toggle());
+      });
+    });
+  });
 }
 
 function TransitionMotionDemo() {
   const content = TransitionMotionExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('动效策略');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('auto 遵循系统减少动态效果偏好，always 强制运行动画。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('动效策略');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('auto 遵循系统减少动态效果偏好，always 强制运行动画。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function TransitionForceDemo() {
   const content = TransitionForceExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('强制动画');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('motion: always 不跟随系统“减少动态效果”偏好，进出场始终播放动画。');
-            stack.child(content);
-          });
-        });
-        card.vCardFooter((footer) => {
-          footer.vButton('切换显示', (button) => {
-            button.variant('primary');
-            button.on('click', () => content.toggle());
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('强制动画');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('motion: always 不跟随系统“减少动态效果”偏好，进出场始终播放动画。');
+        stack.child(content);
       });
-    }
-  };
+    });
+    card.vCardFooter((footer) => {
+      footer.vButton('切换显示', (button) => {
+        button.variant('primary');
+        button.on('click', () => content.toggle());
+      });
+    });
+  });
 }
 
 function MasonryFixedDemo() {
   const content = MasonryFixedExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('固定列数');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('columns 指定列数，gap 控制间距，子项按顺序落入各列。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('固定列数');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('columns 指定列数，gap 控制间距，子项按顺序落入各列。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function MasonryResponsiveDemo() {
   const content = MasonryResponsiveExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('响应式列宽');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('minColumnWidth 设置最小列宽，列数随容器宽度自动调整。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('响应式列宽');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('minColumnWidth 设置最小列宽，列数随容器宽度自动调整。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function MasonryScrollDemo() {
   const content = MasonryScrollExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('滚动查看更多');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('24 张卡片放入固定高度容器，滚动即可查看后续内容，瀑布流列数保持一致。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('滚动查看更多');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('24 张卡片放入固定高度容器，滚动即可查看后续内容，瀑布流列数保持一致。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 function ImagePreviewBasicDemo() {
   const content = ImagePreviewBasicExample();
 
-  return {
-    render() {
-      return vCard((card) => {
-        card.vCardHeader('基础灯箱');
-        card.vCardBody((body) => {
-          body.vstack({ gap: '14px' }, (stack) => {
-            stack.p('点击缩略图打开灯箱，大图懒加载，支持缩放、平移、ESC 关闭。');
-            stack.child(content);
-          });
-        });
+  return vCard((card) => {
+    card.vCardHeader('基础灯箱');
+    card.vCardBody((body) => {
+      body.vstack({ gap: '14px' }, (stack) => {
+        stack.p('点击缩略图打开灯箱，大图懒加载，支持缩放、平移、ESC 关闭。');
+        stack.child(content);
       });
-    }
-  };
+    });
+  });
 }
 
 // ---- 页面定义 ----
@@ -786,72 +738,68 @@ export function ImagePreviewDocumentationPage() {
 }
 
 function createCEndDocumentationPage(definition) {
-  return {
-    render() {
-      return section((page) => {
-        page.className(
-          `components-route-page components-c-end-docs components-c-end-docs--${definition.key}`
-        );
-        page.attr('data-component-route-item', definition.routeItem);
-        page.attr('data-c-end-docs', definition.key);
+  return section((page) => {
+    page.className(
+      `components-route-page components-c-end-docs components-c-end-docs--${definition.key}`
+    );
+    page.attr('data-component-route-item', definition.routeItem);
+    page.attr('data-c-end-docs', definition.key);
 
-        page.header((header) => {
-          header.className('components-c-end-docs-header');
-          header.h1(definition.heading);
-          header.p(definition.intro);
+    page.header((header) => {
+      header.className('components-c-end-docs-header');
+      header.h1(definition.heading);
+      header.p(definition.intro);
+    });
+
+    page.section((usage) => {
+      usage.className('components-c-end-docs-usage');
+      usage.h2(definition.usageTitle);
+      usage.ul((list) => {
+        definition.usageItems.forEach((itemText) => {
+          list.li(itemText);
         });
+      });
+    });
 
-        page.section((usage) => {
-          usage.className('components-c-end-docs-usage');
-          usage.h2(definition.usageTitle);
-          usage.ul((list) => {
-            definition.usageItems.forEach((itemText) => {
-              list.li(itemText);
-            });
+    page.section((api) => {
+      api.className('components-c-end-docs-api');
+      api.h2('常用 API');
+      if (definition.apiIntro) {
+        api.p(definition.apiIntro);
+      }
+      api.pre((pre) => {
+        pre.className('c-end-api-signature');
+        pre.code(definition.apiSignature);
+      });
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('API');
+            row.th('用途');
+            row.th('示例');
           });
         });
-
-        page.section((api) => {
-          api.className('components-c-end-docs-api');
-          api.h2('常用 API');
-          if (definition.apiIntro) {
-            api.p(definition.apiIntro);
-          }
-          api.pre((pre) => {
-            pre.className('c-end-api-signature');
-            pre.code(definition.apiSignature);
-          });
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('API');
-                row.th('用途');
-                row.th('示例');
-              });
+        table.tbody((body) => {
+          definition.apiRows.forEach(([name, purpose, example]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td((cell) => cell.code(example));
             });
-            table.tbody((body) => {
-              definition.apiRows.forEach(([name, purpose, example]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td((cell) => cell.code(example));
-                });
-              });
-            });
-          });
-        });
-
-        page.section((examples) => {
-          examples.className('components-c-end-docs-examples');
-          examples.h2('代码演示');
-          examples.p(definition.examplesIntro);
-          definition.examples.forEach((demo) => {
-            examples.child(CEndExampleSection(demo));
           });
         });
       });
-    }
-  };
+    });
+
+    page.section((examples) => {
+      examples.className('components-c-end-docs-examples');
+      examples.h2('代码演示');
+      examples.p(definition.examplesIntro);
+      definition.examples.forEach((demo) => {
+        examples.child(CEndExampleSection(demo));
+      });
+    });
+  });
 }
 
 function CEndExampleSection(demo) {
@@ -863,20 +811,16 @@ function CEndExampleSection(demo) {
     title: demo.sourceTitle
   });
 
-  return {
-    render() {
-      return section((example) => {
-        example.className('components-c-end-demo');
-        example.attr('data-c-end-demo', demo.id);
-        example.h3(demo.title);
-        example.p(demo.description);
-        example.div((live) => {
-          live.className('components-c-end-demo-live');
-          live.attr('data-c-end-demo-live', 'true');
-          live.child(liveDemo);
-        });
-        example.child(sourcePanel);
-      });
-    }
-  };
+  return section((example) => {
+    example.className('components-c-end-demo');
+    example.attr('data-c-end-demo', demo.id);
+    example.h3(demo.title);
+    example.p(demo.description);
+    example.div((live) => {
+      live.className('components-c-end-demo-live');
+      live.attr('data-c-end-demo-live', 'true');
+      live.child(liveDemo);
+    });
+    example.child(sourcePanel);
+  });
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { bindDocumentEvent, bindWindowEvent } from '../../core/document-events.js';
-import { computed, div, ref, vButton, vText } from '../../index.js';
+import { computed, div, ref, vButton, vNode, vText } from '../../index.js';
 import { vThree } from '../../yoya.three.js';
 import {
   DEVICE_DEFS,
@@ -492,26 +492,27 @@ export function ScadaTwinStandalone() {
   function createStatusWindow() {
     const open = ref(false);
 
-    return {
-      render() {
-        return div((panel) => {
-          panel.className('scada-status-window');
-          panel.rebuildable(() => true);
-          panel.attr('data-open', open.value ? 'true' : 'false');
-          if (!open.value) {
-            panel.style({ display: 'none' });
-            return;
-          }
-          panel.h3('状态窗口');
-          panel.p('内容暂空 · 按 Tab 或 Alt 关闭');
-        });
-      },
-      update(patch) {
+    // 形态 B（`vNode`）：`update` 只写数据（票 07 的对象组件迁移）。
+    return vNode((api) => {
+      api.update = (patch) => {
         if (patch && patch.open !== undefined) {
           open.value = patch.open;
         }
-      }
-    };
+        return api;
+      };
+
+      return div((panel) => {
+        panel.className('scada-status-window');
+        panel.rebuildable(() => true);
+        panel.attr('data-open', open.value ? 'true' : 'false');
+        if (!open.value) {
+          panel.style({ display: 'none' });
+          return;
+        }
+        panel.h3('状态窗口');
+        panel.p('内容暂空 · 按 Tab 或 Alt 关闭');
+      });
+    });
   }
 
   function createStatsPanel() {
@@ -520,40 +521,40 @@ export function ScadaTwinStandalone() {
     const tank1 = ref(0);
     const tank2 = ref(0);
 
-    return {
-      render() {
-        return div((row) => {
-          row.className('scada-stats');
-          row.style({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
-          [
-            ['T-101', computed(() => `${tank1.value.toFixed(1)}%`)],
-            ['T-102', computed(() => `${tank2.value.toFixed(1)}%`)],
-            ['运行泵', running],
-            ['报警', alarms]
-          ].forEach(([label, stat]) => {
-            row.div((item) => {
-              item.className('scada-stat');
-              item.style({
-                backdropFilter: 'blur(6px)',
-                background: 'rgba(15, 23, 42, 0.72)',
-                border: '1px solid rgba(148, 163, 184, 0.28)',
-                borderRadius: '8px',
-                color: '#e2e8f0',
-                padding: '4px 10px'
-              });
-              item.strong(`${label} `);
-              item.child(vText(stat));
-            });
-          });
-        });
-      },
-      update(next) {
+    return vNode((api) => {
+      api.update = (next) => {
         tank1.value = next.tank1;
         tank2.value = next.tank2;
         running.value = next.running;
         alarms.value = next.alarms;
-      }
-    };
+        return api;
+      };
+
+      return div((row) => {
+        row.className('scada-stats');
+        row.style({ display: 'flex', flexWrap: 'wrap', gap: '8px' });
+        [
+          ['T-101', computed(() => `${tank1.value.toFixed(1)}%`)],
+          ['T-102', computed(() => `${tank2.value.toFixed(1)}%`)],
+          ['运行泵', running],
+          ['报警', alarms]
+        ].forEach(([label, stat]) => {
+          row.div((item) => {
+            item.className('scada-stat');
+            item.style({
+              backdropFilter: 'blur(6px)',
+              background: 'rgba(15, 23, 42, 0.72)',
+              border: '1px solid rgba(148, 163, 184, 0.28)',
+              borderRadius: '8px',
+              color: '#e2e8f0',
+              padding: '4px 10px'
+            });
+            item.strong(`${label} `);
+            item.child(vText(stat));
+          });
+        });
+      });
+    });
   }
 
   function createDetailPanel() {
@@ -564,106 +565,106 @@ export function ScadaTwinStandalone() {
     const status = ref('—');
     const value = ref('—');
 
-    return {
-      render() {
-        return div((panel) => {
-          panel.className('scada-detail');
-          panel.h3('设备详情');
-          panel.p((line) => {
-            line.strong('编号 ');
-            line.child(vText(id));
-          });
-          panel.p((line) => {
-            line.strong('名称 ');
-            line.child(vText(name));
-          });
-          panel.p((line) => {
-            line.strong('状态 ');
-            line.child(vText(status));
-          });
-          panel.p((line) => {
-            line.strong('实时值 ');
-            line.child(vText(value));
-          });
-          panel.p((line) => {
-            line.strong('控制模式 ');
-            line.child(vText(mode));
-          });
-          panel.p((line) => {
-            line.className('scada-detail-hint');
-            line.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
-            line.child(vText(hint));
-          });
-        });
-      },
-      update(next) {
+    return vNode((api) => {
+      api.update = (next) => {
         id.value = next.id;
         name.value = next.name;
         status.value = next.status;
         value.value = next.value;
         mode.value = next.mode;
         hint.value = next.hint;
-      }
-    };
+        return api;
+      };
+
+      return div((panel) => {
+        panel.className('scada-detail');
+        panel.h3('设备详情');
+        panel.p((line) => {
+          line.strong('编号 ');
+          line.child(vText(id));
+        });
+        panel.p((line) => {
+          line.strong('名称 ');
+          line.child(vText(name));
+        });
+        panel.p((line) => {
+          line.strong('状态 ');
+          line.child(vText(status));
+        });
+        panel.p((line) => {
+          line.strong('实时值 ');
+          line.child(vText(value));
+        });
+        panel.p((line) => {
+          line.strong('控制模式 ');
+          line.child(vText(mode));
+        });
+        panel.p((line) => {
+          line.className('scada-detail-hint');
+          line.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
+          line.child(vText(hint));
+        });
+      });
+    });
   }
 
   function createAlarmPanel(onAck) {
     const alarms = ref([]);
 
-    return {
-      render() {
-        return div((panel) => {
-          panel.className('scada-alarms');
-          // 区域直读报警列表：列表变化（增删/确认态）即重建
-          panel.rebuildable(() => true);
-          if (alarms.value.length === 0) {
-            panel.p('暂无报警记录');
-            return;
-          }
-          alarms.value.forEach((alarm) => {
-            panel.div((row) => {
-              row.className(`scada-alarm scada-alarm--${alarm.severity}`);
-              row.style({
-                backdropFilter: 'blur(6px)',
-                background:
-                  alarm.severity === 'critical'
-                    ? 'rgba(127, 29, 29, 0.75)'
-                    : 'rgba(146, 64, 14, 0.72)',
-                border:
-                  alarm.severity === 'critical'
-                    ? '1px solid rgba(248, 113, 113, 0.45)'
-                    : '1px solid rgba(251, 191, 36, 0.4)',
-                borderRadius: '8px',
-                color: '#f8fafc',
-                marginBottom: '6px',
-                padding: '6px 8px'
-              });
-              row.p((line) => {
-                line.strong(`#${alarm.id} ${alarm.deviceId} `);
-                line.span(alarm.message);
-              });
-              row.p((line) => {
-                line.style({ color: '#cbd5e1', fontSize: '12px', margin: 0 });
-                line.span(
-                  `${alarm.severity === 'critical' ? '严重' : '警告'} · T${alarm.raisedAt}` +
-                    (alarm.active ? ' · 未恢复' : ' · 已恢复')
-                );
-              });
-              if (alarm.active && !alarm.acked) {
-                row.vButton('确认', (button) => {
-                  button.on('click', () => onAck(alarm.id));
-                });
-              } else {
-                row.span(alarm.acked ? '已确认' : '');
-              }
+    return vNode((api) => {
+      api.update = (next) => {
+        alarms.value = next.alarms;
+        return api;
+      };
+
+      return div((panel) => {
+        panel.className('scada-alarms');
+        // 区域直读报警列表：列表变化（增删/确认态）即重建
+        panel.rebuildable(() => true);
+        if (alarms.value.length === 0) {
+          panel.p('暂无报警记录');
+          return;
+        }
+        alarms.value.forEach((alarm) => {
+          panel.div((row) => {
+            row.className(`scada-alarm scada-alarm--${alarm.severity}`);
+            row.style({
+              backdropFilter: 'blur(6px)',
+              background:
+                alarm.severity === 'critical'
+                  ? 'rgba(127, 29, 29, 0.75)'
+                  : 'rgba(146, 64, 14, 0.72)',
+              border:
+                alarm.severity === 'critical'
+                  ? '1px solid rgba(248, 113, 113, 0.45)'
+                  : '1px solid rgba(251, 191, 36, 0.4)',
+              borderRadius: '8px',
+              color: '#f8fafc',
+              marginBottom: '6px',
+              padding: '6px 8px'
             });
+            row.p((line) => {
+              line.strong(`#${alarm.id} ${alarm.deviceId} `);
+              line.span(alarm.message);
+            });
+            row.p((line) => {
+              line.style({ color: '#cbd5e1', fontSize: '12px', margin: 0 });
+              line.span(
+                `${alarm.severity === 'critical' ? '严重' : '警告'} · T${alarm.raisedAt}` +
+                  (alarm.active ? ' · 未恢复' : ' · 已恢复')
+              );
+            });
+            if (alarm.active && !alarm.acked) {
+              row.vButton('确认', (button) => {
+                button.on('click', () => onAck(alarm.id));
+              });
+            } else {
+              row.span(alarm.acked ? '已确认' : '');
+            }
           });
         });
-      },
-      update(next) {
-        alarms.value = next.alarms;
-      }
-    };
+      });
+    });
   }
 
   function refreshHud(force = false) {
@@ -840,190 +841,190 @@ export function ScadaTwinStandalone() {
   threeNode.on('pointerdown', handlePointerDown);
   threeNode.on('contextmenu', handleContextMenu);
 
-  return {
-    destroy() {
+  // 形态 B（`vNode`）：收尾走 `whenDestroy`（票 07；`destroy` 是节点自己的 API，不能当命令）。
+  return vNode((api) => {
+    api.whenDestroy = () => {
       runtime.timer?.dispose?.();
       runtime.cleanups.forEach((unbind) => unbind());
       runtime.cleanups = [];
       exitLock();
       rootNode?.destroy();
       rootNode = null;
-    },
-    render() {
-      ui.statsPanel = createStatsPanel();
-      ui.detailPanel = createDetailPanel();
-      ui.alarmPanel = createAlarmPanel(ackAlarm);
-      ui.lockHint = ref('未锁定：光标可见 · 点击画面进入 FPS · Tab 状态窗口');
-      ui.reticleText = ref('—');
-      ui.lockBannerText = ref('');
-      ui.statusWindow = createStatusWindow();
+    };
 
-      rootNode = div((root) => {
-        root.className('scada-twin');
-        root.attr('data-status', 'closed');
-        root.style({
-          background: '#0b1220',
-          height: '100vh',
+    ui.statsPanel = createStatsPanel();
+    ui.detailPanel = createDetailPanel();
+    ui.alarmPanel = createAlarmPanel(ackAlarm);
+    ui.lockHint = ref('未锁定：光标可见 · 点击画面进入 FPS · Tab 状态窗口');
+    ui.reticleText = ref('—');
+    ui.lockBannerText = ref('');
+    ui.statusWindow = createStatusWindow();
+
+    rootNode = div((root) => {
+      root.className('scada-twin');
+      root.attr('data-status', 'closed');
+      root.style({
+        background: '#0b1220',
+        height: '100vh',
+        left: 0,
+        overflow: 'hidden',
+        position: 'fixed',
+        top: 0,
+        width: '100vw'
+      });
+      root.div((viewport) => {
+        viewport.className('scada-viewport');
+        viewport.style({
+          bottom: 0,
           left: 0,
-          overflow: 'hidden',
-          position: 'fixed',
-          top: 0,
-          width: '100vw'
+          position: 'absolute',
+          right: 0,
+          top: 0
         });
-        root.div((viewport) => {
-          viewport.className('scada-viewport');
-          viewport.style({
-            bottom: 0,
-            left: 0,
+        viewport.child(threeNode);
+      });
+
+      root.div((hud) => {
+        hud.className('scada-hud');
+        hud.style({
+          bottom: 0,
+          left: 0,
+          pointerEvents: 'none',
+          position: 'absolute',
+          right: 0,
+          top: 0
+        });
+        hud.div((topLeft) => {
+          topLeft.className('hud-panel scada-top-left');
+          topLeft.style({
+            left: '16px',
             position: 'absolute',
-            right: 0,
-            top: 0
+            top: '14px'
           });
-          viewport.child(threeNode);
+          topLeft.h1('工业 SCADA');
+          topLeft.p('假数据数字孪生 · 第一人称厂区巡查');
+          topLeft.p((hint) => {
+            hint.className('scada-lock-hint');
+            hint.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
+            hint.child(vText(ui.lockHint));
+          });
         });
 
-        root.div((hud) => {
-          hud.className('scada-hud');
-          hud.style({
-            bottom: 0,
-            left: 0,
+        hud.div((statsBox) => {
+          statsBox.className('hud-panel scada-top-right');
+          statsBox.style({ position: 'absolute', right: '16px', top: '14px' });
+          statsBox.child(ui.statsPanel);
+        });
+
+        hud.div((deviceBox) => {
+          deviceBox.className('hud-panel scada-device-hud');
+          deviceBox.style({
+            left: '16px',
+            position: 'absolute',
+            top: '150px',
+            width: '210px'
+          });
+          deviceBox.h3('设备');
+          deviceBox.div((list) => {
+            list.style({ display: 'grid', gap: '6px' });
+            DEVICE_DEFS.forEach((device, index) => {
+              const button = vButton(`${index + 1} ${device.id} ${device.name}`, (entry) => {
+                entry.on('click', () => focusDevice(device.id));
+              });
+              deviceButtons.set(device.id, button);
+              list.child(button);
+            });
+          });
+        });
+
+        hud.div((alarmBox) => {
+          alarmBox.className('hud-panel scada-alarm-hud');
+          alarmBox.style({
+            maxHeight: '300px',
+            overflow: 'auto',
+            position: 'absolute',
+            right: '16px',
+            top: '120px',
+            width: '330px'
+          });
+          alarmBox.h3('报警记录');
+          alarmBox.child(ui.alarmPanel);
+        });
+
+        hud.div((bottomLeft) => {
+          bottomLeft.className('hud-panel scada-bottom-left');
+          bottomLeft.style({
+            bottom: '16px',
+            left: '16px',
+            position: 'absolute',
+            width: '300px'
+          });
+          bottomLeft.child(ui.detailPanel);
+          bottomLeft.div((controls) => {
+            controls.className('scada-controls');
+            controls.style({ display: 'grid', gap: '6px', gridTemplateColumns: '1fr 1fr' });
+            [
+              ['E 启停', 'run'],
+              ['R 自动', 'auto'],
+              ['F 故障', 'fault']
+            ].forEach(([label, action]) => {
+              controls.vButton(label, (button) => {
+                button.on('click', () => setOverride(action));
+              });
+            });
+          });
+        });
+
+        hud.div((reticleWrap) => {
+          reticleWrap.className('scada-reticle-wrap');
+          reticleWrap.style({
+            left: '50%',
             pointerEvents: 'none',
             position: 'absolute',
-            right: 0,
-            top: 0
+            top: '50%',
+            transform: 'translate(-50%, -50%)'
           });
-          hud.div((topLeft) => {
-            topLeft.className('hud-panel scada-top-left');
-            topLeft.style({
-              left: '16px',
-              position: 'absolute',
-              top: '14px'
-            });
-            topLeft.h1('工业 SCADA');
-            topLeft.p('假数据数字孪生 · 第一人称厂区巡查');
-            topLeft.p((hint) => {
-              hint.className('scada-lock-hint');
-              hint.style({ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' });
-              hint.child(vText(ui.lockHint));
-            });
+          ui.reticleWrap = reticleWrap;
+          syncReticleVisibility();
+          reticleWrap.div((reticle) => {
+            reticle.className('scada-reticle');
           });
-
-          hud.div((statsBox) => {
-            statsBox.className('hud-panel scada-top-right');
-            statsBox.style({ position: 'absolute', right: '16px', top: '14px' });
-            statsBox.child(ui.statsPanel);
+          reticleWrap.div((label) => {
+            label.className('scada-reticle-label');
+            label.child(vText(ui.reticleText));
           });
-
-          hud.div((deviceBox) => {
-            deviceBox.className('hud-panel scada-device-hud');
-            deviceBox.style({
-              left: '16px',
-              position: 'absolute',
-              top: '150px',
-              width: '210px'
-            });
-            deviceBox.h3('设备');
-            deviceBox.div((list) => {
-              list.style({ display: 'grid', gap: '6px' });
-              DEVICE_DEFS.forEach((device, index) => {
-                const button = vButton(`${index + 1} ${device.id} ${device.name}`, (entry) => {
-                  entry.on('click', () => focusDevice(device.id));
-                });
-                deviceButtons.set(device.id, button);
-                list.child(button);
-              });
-            });
-          });
-
-          hud.div((alarmBox) => {
-            alarmBox.className('hud-panel scada-alarm-hud');
-            alarmBox.style({
-              maxHeight: '300px',
-              overflow: 'auto',
-              position: 'absolute',
-              right: '16px',
-              top: '120px',
-              width: '330px'
-            });
-            alarmBox.h3('报警记录');
-            alarmBox.child(ui.alarmPanel);
-          });
-
-          hud.div((bottomLeft) => {
-            bottomLeft.className('hud-panel scada-bottom-left');
-            bottomLeft.style({
-              bottom: '16px',
-              left: '16px',
-              position: 'absolute',
-              width: '300px'
-            });
-            bottomLeft.child(ui.detailPanel);
-            bottomLeft.div((controls) => {
-              controls.className('scada-controls');
-              controls.style({ display: 'grid', gap: '6px', gridTemplateColumns: '1fr 1fr' });
-              [
-                ['E 启停', 'run'],
-                ['R 自动', 'auto'],
-                ['F 故障', 'fault']
-              ].forEach(([label, action]) => {
-                controls.vButton(label, (button) => {
-                  button.on('click', () => setOverride(action));
-                });
-              });
-            });
-          });
-
-          hud.div((reticleWrap) => {
-            reticleWrap.className('scada-reticle-wrap');
-            reticleWrap.style({
-              left: '50%',
-              pointerEvents: 'none',
-              position: 'absolute',
-              top: '50%',
-              transform: 'translate(-50%, -50%)'
-            });
-            ui.reticleWrap = reticleWrap;
-            syncReticleVisibility();
-            reticleWrap.div((reticle) => {
-              reticle.className('scada-reticle');
-            });
-            reticleWrap.div((label) => {
-              label.className('scada-reticle-label');
-              label.child(vText(ui.reticleText));
-            });
-          });
-
-          hud.div((banner) => {
-            banner.className('scada-lock-banner');
-            banner.style({ display: 'none' });
-            banner.on('click', () => {
-              runtime.lockBannerDismissed = true;
-              banner.style('display', 'none');
-            });
-            banner.child(vText(ui.lockBannerText));
-            ui.lockBanner = banner;
-            updateLockBanner();
-          });
-
-          hud.div((bottomCenter) => {
-            bottomCenter.className('hud-panel scada-bottom-center');
-            bottomCenter.style({
-              bottom: '16px',
-              left: '50%',
-              position: 'absolute',
-              textAlign: 'center',
-              transform: 'translateX(-50%)',
-              whiteSpace: 'nowrap'
-            });
-            bottomCenter.p('WASD 水平移动 · 空格上升 · V 下降 · Shift 加速 · 1-4 选择设备');
-          });
-
-          hud.child(ui.statusWindow);
         });
+
+        hud.div((banner) => {
+          banner.className('scada-lock-banner');
+          banner.style({ display: 'none' });
+          banner.on('click', () => {
+            runtime.lockBannerDismissed = true;
+            banner.style('display', 'none');
+          });
+          banner.child(vText(ui.lockBannerText));
+          ui.lockBanner = banner;
+          updateLockBanner();
+        });
+
+        hud.div((bottomCenter) => {
+          bottomCenter.className('hud-panel scada-bottom-center');
+          bottomCenter.style({
+            bottom: '16px',
+            left: '50%',
+            position: 'absolute',
+            textAlign: 'center',
+            transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap'
+          });
+          bottomCenter.p('WASD 水平移动 · 空格上升 · V 下降 · Shift 加速 · 1-4 选择设备');
+        });
+
+        hud.child(ui.statusWindow);
       });
-      return rootNode;
-    }
-  };
+    });
+    return rootNode;
+  });
 }
 
 function pumpStatusText(status) {

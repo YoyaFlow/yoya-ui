@@ -988,7 +988,7 @@ describe('router', () => {
     );
   });
 
-  it('resolves async route views that return render() component objects', async () => {
+  it('rejects async route views that resolve to a component object (票 07)', async () => {
     const appRouter = router((r) => {
       r.route('/page', () =>
         Promise.resolve({
@@ -1003,17 +1003,12 @@ describe('router', () => {
     appRouter.navigate('/page', { replace: true });
     await flush();
 
-    expect(document.querySelector('#app').textContent).toBe('组件对象内容');
-    expect(appRouter.currentView().renderDom().textContent).toBe('组件对象内容');
+    expect(document.querySelector('#app').textContent).toContain('Router route view must be');
   });
 
   it('calls lazy factories with the route context when a view resolves to a function', async () => {
     function createUserPage({ params }) {
-      return {
-        render() {
-          return div('用户 ' + params.id);
-        }
-      };
+      return div('用户 ' + params.id);
     }
     const appRouter = router((r) => {
       r.route('/user/:id', () => Promise.resolve(createUserPage));
@@ -1026,7 +1021,7 @@ describe('router', () => {
     expect(document.querySelector('#app').textContent).toBe('用户 42');
   });
 
-  it('supports render() component objects as synchronous route views', () => {
+  it('rejects component objects as synchronous route views (票 07)', () => {
     const appRouter = router((r) => {
       r.route('/sync', () => ({
         render() {
@@ -1036,9 +1031,9 @@ describe('router', () => {
     });
     appRouter.bindTo('#app').start();
 
-    appRouter.navigate('/sync', { replace: true });
-
-    expect(document.querySelector('#app').textContent).toBe('同步组件');
+    expect(() => appRouter.navigate('/sync', { replace: true })).toThrowError(
+      /Router route view must be/
+    );
   });
 
   it('invokes the default-export page function from a module with the route context', async () => {
@@ -1056,19 +1051,16 @@ describe('router', () => {
     });
   });
 
-  it('renders default-export component objects from modules without a factory call', async () => {
+  it('rejects a default-export component object (票 07：对象组件退场)', () => {
     window.history.replaceState(null, '', '/');
-    await new Promise((resolve) => setTimeout(resolve, 0));
     const appRouter = router((r) => {
-      r.route('/fixture-object', () => import('./page-object-fixture.js'));
+      r.route('/fixture-object', () => ({ render: () => div('fixture-object') }));
     });
     appRouter.bindTo('#app').start();
 
-    appRouter.navigate('/fixture-object', { replace: true });
-
-    await vi.waitFor(() => {
-      expect(document.querySelector('#app').textContent).toBe('fixture-object');
-    });
+    expect(() => appRouter.navigate('/fixture-object', { replace: true })).toThrowError(
+      /Router route view must be/
+    );
   });
   it('opens a right-click context menu on title tabs with all actions', () => {
     const create = createViewsWithRoutes([

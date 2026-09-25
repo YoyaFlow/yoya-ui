@@ -99,7 +99,7 @@ L3 组件级 token     默认派生自语义层，组件特殊值再扩展（预
 
 ## 5.1 页面壳 vBody
 
-`vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。 区域级容器使用 `vThemeShell`：默认提供主题化背景（`--yoya-color-surface`）、边框（`--yoya-color-border`）、圆角（`--yoya-radius-md`）与文字色（`--yoya-color-text`），并可通过 `.background()` / `.backgroundOpacity(alpha)` / `.radius()` / `.border()` / `.borderColor()` / `.scrollable()` 单独调整单个实例。
+`vBody` 是页面级主题化的接入点：出厂即消费主题 token（背景 `--yoya-color-bg`、文字 `--yoya-color-text`、`--yoya-font-family`、`--yoya-font-size`、`--yoya-line-height`），明暗/品牌/密度切换时页面壳自动跟随，无需页面自行定义 body 级样式。 区域级"面"由提供它的组件自己负责——`vCard` 是样板：背景（`--yoya-color-surface`）、边框（`--yoya-color-border`）与圆角写在皮肤的 `[vn~='VCard']` 规则里，单个实例通过该组件的 API 或行内 `styles()` 调整。想要同样观感的普通盒子，就为自己的身份写一条面规则（或用实例样式），不需要再去拿一个专门的"外壳容器"。
 
 ```js
 import { vBody } from '@yoyaflow/yoya-ui/ui';

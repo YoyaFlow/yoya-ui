@@ -156,6 +156,7 @@ vi.mock('three', () => {
 });
 
 import { renderExamplesIndex } from './index.router.js';
+import L from 'leaflet';
 
 let root = null;
 
@@ -213,6 +214,10 @@ describe('third-party interop routes', { timeout: 30000 }, () => {
     expect(page).not.toBeNull();
     expect(page.querySelectorAll('[data-interop-demo]')).toHaveLength(5);
     expect(page.textContent).toContain('vClientOnly');
+    // 接入示例必须是当前的组件形态：对象组件的 `demo.render()` 已退场（票 03），别再教
+    const signature = page.querySelector('.interop-policy-signature').textContent;
+    expect(signature).toContain('page.child(vClientOnly(() => vLeafletMap()));');
+    expect(signature).not.toContain('.render()');
   });
 
   it.each([
@@ -257,7 +262,7 @@ describe('third-party interop routes', { timeout: 30000 }, () => {
         } else {
           expect(sourceExamples.length).toBe(2);
           expect(
-            sourceExamples.some((node) => node.dataset.sourceExample.includes('胶水类源码'))
+            sourceExamples.some((node) => node.dataset.sourceExample.includes('胶水组件源码'))
           ).toBe(true);
           expect(
             sourceExamples.some((node) => node.dataset.sourceExample.includes('使用案例源码'))
@@ -266,11 +271,27 @@ describe('third-party interop routes', { timeout: 30000 }, () => {
       });
       if (key === 'ag-grid') {
         expect(
-          page.querySelector('[data-source-example="AG Grid 统一胶水入口源码"]')
+          page.querySelector('[data-source-example="AG Grid 统一胶水组件源码"]')
         ).not.toBeNull();
       }
     }
   );
+
+  // 集成在 `whenMount` 里初始化，而演示页把宿主包在 `vClientOnly` 里：透明包装必须把钩子转发给内层组件
+  // （引擎口径见 `src/core/hook-forwarding.test.js`），否则页面结构在、地图永远不建。
+  it('initializes the Leaflet demo through the vClientOnly wrapper', async () => {
+    L.map.mockClear();
+    root = renderExamplesIndex('#app');
+
+    await openRoute('/components/third-party/leaflet');
+    await vi.waitFor(() => {
+      expect(selectedRouteTitle()).toBe('Leaflet 地图');
+    });
+
+    const host = document.querySelector('[data-leaflet-host]');
+    expect(host).not.toBeNull();
+    expect(L.map).toHaveBeenCalledWith(host, expect.objectContaining({ zoom: 12 }));
+  });
 
   it('renders the third-party Three.js page with live cards and source panels', async () => {
     root = renderExamplesIndex('#app');

@@ -61,16 +61,13 @@ export function VTextarea() {
 
     api.value = (value) => {
       if (value === undefined) {
-        return field._el?.value ?? state.value ?? field.textContent();
+        return field.prop('value') ?? state.value ?? field.textContent();
       }
 
       const next = resolveTextValue(value);
       state.value = next;
       replaceChildren(field, next ? normalizeChildren(next) : []);
-
-      if (field._el) {
-        field._el.value = next;
-      }
+      field.prop('value', next);
 
       syncClear();
       return api;
@@ -219,10 +216,8 @@ export function VTextarea() {
     api.clear = () => {
       api.value('');
 
-      if (field._el) {
-        field._el.dispatchEvent(new Event('input', { bubbles: true }));
-        field._el.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      field.emit('input');
+      field.emit('change');
 
       return api;
     };
@@ -310,8 +305,8 @@ export function VTextarea() {
 
     // 元素机制挂到局部节点：SSR 回读走内层节点，权限落位走视图根（渲染路径按节点调用）
     field.hydrateSnapshot = () => {
-      if (field._el) {
-        api.value(field._el.value);
+      if (field.isLanded()) {
+        api.value(field.prop('value'));
       }
       return field;
     };
@@ -332,7 +327,7 @@ export function VTextarea() {
       event.preventDefault();
       event.stopPropagation();
       api.clear();
-      field._el?.focus();
+      field.focus();
     });
 
     root.child(field, clearButton);

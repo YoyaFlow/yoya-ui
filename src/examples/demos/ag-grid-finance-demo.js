@@ -1,5 +1,5 @@
 import { vNode } from '../../index.js';
-import { AgGridDemoNode } from './ag-grid-glue.js';
+import { vAgGrid } from './ag-grid-glue.js';
 
 const SPARK_WIDTH = 104;
 const SPARK_HEIGHT = 30;
@@ -241,7 +241,7 @@ export function AgGridFinanceExample() {
   };
 
   return vNode((api) => {
-    node = new AgGridDemoNode({
+    node = vAgGrid({
       columnDefs: columns(),
       height: '440px',
       gridOptions: {

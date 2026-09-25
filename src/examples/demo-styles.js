@@ -2,14 +2,22 @@ const baseRules = [
   [
     '.components-demo-shell',
     {
+      // 演示站的外壳外观（原来是 vThemeShell 投影过来的那几行）：面底色 / 边框 / 圆角 / 文字色
+      background: 'var(--yoya-color-surface, #ffffff)',
+      border: '1px solid var(--yoya-color-border, #d8dee8)',
+      borderRadius: 'var(--yoya-radius-md, 6px)',
       boxSizing: 'border-box',
+      color: 'var(--yoya-color-text, #172033)',
       display: 'grid',
       gap: '0px',
       gridTemplateRows: '52px minmax(0, 1fr)',
+      // 恰好视口高 + border-box：边框算在 100dvh 里面，页面不会多出最外层滚动条
       height: '100dvh',
       margin: '0',
+      minWidth: '0',
       overflow: 'hidden',
-      padding: '0',
+      // 左右留一点边距：顶栏品牌 / 右上角开关不再贴着外壳边缘（原来 padding: 0）
+      padding: '0 14px',
       width: '100%'
     }
   ],
@@ -67,7 +75,7 @@ const baseRules = [
      .components-not-found p`,
     { letterSpacing: '0', margin: '0' }
   ],
-  ['.components-menu-intro h2', { fontSize: '1rem' }],
+  ['.components-menu-intro h2', { fontSize: '0.95rem', fontWeight: '600' }],
   ['.components-menu-list', { minWidth: '0', padding: '0', width: '100%' }],
   ['.components-route-page', { display: 'grid', gap: '16px' }]
 ];

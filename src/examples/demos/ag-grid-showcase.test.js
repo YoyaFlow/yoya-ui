@@ -44,14 +44,29 @@ import { AgGridFinanceExample } from './ag-grid-finance-demo.js';
 import { AgGridHrExample } from './ag-grid-hr-demo.js';
 import { AgGridInventoryExample } from './ag-grid-inventory-demo.js';
 
+/** 网格在 `whenMount` 里创建：先落地再断言（挂到 body，销毁时一并摘掉）。 */
+function mountDemo(demo) {
+  demo.bindTo(document.body);
+  return document.body.lastElementChild;
+}
+
 describe('AG Grid scenario showcase demos', () => {
   beforeEach(() => {
     gridInstances.length = 0;
   });
 
+  it('does not create the grid before the host lands', () => {
+    const demo = AgGridPerformanceExample(10, 2);
+
+    demo.renderDom();
+
+    expect(gridInstances).toHaveLength(0);
+    demo.destroy();
+  });
+
   it('performance reloads row and column counts through the grid api', () => {
     const demo = AgGridPerformanceExample(1200, 4);
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     expect(gridInstances[0].options.rowData).toHaveLength(1200);
     expect(gridInstances[0].options.columnDefs).toHaveLength(6);
@@ -66,12 +81,12 @@ describe('AG Grid scenario showcase demos', () => {
     expect(rowCall[1]).toHaveLength(3000);
     expect(demo.cellCount()).toBe(24000);
     demo.destroy();
-    el.remove();
+    expect(document.body.contains(el)).toBe(false);
   });
 
   it('finance renders sparkline and pushes price ticks via transactions', () => {
     const demo = AgGridFinanceExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
     const api = gridInstances[0];
     const columns = api.options.columnDefs;
 
@@ -97,12 +112,12 @@ describe('AG Grid scenario showcase demos', () => {
     expect(demo.tickCount()).toBe(0);
     expect(api.lastOption[1]).toHaveLength(8);
     demo.destroy();
-    el.remove();
+    expect(document.body.contains(el)).toBe(false);
   });
 
   it('hr rebuilds visible flat rows when org nodes expand or collapse', () => {
     const demo = AgGridHrExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     expect(gridInstances[0].options.rowData).toHaveLength(34);
 
@@ -113,12 +128,12 @@ describe('AG Grid scenario showcase demos', () => {
     expect(gridInstances[0].lastOption[1]).toHaveLength(34);
     expect(demo.visibleCount()).toBe(34);
     demo.destroy();
-    el.remove();
+    expect(document.body.contains(el)).toBe(false);
   });
 
   it('inventory shows variant rows in a second grid and filters master rows', () => {
     const demo = AgGridInventoryExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     const master = gridInstances[0];
     const detail = gridInstances[1];
@@ -132,6 +147,6 @@ describe('AG Grid scenario showcase demos', () => {
     demo.setStatus('缺货');
     expect(master.lastOption[1]).toHaveLength(4);
     demo.destroy();
-    el.remove();
+    expect(document.body.contains(el)).toBe(false);
   });
 });

@@ -105,22 +105,19 @@ describe('component hooks', () => {
     expect(seen).toEqual([null]);
   });
 
-  it('supports shape B component objects (child(componentObject))', () => {
+  it('mounts a definition-function component and fires whenMount once', () => {
     const calls = [];
-    const component = {
-      render: () => div('body'),
-      whenMount() {
-        calls.push(['mount', this === component]);
-      },
-      whenDestroy() {
-        calls.push(['destroy', this === component]);
-      }
-    };
+    const component = vNode((api) => {
+      api.whenMount = () => {
+        calls.push('mount');
+      };
+      return div('body');
+    });
 
     document.body.innerHTML = '';
     const host = mountToHost(div((root) => root.child(component)));
 
-    expect(calls).toEqual([['mount', true]]);
+    expect(calls).toEqual(['mount']);
     expect(host.innerHTML).toContain('body');
 
     document.body.innerHTML = '';

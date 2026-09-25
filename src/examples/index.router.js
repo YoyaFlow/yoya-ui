@@ -12,7 +12,6 @@ import {
   vRouterViews,
   vSplitPanel,
   vThemeModeSwitch,
-  vThemeShell,
   vTree
 } from '../index.js';
 import '../yoya.ui.css';
@@ -547,10 +546,10 @@ function createComponentsView(appRouter) {
     view.child(workspace);
   });
 
-  const root = vThemeShell((shell) => {
-    shell.virtual();
-    shell.child(vBody({ children: [appShell], gap: 0, maxWidth: '100%', padding: 0 }));
-  });
+  // 根就是普通的 vBody：演示站自己的"外壳"外观（面底色 / 边框 / 圆角 / 视口高）
+  // 写在 `demo-styles.js` 的 `.components-demo-shell` 上——那是恰好视口高、又 border-box
+  // 的那一层，边框算在 100dvh 里面，不会溢出成最外层滚动条
+  const root = vBody({ children: [appShell], gap: 0, maxWidth: '100%', padding: 0 });
 
   const applyStyles = () => applyDemoStyles(root);
 

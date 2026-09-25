@@ -2,6 +2,7 @@ import { registerChildFactories } from '../core/node.js';
 import { HtmlElementNode, div } from '../html/index.js';
 import { bindWindowEvent } from '../core/document-events.js';
 import { vNode } from '../core/v-node.js';
+import { ref } from '../core/signals/handle.js';
 import { createComponentShortcut, delegateNodeCommands } from '../components/shared.js';
 
 /**
@@ -31,6 +32,10 @@ export function VEChart({
   width,
   ...rest
 } = {}) {
+  // 尺寸是**状态**（命令写、视图跟）：句柄进 `style` 才是随状态变的活值，
+  // 写死成普通值会让 `chart.height('320px')` 只改状态、DOM 停在默认值（R6 读值绑定）。
+  const heightRef = ref(height ?? '400px');
+  const widthRef = ref(width ?? '100%');
   const state = {
     autoResize: autoResize === undefined ? true : Boolean(autoResize),
     chartInstance: null,
@@ -38,7 +43,7 @@ export function VEChart({
     destroyed: false,
     echartsLib: echartsLib ?? null,
     element: null,
-    height: height ?? '400px',
+    height: heightRef,
     loading: Boolean(loading),
     loadingText: loadingText ?? '加载中...',
     onReadyCallbacks: [],
@@ -48,7 +53,7 @@ export function VEChart({
     resizeObserver: null,
     resizeUnbind: null,
     theme: theme ?? null,
-    width: width ?? '100%'
+    width: widthRef
   };
 
   const resolveLib = () => {
@@ -197,19 +202,19 @@ export function VEChart({
 
     api.width = (value) => {
       if (value === undefined) {
-        return state.width;
+        return state.width.value;
       }
 
-      state.width = value;
+      state.width.value = value;
       return api;
     };
 
     api.height = (value) => {
       if (value === undefined) {
-        return state.height;
+        return state.height.value;
       }
 
-      state.height = value;
+      state.height.value = value;
       return api;
     };
 

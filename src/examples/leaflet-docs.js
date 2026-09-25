@@ -1,15 +1,15 @@
 import { interopPageFrame } from './interop-section.js';
-import { LeafletMapDemoNode, LeafletMapExample } from './demos/leaflet-map.js';
+import { LeafletMapExample, vLeafletMap } from './demos/leaflet-map.js';
 
 const LEAF_DEMO = Object.freeze({
   id: 'leaflet',
   description: '拖动或缩放地图查看瓦片与标记点；用按钮在上海与杭州之间跳转定位。',
   component: LeafletMapExample,
-  sourceComponent: LeafletMapDemoNode,
-  imports: ['HtmlElementNode'],
+  sourceComponent: vLeafletMap,
+  imports: ['div', 'vNode'],
   extraSource: "import L from 'leaflet';\nimport 'leaflet/dist/leaflet.css';",
-  sourceTitle: 'Leaflet 胶水类源码',
-  usageImports: [{ from: './demos/leaflet-map.js', names: ['LeafletMapDemoNode'] }],
+  sourceTitle: 'Leaflet 胶水组件源码',
+  usageImports: ['vNode', { from: './demos/leaflet-map.js', names: ['vLeafletMap'] }],
   usageTitle: 'Leaflet 使用案例源码',
   outputText: '地图默认定位上海，可尝试切换城市。',
   controls: [

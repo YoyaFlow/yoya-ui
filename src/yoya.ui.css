@@ -546,23 +546,6 @@ body {
     width: 0;
   }
 
-  /* VThemeShell：背景的「基色 × 不透明度」由这里组合（票 01 / D11）。
-     命令只写 `--yoya-shell-bg` / `--yoya-shell-alpha` 两段数据，不认 color-mix() 的浏览器
-     走下面那条兜底——背景仍然正确，只丢掉透明度。 */
-  [vn~='VThemeShell'] {
-    --yoya-shell-composed: color-mix(
-      in srgb,
-      var(--yoya-shell-bg, var(--yoya-color-surface, #ffffff)) var(--yoya-shell-alpha, 100%),
-      transparent
-    );
-  }
-
-  @supports not (color: color-mix(in srgb, #fff, #000)) {
-    [vn~='VThemeShell'] {
-      --yoya-shell-composed: var(--yoya-shell-bg, var(--yoya-color-surface, #ffffff));
-    }
-  }
-
   :where([vn~='VField']) {
     display: grid;
     gap: 8px;
@@ -946,8 +929,9 @@ body {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 13px;
+    /* 页签标签走界面字体（原来这里写死等宽，标签像代码）；字号比正文小一档 */
+    font-family: inherit;
+    font-size: 12px;
     gap: 0;
     -ms-overflow-style: none;
     overflow-x: auto;
@@ -1061,9 +1045,10 @@ body {
     display: inline-flex;
     font: inherit;
     font-weight: 400;
-    gap: 8px;
-    margin-bottom: -9px;
-    padding: 7px 14px 8px;
+    gap: 6px;
+    /* 负 margin = 下内边距 + 1px 边框：激活页签的底边正好融进内容区 */
+    margin-bottom: -7px;
+    padding: 5px 12px 6px;
     white-space: nowrap;
   }
 
@@ -1082,7 +1067,7 @@ body {
   [vn~='VRouterViews'][data-title-position='right'] [vn~='VRouterViewsTitle'] {
     border-bottom-color: var(--yoya-color-border, #d0d7de);
     margin-bottom: 0;
-    padding: 8px 10px;
+    padding: 6px 9px;
   }
 
   [vn~='VRouterViews'][data-title-position='left'] [vn~='VRouterViewsTitle'] {
@@ -2558,14 +2543,15 @@ body {
      现在按"有没有内容"条件挂载（`mountable`），默认值不再跟 JS 抢。 */
   [vn~='VNavbarBrandTitle'] {
     color: var(--yoya-color-text-strong, #0f172a);
-    font-size: 1.02rem;
+    font-size: 1.1rem;
     font-weight: 700;
     line-height: 1.2;
   }
 
   [vn~='VNavbarBrandSubtitle'] {
     color: var(--yoya-color-text-muted, #64748b);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
+    font-weight: 500;
     line-height: 1.2;
   }
 
@@ -3109,9 +3095,9 @@ body {
     border-radius: 50%;
     color: var(--yoya-color-text-secondary, #6f6f6f);
     flex: 0 0 auto;
-    height: 32px;
+    height: 34px;
     padding: 0;
-    width: 32px;
+    width: 34px;
   }
 
   [vn~='VThemeModeSwitch'] > [vn~='VButton'][data-active='true'] {

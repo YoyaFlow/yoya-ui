@@ -1,20 +1,21 @@
 import { interopPageFrame } from './interop-section.js';
-import { CodeMirrorDemoNode, CodeMirrorExample } from './demos/codemirror-editor.js';
+import { CodeMirrorExample, vCodeMirror } from './demos/codemirror-editor.js';
 
 const CODE_DEMO = Object.freeze({
   id: 'codemirror',
   description: '直接编辑代码体验高亮；「写入示例片段」替换文档，「导出内容」显示当前全文。',
   component: CodeMirrorExample,
-  sourceComponent: CodeMirrorDemoNode,
-  imports: ['HtmlElementNode'],
+  sourceComponent: vCodeMirror,
+  imports: ['div', 'vNode'],
   extraSource: [
+    "import { isDarkMode, watchDocsTheme } from './docs-theme.js';",
     "import { Compartment } from '@codemirror/state';",
     "import { oneDark } from '@codemirror/theme-one-dark';",
     "import { EditorView, basicSetup } from 'codemirror';",
     "import { javascript } from '@codemirror/lang-javascript';"
   ].join('\n'),
-  sourceTitle: 'CodeMirror 6 胶水类源码',
-  usageImports: [{ from: './demos/codemirror-editor.js', names: ['CodeMirrorDemoNode'] }],
+  sourceTitle: 'CodeMirror 6 胶水组件源码',
+  usageImports: ['vNode', { from: './demos/codemirror-editor.js', names: ['vCodeMirror'] }],
   usageTitle: 'CodeMirror 使用案例源码',
   outputText: '编辑器默认展示一段可编辑示例代码。',
   controls: [

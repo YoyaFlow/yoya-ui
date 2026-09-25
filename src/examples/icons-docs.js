@@ -160,116 +160,112 @@ export function IconsDocumentationPage() {
     sourceDialog.open(true);
   };
 
-  return {
-    render() {
-      return section((page) => {
-        page.className('components-route-page components-icons-page');
-        page.attr('data-icons-page', 'true');
-        page.h1('SVG 图标');
-        page.p('统一使用 24x24 viewBox、currentColor 描边，可以按名称直接引入。');
+  return section((page) => {
+    page.className('components-route-page components-icons-page');
+    page.attr('data-icons-page', 'true');
+    page.h1('SVG 图标');
+    page.p('统一使用 24x24 viewBox、currentColor 描边，可以按名称直接引入。');
 
-        const sourceBlock = codeBlock({
-          content: exampleSource,
-          copyLabel: '复制示例代码',
-          language: 'js'
-        });
-        const copySource = sourceBlock.copy.bind(sourceBlock);
-        sourceBlock.copy = async () => {
-          const content = await copySource();
-          toast.success('源码已复制');
-          return content;
-        };
-        page.section((sourceSection) => {
-          sourceSection.className('components-icons-source-section');
-          sourceSection.attr('data-icons-source-section', 'true');
-          sourceSection.h2('源码示例');
-          sourceSection.p('下面这段代码演示三个常用图标的引入和渲染方式。');
-          sourceSection.child(sourceBlock);
-        });
+    const sourceBlock = codeBlock({
+      content: exampleSource,
+      copyLabel: '复制示例代码',
+      language: 'js'
+    });
+    const copySource = sourceBlock.copy.bind(sourceBlock);
+    sourceBlock.copy = async () => {
+      const content = await copySource();
+      toast.success('源码已复制');
+      return content;
+    };
+    page.section((sourceSection) => {
+      sourceSection.className('components-icons-source-section');
+      sourceSection.attr('data-icons-source-section', 'true');
+      sourceSection.h2('源码示例');
+      sourceSection.p('下面这段代码演示三个常用图标的引入和渲染方式。');
+      sourceSection.child(sourceBlock);
+    });
 
-        page.section((api) => {
-          api.className('components-icons-api');
-          api.attr('data-icons-api', 'true');
-          api.h2('API 说明');
-          api.p('每个图标都是独立函数，调用后返回一个 SvgElementNode。');
-          api.table((table) => {
-            table.thead((head) => {
-              head.tr((row) => {
-                row.th('函数');
-                row.th('说明');
-                row.th('返回');
-              });
-            });
-            table.tbody((body) => {
-              [
-                ['ArrowDownOutlined()', '向下箭头', 'SvgElementNode'],
-                ['SearchOutlined()', '搜索图标', 'SvgElementNode'],
-                ['UploadOutlined()', '上传图标', 'SvgElementNode'],
-                ['其余 XxxOutlined()', '与上述图标保持相同结构', 'SvgElementNode']
-              ].forEach(([name, purpose, returns]) => {
-                body.tr((row) => {
-                  row.td((cell) => cell.code(name));
-                  row.td(purpose);
-                  row.td(returns);
-                });
-              });
-            });
-          });
-          api.ul((list) => {
-            [
-              '默认尺寸为 24x24。',
-              '默认 fill 为 none。',
-              '默认 stroke 为 currentColor。',
-              '默认 aria-hidden 为 true。'
-            ].forEach((item) => list.li(item));
+    page.section((api) => {
+      api.className('components-icons-api');
+      api.attr('data-icons-api', 'true');
+      api.h2('API 说明');
+      api.p('每个图标都是独立函数，调用后返回一个 SvgElementNode。');
+      api.table((table) => {
+        table.thead((head) => {
+          head.tr((row) => {
+            row.th('函数');
+            row.th('说明');
+            row.th('返回');
           });
         });
-
-        sourceDialog = vDialog({ open: false });
-        sourceDialog.attr('data-icon-source-dialog', 'true');
-        sourceDialog.className('components-icon-source-dialog');
-        page.child(sourceDialog);
-
-        page.div((grid) => {
-          grid.className('components-icons-grid');
-          grid.attr('data-icons-grid', 'true');
-          iconEntries.forEach(({ description, factory, name }) => {
-            const icon = factory();
-            grid.article((cell) => {
-              cell.className('components-icon-cell');
-              cell.attr('data-icon-name', name);
-              cell.div((symbol) => {
-                symbol.className('components-icon-symbol');
-                symbol.child(icon);
-              });
-              cell.strong(name);
-              cell.span((descriptionNode) => {
-                descriptionNode.className('components-icon-description');
-                descriptionNode.child(description);
-              });
-              cell.vSymbolButton((sourceButton) => {
-                sourceButton.className('components-icon-source-trigger');
-                sourceButton.ariaLabel('查看源码定义');
-                sourceButton.attr('title', '源码定义');
-                sourceButton.icon(CodeOutlined());
-                sourceButton.on('click', (event) => {
-                  event.stopPropagation();
-                  showIconSource(name, factory);
-                });
-              });
-              cell.vSymbolButton((button) => {
-                button.className('components-icon-copy');
-                button.ariaLabel(`复制 ${name} 代码`);
-                button.icon(CopyOutlined());
-                button.on('click', (event) => {
-                  event.stopPropagation();
-                  void copyIconUsage(name);
-                });
-              });
+        table.tbody((body) => {
+          [
+            ['ArrowDownOutlined()', '向下箭头', 'SvgElementNode'],
+            ['SearchOutlined()', '搜索图标', 'SvgElementNode'],
+            ['UploadOutlined()', '上传图标', 'SvgElementNode'],
+            ['其余 XxxOutlined()', '与上述图标保持相同结构', 'SvgElementNode']
+          ].forEach(([name, purpose, returns]) => {
+            body.tr((row) => {
+              row.td((cell) => cell.code(name));
+              row.td(purpose);
+              row.td(returns);
             });
           });
         });
       });
-    }
-  };
+      api.ul((list) => {
+        [
+          '默认尺寸为 24x24。',
+          '默认 fill 为 none。',
+          '默认 stroke 为 currentColor。',
+          '默认 aria-hidden 为 true。'
+        ].forEach((item) => list.li(item));
+      });
+    });
+
+    sourceDialog = vDialog({ open: false });
+    sourceDialog.attr('data-icon-source-dialog', 'true');
+    sourceDialog.className('components-icon-source-dialog');
+    page.child(sourceDialog);
+
+    page.div((grid) => {
+      grid.className('components-icons-grid');
+      grid.attr('data-icons-grid', 'true');
+      iconEntries.forEach(({ description, factory, name }) => {
+        const icon = factory();
+        grid.article((cell) => {
+          cell.className('components-icon-cell');
+          cell.attr('data-icon-name', name);
+          cell.div((symbol) => {
+            symbol.className('components-icon-symbol');
+            symbol.child(icon);
+          });
+          cell.strong(name);
+          cell.span((descriptionNode) => {
+            descriptionNode.className('components-icon-description');
+            descriptionNode.child(description);
+          });
+          cell.vSymbolButton((sourceButton) => {
+            sourceButton.className('components-icon-source-trigger');
+            sourceButton.ariaLabel('查看源码定义');
+            sourceButton.attr('title', '源码定义');
+            sourceButton.icon(CodeOutlined());
+            sourceButton.on('click', (event) => {
+              event.stopPropagation();
+              showIconSource(name, factory);
+            });
+          });
+          cell.vSymbolButton((button) => {
+            button.className('components-icon-copy');
+            button.ariaLabel(`复制 ${name} 代码`);
+            button.icon(CopyOutlined());
+            button.on('click', (event) => {
+              event.stopPropagation();
+              void copyIconUsage(name);
+            });
+          });
+        });
+      });
+    });
+  });
 }

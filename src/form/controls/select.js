@@ -83,9 +83,7 @@ export function VSelect() {
 
       replaceChildren(field, nodes);
 
-      if (field._el) {
-        field._el.value = selectedValue;
-      }
+      field.prop('value', selectedValue);
     };
 
     const applyDisabled = () => {
@@ -153,7 +151,7 @@ export function VSelect() {
 
     api.value = (value) => {
       if (value === undefined) {
-        return field._el?.value ?? state.value ?? '';
+        return field.prop('value') ?? state.value ?? '';
       }
 
       state.value = resolveTextValue(value);
@@ -210,9 +208,7 @@ export function VSelect() {
     api.clear = () => {
       api.value('');
 
-      if (field._el) {
-        field._el.dispatchEvent(new Event('change', { bubbles: true }));
-      }
+      field.emit('change');
 
       return api;
     };
@@ -314,8 +310,8 @@ export function VSelect() {
 
     // 元素机制挂到内层 select：SSR 回读按节点调用
     field.hydrateSnapshot = () => {
-      if (field._el) {
-        api.value(field._el.value);
+      if (field.isLanded()) {
+        api.value(field.prop('value'));
       }
       return field;
     };
@@ -324,7 +320,7 @@ export function VSelect() {
       event.preventDefault();
       event.stopPropagation();
       api.clear();
-      field._el?.focus();
+      field.focus();
     });
     field.on('change', syncClear);
 

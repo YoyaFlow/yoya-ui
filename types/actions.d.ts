@@ -1,8 +1,10 @@
 import type {
+  ComponentNode,
   AttrValue,
   ChildInput,
   ElementFactory,
   ElementOptions,
+  PropValue,
   SetupCallback,
   SetupInput
 } from './core.js';
@@ -19,19 +21,20 @@ export interface ButtonOptions {
   text?: ChildInput;
   children?: ChildInput;
   /** 变体：`type` / `variant` 两键同义。 */
-  type?: ButtonVariant;
-  variant?: ButtonVariant;
-  formType?: ButtonFormType;
-  size?: ButtonSize;
-  disabled?: boolean;
-  loading?: boolean;
+  type?: PropValue<ButtonVariant>;
+  variant?: PropValue<ButtonVariant>;
+  formType?: PropValue<ButtonFormType>;
+  size?: PropValue<ButtonSize>;
+  disabled?: PropValue<boolean>;
+  loading?: PropValue<boolean>;
   /** 单选联动的值（`VButtons` 里用；不填按标签文本比对）。 */
   value?: unknown;
-  [key: string]: any;
+  /** 元素级配置（`class` / `style` / `onXxx` / `data-*` / `attrs` …）照旧透传。 */
+  [key: string]: unknown;
 }
 
 /** Compound button component. */
-export class VButton extends HtmlElementNode {
+export interface VButton extends ComponentNode {
   label(): string;
   label(content: ChildInput): VButton;
   content(content: ChildInput): VButton;
@@ -60,6 +63,8 @@ export class VButton extends HtmlElementNode {
   focus(): this;
 }
 
+export const VButton: { (props?: ButtonOptions): VButton };
+
 /** `vButtons({ … })` 的 props：`options` / `children` 都是按钮数据。 */
 export interface ButtonsOptions {
   variant?: ButtonVariant;
@@ -75,7 +80,7 @@ export interface ButtonsOptions {
 }
 
 /** Button group with selection state. */
-export class VButtons extends HtmlElementNode {
+export interface VButtons extends ComponentNode {
   child(...children: ChildInput[]): this;
   /** 追加一份按钮，返回按钮句柄（`container.vButton(…)`）。 */
   vButton(setup: ButtonOption | SetupInput<VButton>): VButton;
@@ -97,6 +102,8 @@ export class VButtons extends HtmlElementNode {
   ): VButtons;
 }
 
+export const VButtons: { (props?: ButtonsOptions): VButtons };
+
 export interface ButtonOption {
   label?: ChildInput;
   value?: unknown;
@@ -106,8 +113,22 @@ export interface ButtonOption {
   [key: string]: any;
 }
 
+/** `VFloatButton({ … })` 的直接参数。 */
+export interface FloatButtonOptions {
+  children?: ChildInput;
+  disabled?: PropValue<boolean>;
+  fixed?: PropValue<boolean>;
+  icon?: ChildInput;
+  label?: ChildInput;
+  position?: PropValue<string>;
+  size?: PropValue<ButtonSize>;
+  text?: ChildInput;
+  variant?: PropValue<ButtonVariant>;
+  [key: string]: unknown;
+}
+
 /** Floating action button. */
-export class VFloatButton extends HtmlElementNode {
+export interface VFloatButton extends ComponentNode {
   icon(content: ChildInput): VFloatButton;
   label(content: ChildInput): VFloatButton;
   content(content: ChildInput): VFloatButton;
@@ -125,15 +146,42 @@ export class VFloatButton extends HtmlElementNode {
   position(value: string): VFloatButton;
 }
 
+export const VFloatButton: { (props?: FloatButtonOptions): VFloatButton };
+
+/** `VSymbolButton({ … })` 的直接参数。 */
+export interface SymbolButtonOptions {
+  ariaLabel?: string;
+  icon?: ChildInput;
+  title?: ChildInput;
+  [key: string]: unknown;
+}
+
 /** Icon/symbol-only button without border or outline. */
-export class VSymbolButton extends HtmlElementNode {
+export interface VSymbolButton extends ComponentNode {
   icon(content: ChildInput): VSymbolButton;
   ariaLabel(): AttrValue | undefined;
   ariaLabel(value: string): VSymbolButton;
 }
 
+export const VSymbolButton: { (props?: SymbolButtonOptions): VSymbolButton };
+
+/** `VDropdownMenu({ … })` 的直接参数（`menu` / `menuContent` / `trigger` 收节点或句柄）。 */
+export interface DropdownMenuOptions {
+  children?: ChildInput;
+  closeOnSelect?: PropValue<boolean>;
+  content?: ChildInput;
+  label?: ChildInput;
+  menu?: SetupInput<HtmlElementNode>;
+  menuContent?: SetupInput<HtmlElementNode>;
+  open?: PropValue<boolean>;
+  placement?: PropValue<DropdownPlacement>;
+  text?: ChildInput;
+  trigger?: SetupInput<HtmlElementNode>;
+  [key: string]: unknown;
+}
+
 /** Dropdown menu anchored to a trigger. */
-export class VDropdownMenu extends HtmlElementNode {
+export interface VDropdownMenu extends ComponentNode {
   trigger(): HtmlElementNode;
   trigger(setup: SetupInput<HtmlElementNode>): VDropdownMenu;
   menuContent(): HtmlElementNode;
@@ -146,8 +194,24 @@ export class VDropdownMenu extends HtmlElementNode {
   toggle(): VDropdownMenu;
 }
 
+export const VDropdownMenu: { (props?: DropdownMenuOptions): VDropdownMenu };
+
+/** `VContextMenu({ … })` 的直接参数（`menu` / `menuContent` / `target` 收节点或句柄）。 */
+export interface ContextMenuOptions {
+  children?: ChildInput;
+  closeOnSelect?: PropValue<boolean>;
+  content?: ChildInput;
+  menu?: SetupInput<HtmlElementNode>;
+  menuContent?: SetupInput<HtmlElementNode>;
+  open?: PropValue<boolean>;
+  target?: SetupInput<HtmlElementNode>;
+  x?: PropValue<number>;
+  y?: PropValue<number>;
+  [key: string]: unknown;
+}
+
 /** Right-click context menu. */
-export class VContextMenu extends HtmlElementNode {
+export interface VContextMenu extends ComponentNode {
   target(): HtmlElementNode;
   target(setup: SetupInput<HtmlElementNode>): VContextMenu;
   menuContent(): HtmlElementNode;
@@ -161,6 +225,8 @@ export class VContextMenu extends HtmlElementNode {
   close(): VContextMenu;
 }
 
+export const VContextMenu: { (props?: ContextMenuOptions): VContextMenu };
+
 export const vButton: ElementFactory<VButton> & {
   (first?: ButtonOptions | SetupInput<VButton> | null, callback?: SetupCallback<VButton>): VButton;
 };
@@ -171,22 +237,28 @@ export const vButtons: ElementFactory<VButtons> & {
   ): VButtons;
 };
 export const vFloatButton: ElementFactory<VFloatButton> & {
-  (first?: SetupInput<VFloatButton> | null, callback?: SetupCallback<VFloatButton>): VFloatButton;
+  (
+    first?: FloatButtonOptions | SetupInput<VFloatButton> | null,
+    callback?: SetupCallback<VFloatButton>
+  ): VFloatButton;
 };
 export const vSymbolButton: ElementFactory<VSymbolButton> & {
   (
-    first?: SetupInput<VSymbolButton> | null,
+    first?: SymbolButtonOptions | SetupInput<VSymbolButton> | null,
     callback?: SetupCallback<VSymbolButton>
   ): VSymbolButton;
 };
 export const vDropdownMenu: ElementFactory<VDropdownMenu> & {
   (
-    first?: SetupInput<VDropdownMenu> | null,
+    first?: DropdownMenuOptions | SetupInput<VDropdownMenu> | null,
     callback?: SetupCallback<VDropdownMenu>
   ): VDropdownMenu;
 };
 export const vContextMenu: ElementFactory<VContextMenu> & {
-  (first?: SetupInput<VContextMenu> | null, callback?: SetupCallback<VContextMenu>): VContextMenu;
+  (
+    first?: ContextMenuOptions | SetupInput<VContextMenu> | null,
+    callback?: SetupCallback<VContextMenu>
+  ): VContextMenu;
 };
 
 /** Parent-shortcut surface merged onto HtmlElementNode. */
@@ -200,19 +272,19 @@ export interface ActionsParentShortcuts {
     callback?: SetupCallback<VButtons>
   ): VButtons;
   vFloatButton(
-    first?: SetupInput<VFloatButton> | null,
+    first?: FloatButtonOptions | SetupInput<VFloatButton> | null,
     callback?: SetupCallback<VFloatButton>
   ): VFloatButton;
   vSymbolButton(
-    first?: SetupInput<VSymbolButton> | null,
+    first?: SymbolButtonOptions | SetupInput<VSymbolButton> | null,
     callback?: SetupCallback<VSymbolButton>
   ): VSymbolButton;
   vDropdownMenu(
-    first?: SetupInput<VDropdownMenu> | null,
+    first?: DropdownMenuOptions | SetupInput<VDropdownMenu> | null,
     callback?: SetupCallback<VDropdownMenu>
   ): VDropdownMenu;
   vContextMenu(
-    first?: SetupInput<VContextMenu> | null,
+    first?: ContextMenuOptions | SetupInput<VContextMenu> | null,
     callback?: SetupCallback<VContextMenu>
   ): VContextMenu;
 }

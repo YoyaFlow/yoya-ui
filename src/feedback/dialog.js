@@ -32,16 +32,10 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
   let pendingOpenSync = false;
 
   return vNode((api) => {
-    /** 视图根的**真 DOM**：只读判定"建没建"，不提前 `renderDom()`（同上一条的口径）。 */
-    const element = () => view?._el ?? null;
-
-    const isModal = (el) => {
-      if (!el || typeof el.matches !== 'function') {
-        return false;
-      }
-
+    /** 视图根是不是模态态（`:modal` 匹配不了 / 还没落地 = false）。 */
+    const isModal = () => {
       try {
-        return el.matches(':modal');
+        return view.invoke('matches', ':modal') === true;
       } catch {
         return false;
       }
@@ -65,9 +59,7 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
 
     /** 开：原生 `showModal` 优先；不支持时只写 `open` 属性（显隐归 CSS 规则）。 */
     const openElement = ({ defer = true } = {}) => {
-      const el = element();
-
-      if (!el) {
+      if (!view.isLanded()) {
         // 还没落地：记下"要开"，渲染之后再补一次
         if (defer) {
           scheduleOpenSync();
@@ -75,12 +67,12 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
         return;
       }
 
-      if (typeof el.showModal !== 'function') {
+      if (typeof view.prop('showModal') !== 'function') {
         view.attr('open', true);
         return;
       }
 
-      if (!el.isConnected) {
+      if (!view.prop('isConnected')) {
         if (defer) {
           scheduleOpenSync();
         }
@@ -89,12 +81,12 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
 
       try {
         // 非模态的 `open`（例如 SSR 直出的那份）先摘掉，才能走 showModal
-        if (el.open && !isModal(el)) {
+        if (view.prop('open') && !isModal()) {
           view.attr('open', null);
         }
 
-        if (!el.open) {
-          el.showModal();
+        if (!view.prop('open')) {
+          view.invoke('showModal');
         }
 
         view.attr('open', true);
@@ -105,13 +97,9 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
 
     /** 关：原生 `close` 优先；不支持时只摘 `open` 属性（CSS 规则负责隐藏）。 */
     const closeElement = () => {
-      const el = element();
-
-      if (el && typeof el.close === 'function') {
+      if (view.isLanded() && view.prop('open')) {
         try {
-          if (el.open) {
-            el.close();
-          }
+          view.invoke('close');
         } catch {
           // 忽略不支持的关闭行为
         }

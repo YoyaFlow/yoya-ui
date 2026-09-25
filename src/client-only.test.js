@@ -2,22 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { computed, div, ref, vButton, vClientOnly, vText } from './index.js';
 import { hydrate, renderToString } from './yoya.ssr.js';
 
-/** 客户端专属计数岛：数据与视图都在组件对象里，写入信号即更新。 */
+/** 客户端专属计数岛：数据在闭包、视图由定义函数返回（票 07：对象组件已退场）。 */
 function createCounterIsland(initial = 1) {
   const count = ref(initial);
 
-  return {
-    render() {
-      return div((root) => {
-        root.span((line) => line.child(vText(computed(() => `n=${count.value}`))));
-        root.button('+', (button) => {
-          button.on('click', () => {
-            count.value += 1;
-          });
+  return () =>
+    div((root) => {
+      root.span((line) => line.child(vText(computed(() => `n=${count.value}`))));
+      root.button('+', (button) => {
+        button.on('click', () => {
+          count.value += 1;
         });
       });
-    }
-  };
+    });
 }
 
 describe('vClientOnly', () => {
@@ -65,7 +62,7 @@ describe('vClientOnly', () => {
     expect(element.querySelector('button').textContent).toBe('按钮');
   });
 
-  it('supports component object loaders in plain client rendering', () => {
+  it('supports definition-function loaders in plain client rendering', () => {
     const counter = vClientOnly(() => createCounterIsland(1));
     const element = counter.renderDom();
     document.body.appendChild(element);
@@ -75,7 +72,7 @@ describe('vClientOnly', () => {
     expect(document.body.textContent).toContain('n=2');
   });
 
-  it('hydrates a component object island and keeps it interactive', () => {
+  it('hydrates a definition-function island and keeps it interactive', () => {
     const page = () =>
       div((root) => {
         root.child(vClientOnly(() => createCounterIsland(2)));

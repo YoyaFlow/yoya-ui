@@ -1,13 +1,15 @@
 import { interopPageFrame } from './interop-section.js';
 import { ComponentSource } from './component-source.js';
 import './ag-grid-showcase.css';
-import { AgGridDemoNode } from './demos/ag-grid-glue.js';
+import { vAgGrid } from './demos/ag-grid-glue.js';
 import { AgGridPerformanceExample } from './demos/ag-grid-performance-demo.js';
 import { AgGridFinanceExample } from './demos/ag-grid-finance-demo.js';
 import { AgGridHrExample } from './demos/ag-grid-hr-demo.js';
 import { AgGridInventoryExample } from './demos/ag-grid-inventory-demo.js';
 
 const AG_GRID_IMPORTS = [
+  "import { isDarkMode, watchDocsTheme } from './docs-theme.js';",
+  '',
   [
     'import { AllCommunityModule, colorSchemeDark, createGrid,',
     "  ModuleRegistry, themeQuartz } from 'ag-grid-community';"
@@ -16,12 +18,14 @@ const AG_GRID_IMPORTS = [
   'ModuleRegistry.registerModules([AllCommunityModule]);'
 ].join('\n');
 
-const GLUE_PANEL = ComponentSource({
-  extraSource: AG_GRID_IMPORTS,
-  imports: ['HtmlElementNode'],
-  sourceComponent: AgGridDemoNode,
-  title: 'AG Grid 统一胶水入口源码'
-});
+// 缓存**工厂**（票 07）：页面工厂返回节点，节点只能挂一处；模块级缓存节点会让第二次进页面挂到旧实例。
+const gluePanel = () =>
+  ComponentSource({
+    extraSource: AG_GRID_IMPORTS,
+    imports: ['div', 'ref', 'vNode'],
+    sourceComponent: vAgGrid,
+    title: 'AG Grid 统一胶水组件源码'
+  });
 
 function performanceDemo() {
   return Object.freeze({
@@ -74,7 +78,7 @@ function performanceDemo() {
     usageImports: [
       {
         from: './demos/ag-grid-glue.js',
-        names: ['AgGridDemoNode']
+        names: ['vAgGrid']
       }
     ],
     usageTitle: 'Performance 使用案例源码'
@@ -125,7 +129,7 @@ function financeDemo() {
     usageImports: [
       {
         from: './demos/ag-grid-glue.js',
-        names: ['AgGridDemoNode']
+        names: ['vAgGrid']
       }
     ],
     usageTitle: 'Finance 使用案例源码'
@@ -162,7 +166,7 @@ function hrDemo() {
     usageImports: [
       {
         from: './demos/ag-grid-glue.js',
-        names: ['AgGridDemoNode']
+        names: ['vAgGrid']
       }
     ],
     usageTitle: 'HR 使用案例源码'
@@ -212,14 +216,7 @@ function inventoryDemo() {
     outputText: '共 12 个商品：在售 5、已暂停 3、缺货 4。点击任意主行查看下方规格明细。',
     title: '商品库存主从管理',
     usageComponent: AgGridInventoryExample,
-    usageImports: [
-      {
-        from: './demos/ag-grid-glue.js',
-        names: ['AgGridDemoNode']
-      },
-      'HtmlElementNode',
-      'vNode'
-    ],
+    usageImports: [{ from: './demos/ag-grid-glue.js', names: ['vAgGrid'] }, 'div', 'vNode'],
     usageTitle: 'Inventory 使用案例源码'
   });
 }
@@ -228,10 +225,10 @@ export function AgGridDocumentationPage() {
   return interopPageFrame({
     demos: [performanceDemo(), financeDemo(), hrDemo(), inventoryDemo()],
     docsKey: 'ag-grid',
-    gluePanel: GLUE_PANEL,
+    gluePanel: gluePanel(),
     heading: 'AG Grid Community 数据表格',
     lead: '参照 ag-grid.com/example 的四个大型场景重做演示：Performance 大数据量、Finance 实时行情、HR 组织树、Inventory 主从库存。四个场景共用同一个胶水入口，只各自提供列与数据配置。',
-    note: '网格统一由 AgGridDemoNode 入口挂载（createGrid 一次、destroy 时释放）。明暗与主题直接使用 AG Grid 自带的 Quartz：light / dark / auto-dark 跟随示例站的浅色、深色与系统模式，不再用 yoya-ui 变量改写 AG Grid 内部配色。',
+    note: '网格统一由 vAgGrid 胶水组件挂载（createGrid 一次、destroy 时释放）。明暗与主题直接使用 AG Grid 自带的 Quartz：light / dark / auto-dark 跟随示例站的浅色、深色与系统模式，不再用 yoya-ui 变量改写 AG Grid 内部配色。',
     pageClass: 'components-ag-grid-showcase',
     usage: [
       '需要 10 万级行/列的虚拟滚动，滚动、排序与过滤保持即时。',

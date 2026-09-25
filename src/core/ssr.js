@@ -6,7 +6,6 @@ import { withAccess } from './access.js';
 import { emitDevtools, isDevtoolsEnabled } from './devtools.js';
 import { HtmlElementNode } from '../html/index.js';
 import { beginLanding, endLanding, fireWhenMount } from './hooks.js';
-import { warnDeprecatedComponentObject } from './deprecations.js';
 
 /**
  * 从已取好的请求字段解析语言标识，优先级：cookie > query > Accept-Language > 默认值。
@@ -123,8 +122,8 @@ function scopeI18nBuild(i18n, state, build) {
 }
 
 /**
- * 统一解析组件为 ViewNode，支持三种形态：
- * 函数工厂（接收 initialState）、带 render() 的对象组件、ViewNode 实例。
+ * 统一解析组件为 ViewNode，支持两种形态：
+ * 函数工厂（接收 initialState）与 ViewNode 实例（票 07：对象组件退场）。
  */
 function createRootNode(component, state = null) {
   const resolve = (target) => {
@@ -136,13 +135,9 @@ function createRootNode(component, state = null) {
       return resolve(target(state));
     }
 
-    if (target && typeof target.render === 'function') {
-      warnDeprecatedComponentObject(target, 'renderToString / mount / hydrate');
-      return resolve(target.render());
-    }
-
     throw new TypeError(
-      'renderToString/mount requires a ViewNode, a component object with render(), or a factory function'
+      'renderToString/mount requires a ViewNode or a factory function ' +
+        '(object components retired in 0.7.0)'
     );
   };
 
@@ -482,8 +477,12 @@ function fireHydratedHooks(node) {
     return;
   }
 
+  // 透明包装 / 组件嵌组件：钩子挂在**内层视图根**上（与落地路径同一条归属链，见 `core/hooks.js`）
+  if (typeof node.viewRoots === 'function') {
+    node.viewRoots().forEach(fireHydratedHooks);
+  }
+
   if (node instanceof ComponentNode) {
-    node._resolveList().forEach(fireHydratedHooks);
     node.children().forEach(fireHydratedHooks);
     // 触发条件（"确实挂在树上"）由 `fireWhenMount` 自己把关，这里只负责按后序登记
     fireWhenMount(node);

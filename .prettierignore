@@ -1,6 +1,7 @@
 .codebase-memory
 .scratch
 dist
+**/dist
 node_modules
 package-lock.json
 src/chart/echarts.min.js

@@ -93,9 +93,8 @@ describe('devtools hook (core)', () => {
   });
 
   it('shows component boundaries and multi-root fragments', () => {
-    const fragment = {
-      render: () => [div('first'), div('second')]
-    };
+    // 形态 A 薄工厂（票 07）：多根 = 直接返回节点数组
+    const fragment = () => [div('first'), div('second')];
     const root = div().child(fragment);
     root.renderDom();
 

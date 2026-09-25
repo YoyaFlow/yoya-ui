@@ -809,16 +809,8 @@ export function VRouterViews(routerInstance) {
 
       if (!state.landed) return;
 
-      // 只有落地之后才动 DOM：清单外的由 commit 销毁，顺序搬到末尾
-      parent.commit();
-
-      const element = parent.renderDom();
-      if (!element) return;
-
-      ordered.forEach((child) => {
-        const childElement = child.isMounted() ? child.renderDom() : null;
-        if (childElement) element.appendChild(childElement);
-      });
+      // 只有落地之后才动 DOM：清单外的由引擎销毁，清单按 state 顺序搬到末尾（元素级机制走引擎口子）
+      parent.reorderChildren(ordered);
     };
 
     /**
@@ -923,10 +915,7 @@ export function VRouterViews(routerInstance) {
       placePopup();
 
       const handleDocumentClick = (event) => {
-        if (
-          !popup.renderDom()?.contains(event.target) &&
-          !moreButton.renderDom()?.contains(event.target)
-        ) {
+        if (!popup.owns(event.target) && !moreButton.owns(event.target)) {
           closePopup();
         }
       };
@@ -948,8 +937,8 @@ export function VRouterViews(routerInstance) {
       };
 
       function placePopup() {
-        const buttonRect = moreButton.renderDom()?.getBoundingClientRect();
-        const popupRect = popup.renderDom()?.getBoundingClientRect();
+        const buttonRect = moreButton.measure();
+        const popupRect = popup.measure();
         if (!buttonRect || !popupRect) {
           return;
         }
@@ -1100,7 +1089,8 @@ export function VRouterViews(routerInstance) {
     const closeTabContextMenu = () => {
       if (!titleContextMenu) return;
       replaceChildren(titleContextMenu, []);
-      titleContextMenu.renderDom()?.remove();
+      // 菜单挂在 document.body 上（树外挂载）：从 DOM 摘掉走引擎口子
+      titleContextMenu.invoke('remove');
       if (contextMenuCleanup) {
         contextMenuCleanup();
         contextMenuCleanup = null;
@@ -1215,7 +1205,7 @@ export function VRouterViews(routerInstance) {
       const menu = contextMenuOf();
       menu.bindTo(document.body);
 
-      const rect = menu.renderDom().getBoundingClientRect();
+      const rect = menu.measure();
       const viewportWidth = typeof window === 'undefined' ? 0 : window.innerWidth || 0;
       const viewportHeight = typeof window === 'undefined' ? 0 : window.innerHeight || 0;
       const edge = 8;
@@ -1224,7 +1214,7 @@ export function VRouterViews(routerInstance) {
       menu.styles({ left: `${left}px`, top: `${top}px` });
 
       const handlePointerDown = (pointerEvent) => {
-        if (!menu.renderDom()?.contains(pointerEvent.target)) {
+        if (!menu.owns(pointerEvent.target)) {
           closeTabContextMenu();
         }
       };
@@ -1531,12 +1521,7 @@ function normalizeRouteView(view, context) {
     return vText(view);
   }
 
-  if (
-    view !== null &&
-    typeof view === 'object' &&
-    typeof view.default !== 'undefined' &&
-    typeof view.render !== 'function'
-  ) {
+  if (view !== null && typeof view === 'object' && typeof view.default !== 'undefined') {
     return normalizeRouteView(view.default, context);
   }
 
@@ -1544,12 +1529,8 @@ function normalizeRouteView(view, context) {
     return normalizeRouteView(view(context), context);
   }
 
-  if (typeof view === 'object' && typeof view.render === 'function') {
-    return normalizeRouteView(view.render(), context);
-  }
-
   throw new TypeError(
-    'Router route view must be a ViewNode, string, number, null, undefined, a render() component object, a factory returning one, or a module with a default export'
+    'Router route view must be a ViewNode, string, number, null, undefined, a factory returning one, or a module with a default export'
   );
 }
 

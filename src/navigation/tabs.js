@@ -387,7 +387,7 @@ export function VTabs({
 
     /** 触发器元素 → 项：容器按自己造出来的项找（不遍历结构）。 */
     const tabFromTrigger = (trigger) =>
-      tabNodes.value.find((tab) => tab.trigger().renderDom() === trigger) ?? null;
+      tabNodes.value.find((tab) => tab.trigger().owns(trigger)) ?? null;
 
     const handleNavClick = (event) => {
       const trigger = event.target.closest?.('[vn~="VTabTrigger"]');
@@ -456,7 +456,7 @@ export function VTabs({
       }
 
       selectIndex(tabNodes.value.indexOf(nextTab), true);
-      nextTab.trigger().renderDom()?.focus?.();
+      nextTab.trigger().focus();
     };
 
     /** 追加一份页签：只写数据，结构（触发器 / 面板两端）交给 `keyed` 对账。 */

@@ -34,10 +34,11 @@ div((root) => {
   - 正确：`page.button('保存', (btn) => btn.on('click', fn))`
 - **不直接操作 document**：组件代码（含事件回调）不直接 `document.createElement` / `addEventListener`；需要文档级监听（外部点击、拖拽、Esc、滚动）时用 `bindDocumentEvent`，`window` 级用 `bindWindowEvent`；**帧循环/单帧用节点方法** `node.bindAnimationFrameLoop(cb)` / `node.bindAnimationFrame(cb)`（`destroy()` 自动取消，`stopAnimationFrameLoop()` 提前停）；注入样式用 `injectDocumentStyle`
 - **挂载走 `bindTo`**：`node.bindTo('#app')` 渲染并挂到容器；SSR 用 `hydrate` / `mount`。不要在业务代码里 `document.querySelector('#app').appendChild(node.renderDom())`——绕开挂载约定，容器不存在时还会直接抛错
-- **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在 render 里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
-- **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等）时才在 `render()` 之外先建再挂载；纯结构就地组合（`stack.div((box) => …)`、`page.vCard((card) => …)`），不要先把节点存成中间变量再 `child()` 挂回去
-- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回 ViewNode，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法就写 **vNode**（`vNode((api) => 视图)`，命令与钩子在 api 上）。**组件只有这两种写法**：父子嵌套要操作子实例、要重写渲染 / 生命周期，都写在 vNode 里（命令 + `self.node()` + `whenMount` / `whenDestroy`）——`class Xxx extends HtmlElementNode` 只是引擎内部的节点类型扩展，不是组件写法。对象组件（`{ render(), ... }`）**已弃用**、仅存量（同一对象挂两处会共用一份状态），不要写。**演示代码用同一条判据**：只演示结构与交互、不需要对外命令方法时，函数直接 `return` 节点（`return vCard((card) => …)`），不要白包一层 `render()`。详见 references/core.md
+- **复杂组件分块也走组件**：结构复杂时把每一块抽成同文件内的函数组件（PascalCase、描述 UI 单元、输入走参数），在视图表达式里组合；不要用匿名片段或 `renderTop` 这类位置式命名堆结构。详见 references/modules.md
+- **非必要不提前建节点**：只有需要组件句柄（`refresh()` / `update()` / `open()` 等）时才把子组件先建出来再 `child()` 挂回去；纯结构就地组合（`stack.div((box) => …)`、`page.vCard((card) => …)`），不要先把节点存成中间变量。**要复用页面壳 / 面板就缓存工厂**（`() => createPage(definition)`），不要缓存节点——节点只能挂一处
+- **组件形态按需升级**：确定这个组件没有额外行为要定义（无内部状态、无对外命令方法、无生命周期诉求）就用**形态 A 薄工厂**——函数直接返回 ViewNode，不要为「以后可能要用」先包成对象组件；有内部状态或对外命令方法就写 **vNode**（`vNode((api) => 视图)`，命令与钩子在 api 上）。**组件只有这两种写法**：父子嵌套要操作子实例、要重写渲染 / 生命周期，都写在 vNode 里（命令 + `self.node()` + `whenMount` / `whenDestroy`）——`class Xxx extends HtmlElementNode` 只是引擎内部的节点类型扩展，不是组件写法。对象组件（`{ render(), ... }`）**0.7 起运行期直接拒收**（`child(对象)` / `renderToString(页面对象)` / `vClientOnly(() => 对象)` / 路由页面对象都报错），不要写。**演示代码用同一条判据**：只演示结构与交互、不需要对外命令方法时，函数直接 `return` 节点（`return vCard((card) => …)`），不要白包一层 `render()`。**另外两条**：页面壳 / 面板缓存**工厂**而不是节点（节点只能挂一处，缓存节点会让第二次进页面空白）；组件上的 `get x()` 改读值命令（`api.x = () => …`，调用点写 `x()`）。详见 references/core.md
 - **`vNode` 是 ComponentNode 的快捷工厂**：`vNode((api) => 视图)` 定义即得到节点——可当根 `bindTo`、可当子节点、不产生占位元素，setup 返回数组即多根 fragment。对外命令方法收到 `api` 上（`api.reload = () => { …; return api }`），工厂把它们挂到节点本身，**撞上节点 API（`child` / `destroy` / `mountable` …）直接报错**，不静默覆盖；命令里 `return api` 等价于返回节点；自带错误边界写 `api.whenFailed = (error, info) => 降级节点`（等价于 `node.whenFailed(fn)`）。其余节点能力链在返回的节点上（`vNode(…).mountable(cond)`）。详见 references/core.md
+- **props 与命令面都有类型**：`VBadge({ count: 3 })` 这种**定义函数直参**逐键检查（每个组件的 `XxxOptions`）；`vBadge({ … })` 首参含元素级透传（`class` / `style` / `onXxx` / `data-*`），所以宽松。值位置可以放句柄（`PropValue<T>` = 值 / `SignalHandle` / 零参闭包 = 活值）。句柄的公开命令面由 `interface VXxx extends ComponentNode` 声明（拼错命令当场报错）；身份判定用 `componentNameOf` / `hasComponentIdentity`，**不是 `instanceof VXxx`**。详见 references/components.md
 
 ## 文本与状态
 
@@ -107,7 +108,7 @@ div((root) => {
 
 ## 权限控制
 
-组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。跨组件共享数据用 `provide(key, value)` + `inject(key, fallback)`（就近覆盖、随节点销毁，声明写在 setup / `render()` 里）；请求级注入用 `withContext(providers, build)` + `currentContext(key)`（SSR 每请求隔离）。详见 references/access-context.md。
+组件只声明裸资源码 `node.access('system:member')`，读/写级别由用户持有决定：无读不渲染、无写只读/禁用；容器声明即整块作用域、就近覆盖。SPA 用 `installAccess(access)` 初始化一次，SSR 用入口 `options.access` 注入。跨组件共享数据用 `provide(key, value)` + `inject(key, fallback)`（就近覆盖、随节点销毁，声明写在 setup 回调 / 组件定义函数的构建那一帧里）；请求级注入用 `withContext(providers, build)` + `currentContext(key)`（SSR 每请求隔离）。详见 references/access-context.md。
 
 ## DevTools（Beta）
 

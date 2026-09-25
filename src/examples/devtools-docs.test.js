@@ -5,7 +5,7 @@ import { DevtoolsDocumentationPage } from './devtools-docs.js';
 describe('devtools documentation page', () => {
   it('renders the reference inspector demo inside the docs shell', () => {
     const page = DevtoolsDocumentationPage();
-    const view = page.render();
+    const view = page;
     const element = view.renderDom();
 
     expect(element.getAttribute('data-component-route-item')).toBe('guides:devtools');

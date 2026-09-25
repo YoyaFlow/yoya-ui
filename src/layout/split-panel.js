@@ -58,14 +58,14 @@ export function VSplitPanel({
   return vNode((api, self) => {
     /** 容器当前尺寸（拖拽 / 键盘调整都要量，方向决定量哪个轴）。 */
     const containerSize = () => {
-      // 量测只读已经落地的元素（`_el`）：不为了量一次就提前 `renderDom()` 把 DOM 建出来
-      const element = self.node()._el;
-
-      if (!element) {
+      // 量测走引擎口子（未落地 = 0）：不为了量一次就提前把 DOM 建出来
+      if (!self.node().isLanded()) {
         return 0;
       }
 
-      return directionValue.value === 'horizontal' ? element.offsetWidth : element.offsetHeight;
+      return directionValue.value === 'horizontal'
+        ? self.node().prop('offsetWidth')
+        : self.node().prop('offsetHeight');
     };
 
     /** 首面板尺寸写回状态（px 取整；clamp 到 `minSize` 与"容器 - minSize"之间）。 */
@@ -93,19 +93,18 @@ export function VSplitPanel({
     };
 
     const startDrag = (event) => {
-      const element = self.node()._el;
-      const firstElement = firstBox?._el;
-
-      if (event.button !== 0 || !element || !firstElement) {
+      if (event.button !== 0 || !self.node().isLanded() || !firstBox?.isLanded()) {
         return;
       }
 
       event.preventDefault();
       const horizontal = directionValue.value === 'horizontal';
-      const rect = firstElement.getBoundingClientRect();
+      const rect = firstBox.measure();
 
       drag = {
-        containerSize: horizontal ? element.offsetWidth : element.offsetHeight,
+        containerSize: horizontal
+          ? self.node().prop('offsetWidth')
+          : self.node().prop('offsetHeight'),
         start: horizontal ? event.clientX : event.clientY,
         startSize: horizontal ? rect.width : rect.height
       };
@@ -121,8 +120,8 @@ export function VSplitPanel({
             ? 16
             : 0;
 
-      // 落地判定只读 `_el`（不要为了"建没建"去 `renderDom()` 把 DOM 建出来）
-      if (!delta || !self.node()._el) {
+      // 落地判定走引擎口子（不要为了"建没建"去把 DOM 建出来）
+      if (!delta || !self.node().isLanded()) {
         return;
       }
 

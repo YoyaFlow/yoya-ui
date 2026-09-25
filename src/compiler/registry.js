@@ -29,9 +29,6 @@ export const REGISTRY_VERSION = 1;
 
 const sha12 = (text) => createHash('sha256').update(text).digest('hex').slice(0, 12);
 
-/** 函数节点的类型：对象简写方法（`render() {}`）与函数表达式 / 箭头函数。 */
-const FUNCTION_TYPES = new Set(['ObjectMethod', 'FunctionExpression', 'ArrowFunctionExpression']);
-
 const withDotPrefix = (path) => (path.startsWith('.') ? path : `./${path}`);
 
 /**
@@ -112,32 +109,9 @@ export function findViewExpression(source, fn, imports = null) {
     return { callSource, paramsSource };
   }
 
-  if (returned.type === 'ObjectExpression') {
-    if (returned.properties.length !== 1) {
-      return {
-        error: '形态 B 组件的额外成员（状态 / 命令方法）本轮不编（要保留组件对象，见票 42）'
-      };
-    }
-    const render = returned.properties.find(
-      (property) => (property.key?.name ?? property.key?.value) === 'render'
-    );
-    const renderFn = render?.type === 'ObjectMethod' ? render : render?.value;
-    if (!renderFn || !FUNCTION_TYPES.has(renderFn.type)) {
-      return { error: '组件对象没有 render() 方法（形态 B 要求 render 返回视图）' };
-    }
-    const body =
-      renderFn.body.type === 'BlockStatement'
-        ? renderFn.body.body.length === 1 && renderFn.body.body[0].type === 'ReturnStatement'
-          ? renderFn.body.body[0].argument
-          : null
-        : renderFn.body;
-    if (!body) {
-      return { error: 'render() 只支持单一 return 视图（分支 / 多语句本轮不编）' };
-    }
-    return { callSource: source.slice(body.start, body.end), paramsSource };
-  }
-
-  return { error: '组件只支持返回单一视图（return 工厂调用 / { render() } / vNode(setup)）' };
+  // 票 07：对象组件（`return { render() { … } }`）已退场——这里不再有那条形状分支，
+  // 认不出就记原因跳过，调用点照旧走运行时构造。
+  return { error: '组件只支持返回单一视图（return 工厂调用 / vNode(setup)）' };
 }
 
 const failed = (file, exportName, reason) => ({

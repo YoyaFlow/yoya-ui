@@ -286,7 +286,7 @@ export function VColorPicker() {
     const bindOutsideClose = (enabled) => {
       if (enabled && !outsideUnbind) {
         outsideUnbind = bindDocumentEvent('mousedown', (event) => {
-          if (!node._el || !node._el.contains(event.target)) {
+          if (!node.owns(event.target)) {
             api.close();
           }
         });
@@ -320,19 +320,13 @@ export function VColorPicker() {
 
     /** 弹窗以 fixed 定位在触发器下方，避免被父容器 overflow 裁剪。 */
     const positionPanel = () => {
-      if (typeof window === 'undefined' || !node._el || !trigger._el) {
+      if (typeof window === 'undefined' || !trigger.isLanded() || !panel.isLanded()) {
         return;
       }
 
-      const rect = trigger._el.getBoundingClientRect();
-      const panelElement = panel._el;
-
-      if (!panelElement) {
-        return;
-      }
-
-      const panelWidth = panelElement.offsetWidth || 250;
-      const panelHeight = panelElement.offsetHeight || 280;
+      const rect = trigger.measure();
+      const panelWidth = panel.prop('offsetWidth') || 250;
+      const panelHeight = panel.prop('offsetHeight') || 280;
       const margin = 8;
       let left = rect.left;
 

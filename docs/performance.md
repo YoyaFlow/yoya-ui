@@ -85,9 +85,10 @@ fails the gate. See [benchmark/README.md](../benchmark/README.md) for the reprod
 
 ## Cross-harness numbers are not interchangeable
 
-This repository also keeps a self-built harness (`.scratch/perf-1x/`, msedge headless, reading the
-per-1000-row MB increment). It exists for before/after comparisons on the same machine. **The absolute
+During development a self-built harness (msedge headless, reading the per-1000-row MB increment) was used
+for before/after comparisons on the same machine; it lived in the local scratch area (`.scratch/`, removed
+in the 2026-09-25 cleanup — recreate it from the description above if needed). **The absolute
 values of the two setups are not interchangeable**: the official runner uses Chrome for Testing 152 with
-playwright and times operations, while the harness reads
+playwright and times operations, while that harness reads
 `performance.measureUserAgentSpecificMemory()` increments. The same code can differ by 1.5–3× between them,
 so comparisons only hold within one setup.

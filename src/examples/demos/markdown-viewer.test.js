@@ -52,6 +52,12 @@ vi.mock('@toast-ui/editor/viewer', () => ({ default: FakeViewer }));
 
 import { MarkdownViewerExample } from './markdown-viewer.js';
 
+/** 集成在 `whenMount` 里初始化：先落地再断言（挂到 body，销毁时一并摘掉）。 */
+function mountDemo(demo) {
+  demo.bindTo(document.body);
+  return document.body.lastElementChild;
+}
+
 describe('Toast UI Markdown edit / view demo', () => {
   beforeEach(() => {
     editorInstances.length = 0;
@@ -59,9 +65,19 @@ describe('Toast UI Markdown edit / view demo', () => {
     vi.clearAllMocks();
   });
 
+  it('does not create editor or viewer before the host lands', () => {
+    const demo = MarkdownViewerExample('# 标题');
+
+    demo.renderDom();
+
+    expect(editorInstances).toHaveLength(0);
+    expect(viewerInstances).toHaveLength(0);
+    demo.destroy();
+  });
+
   it('mounts editor and viewer side by side in edit mode', () => {
     const demo = MarkdownViewerExample('# 标题');
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     expect(el.dataset.markdownViewerHost).toBe('true');
     expect(editorInstances).toHaveLength(1);
@@ -72,25 +88,23 @@ describe('Toast UI Markdown edit / view demo', () => {
     expect(el.children[0].style.display).toBe('block');
     expect(el.children[1].style.display).toBe('block');
     expect(el.children[2].style.display).toBe('block');
-    el.remove();
+    demo.destroy();
   });
 
   it('syncs editor changes into the viewer preview', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.renderDom();
+    mountDemo(demo);
 
     editorInstances[0].markdown = '## 更新后的内容';
     editorInstances[0].changeHandler();
 
-    expect(viewerInstances[0].setMarkdown).toHaveBeenCalledWith(
-      '## 更新后的内容'
-    );
-    el.remove();
+    expect(viewerInstances[0].setMarkdown).toHaveBeenCalledWith('## 更新后的内容');
+    demo.destroy();
   });
 
   it('switches between edit and readonly view modes', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
     const editorPanel = el.children[0];
     const divider = el.children[1];
 
@@ -102,14 +116,14 @@ describe('Toast UI Markdown edit / view demo', () => {
     demo.setMode('edit');
     expect(demo.mode()).toBe('edit');
     expect(editorPanel.style.display).toBe('block');
-    el.remove();
+    demo.destroy();
   });
 
   it('uses the toastui dark theme when the docs mode is dark', () => {
     const root = document.documentElement;
     root.dataset.yoyaMode = 'dark';
     const demo = MarkdownViewerExample();
-    const el = demo.renderDom();
+    const el = mountDemo(demo);
 
     try {
       expect(editorInstances[0].config.theme).toBe('dark');
@@ -119,25 +133,24 @@ describe('Toast UI Markdown edit / view demo', () => {
     } finally {
       demo.destroy();
       delete root.dataset.yoyaMode;
-      el.remove();
     }
   });
 
   it('does not create instances twice on repeated renderDom', () => {
     const demo = MarkdownViewerExample();
-    const node = demo;
+    mountDemo(demo);
 
-    node.renderDom();
-    node.renderDom();
+    demo.renderDom();
+    demo.renderDom();
 
     expect(editorInstances).toHaveLength(1);
     expect(viewerInstances).toHaveLength(1);
+    demo.destroy();
   });
 
   it('destroys editor and viewer instances', () => {
     const demo = MarkdownViewerExample();
-    const el = demo.renderDom();
-    document.body.appendChild(el);
+    const el = mountDemo(demo);
 
     demo.destroy();
 

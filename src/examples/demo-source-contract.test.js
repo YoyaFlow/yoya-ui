@@ -33,7 +33,7 @@ const LONG_DEMO_BUDGET = Object.freeze({
   'form:form :: FormExample1': 71,
   'general:svg :: SvgProgressRingExample1': 84,
   'guides:component :: InteractiveComposeExample1': 86,
-  'guides:devtools :: DevtoolsInspectorDemo': 543,
+  'guides:devtools :: DevtoolsInspectorDemo': 553,
   'guides:i18n :: I18nExtendExample1': 73,
   'guides:i18n :: I18nParamsExample1': 68,
   'guides:state-node :: StateDynamicAttrsExample1': 61,
@@ -49,7 +49,8 @@ const LONG_DEMO_BUDGET = Object.freeze({
   'navigation:menu :: AdminSidebarCard': 86,
   'third-party:ag-grid :: AgGridFinanceExample': 269,
   'third-party:ag-grid :: AgGridHrExample': 245,
-  'third-party:ag-grid :: AgGridInventoryExample': 302
+  'third-party:ag-grid :: AgGridInventoryExample': 298,
+  'third-party:markdown-viewer :: vMarkdownViewer': 126
 });
 
 /** 收集一个面板文本里 import 的符号（支持多行 import）。 */
