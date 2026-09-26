@@ -1,11 +1,10 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import * as core from '@yoyaflow/yoya-core';
-import { runCli } from './index.js';
+import { runCli, runCliIfMain } from './index.js';
 
 const root = mkdtempSync(join(tmpdir(), 'yoya-cli-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -21,45 +20,36 @@ const record = () => {
 
 const fixture = join(import.meta.dirname, 'fixtures/item-fixture.js');
 
-/** 以子进程跑真实 CLI 入口（覆盖「主模块判断」这条只有真跑才会暴露的路径）。 */
-const runBin = (args) =>
-  new Promise((resolve) => {
-    execFile(
-      process.execPath,
-      [join(import.meta.dirname, 'bin.js'), ...args],
-      (error, stdout, stderr) =>
-        resolve({
-          code: typeof error?.code === 'number' ? error.code : 0,
-          output: `${stdout}${stderr}`
-        })
+/**
+ * 主模块判断（0.7.5 修的那个 bug：以前拿的是 `cli.js` 自己的 URL，永远不成立、CLI 静默不执行）。
+ *
+ * 这里**故意不 spawn 子进程**：CI 的顺序是 Test → Build，跑测试时 `packages/yoya-core/dist` 还不存在，
+ * 普通 node 子进程 import `@yoyaflow/yoya-core` 会直接崩（vitest 里能过是因为它把包别名到了 src）。
+ * 真实 CLI 的端到端校验放在 build 之后的 `npm run verify:dist`（见 scripts/verify-dist.mjs §5）。
+ */
+describe('bin 入口的主模块判断', () => {
+  it('runs the CLI when the given module URL matches argv[1], and stays quiet otherwise', async () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    try {
+      expect(await runCliIfMain(core, ['--help'], pathToFileURL(process.argv[1]).href)).toBe(0);
+      expect(spy, '命中主模块时应当打印用法').toHaveBeenCalled();
+
+      spy.mockClear();
+      const cliUrl = pathToFileURL(join(import.meta.dirname, 'cli.js')).href;
+      expect(await runCliIfMain(core, ['--help'], cliUrl)).toBeNull();
+      expect(spy, 'URL 不是调用方自己时不许执行').not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('passes its own module URL from bin.js', () => {
+    const source = readFileSync(join(import.meta.dirname, 'bin.js'), 'utf8');
+
+    expect(source).toMatch(
+      /runCliIfMain\(\s*core,\s*process\.argv\.slice\(2\),\s*import\.meta\.url\s*\)/
     );
-  });
-
-describe('bin 入口（真实子进程）', () => {
-  it('prints the usage when run as the main module', async () => {
-    const { code, output } = await runBin(['--help']);
-
-    expect(code).toBe(0);
-    expect(output).toContain('用法');
-  });
-
-  it('compiles a file and writes the artifact', async () => {
-    const out = join(root, 'bin-out', 'item.js');
-    mkdirSync(join(root, 'bin-out'), { recursive: true });
-
-    const { code } = await runBin([
-      '--file',
-      fixture,
-      '--component',
-      'Item',
-      '--mode',
-      'element',
-      '--out',
-      out
-    ]);
-
-    expect(code).toBe(0);
-    expect(existsSync(out)).toBe(true);
   });
 });
 
