@@ -5,10 +5,12 @@
 //   3. ui 的 dist 只通过**裸包名**引 core（不许相对路径钻进 core 目录）；
 //   4. 宿主单例冒烟：两包各装一次（workspace 链接），core 原语 + 组件一起渲染成 HTML，
 //      且身份判定（componentNameOf）成立——这条正是 docs/ssr.md 的"双副本失配"禁忌；
-//   5. compiler bin 可执行（`node dist/compiler.js --help`，顺带验 shebang）；
+//   5. compiler bin 真能当 CLI 跑（`--help` 必须打用法 + 真编一份夹具，顺带验 shebang）——
+//      放在 build 之后，因为测试阶段 `packages/yoya-core/dist` 还不存在（CLI 要 import core）；
 //   6. README 体积表 + 基准表与当前产物 / 数据源一致。
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { compareBenchmarkTables, readBenchmarkResults } from './benchmark-report.mjs';
 import { collectBundleReport, compareReadmeSizes } from './bundle-metrics.mjs';
@@ -214,8 +216,40 @@ const bin = join(ROOT, PACKAGES['yoya-ui'], 'dist/compiler.js');
 const help = spawnSync(process.execPath, [bin, '--help'], { encoding: 'utf8', cwd: ROOT });
 if (help.status === 0) ok('`node dist/compiler.js --help` 退出码 0');
 else bad(`compiler bin 失败：${help.status} ${help.stderr?.slice(0, 200)}`);
+// 退出码 0 不够：0.7.5 之前主模块判断拿错 URL，CLI 是**静默 no-op**，也是退出码 0。
+if ((help.stdout ?? '').includes('用法')) ok('`--help` 真的打印了用法（不是静默 no-op）');
+else bad(`--help 没有输出用法：${(help.stdout ?? '').slice(0, 120)}`);
 if (readFileSync(bin, 'utf8').startsWith('#!')) ok('bin 带 shebang');
 else bad('bin 缺 shebang（npm 的 POSIX shim 会直接 exec 它）');
+// 真编一份中性夹具：CLI 端到端（构建后 dist 已就位）
+const compileOut = mkdtempSync(join(tmpdir(), 'yoya-verify-compile-'));
+const compiledFile = join(compileOut, 'item.js');
+const compiled = spawnSync(
+  process.execPath,
+  [
+    bin,
+    '--file',
+    join(ROOT, PACKAGES['yoya-compiler'], 'src/fixtures/item-fixture.js'),
+    '--component',
+    'Item',
+    '--mode',
+    'element',
+    '--out',
+    compiledFile
+  ],
+  { encoding: 'utf8', cwd: ROOT }
+);
+if (
+  compiled.status === 0 &&
+  existsSync(compiledFile) &&
+  readFileSync(compiledFile, 'utf8').length > 0
+)
+  ok(`CLI 真编译出产物（${readFileSync(compiledFile, 'utf8').length} 字节）`);
+else
+  bad(
+    `CLI 编译夹具失败：status=${compiled.status} ${(compiled.stderr ?? compiled.stdout ?? '').slice(0, 160)}`
+  );
+rmSync(compileOut, { recursive: true, force: true });
 
 // 6) README 体积表 + 基准表
 console.log('\n[6] README 体积表 / 基准表');
