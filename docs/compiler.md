@@ -76,18 +76,30 @@ them (keep the server on the generic path for that source).
 
 ### 2.2 Zero source changes: the build-time plugin
 
-The compiler is written once with [unplugin](https://unplugin.unjs.io/) and exposes every bundler entry
-(`yoyaCompile.vite(...)` / `.rollup(...)` / `.webpack(...)` / `.esbuild(...)` / `.rspack(...)` /
-`.rolldown(...)` / `.farm(...)`), so it is one line in the build config you already have:
+The plugin ships two entries — pick the one for your bundler; either way it is one line in the build
+config you already have:
+
+- **Rollup / Vite** (recommended): `@yoyaflow/yoya-compiler/rollup` — a native plugin with **no
+  unplugin dependency**, works on Node 18.12+;
+- **Webpack / esbuild / Rspack / Rolldown / Farm**: the [unplugin](https://unplugin.unjs.io/)-based
+  `yoyaCompile` (`.vite(...)` / `.rollup(...)` / `.webpack(...)` / `.esbuild(...)` / `.rspack(...)` /
+  `.rolldown(...)` / `.farm(...)`), where the Node requirement comes from the installed unplugin:
+  **unplugin 2.3.x supports Node 18.12+**, unplugin 3.x needs Node 20.19+ / 22.12+.
 
 ```js
-// vite.config.js
+// vite.config.js (same object for Rollup: drop it into `plugins`)
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // compile units = component boundary (view-returning factories)
+  plugins: [yoyaCompileRollup({ core })] // compile units = component boundary (view-returning factories)
 });
+```
+
+```js
+// any other bundler: the unplugin entry (unplugin required)
+import { yoyaCompile } from '@yoyaflow/yoya-compiler';
+plugins: [yoyaCompile.webpack({ core })];
 ```
 
 The compile unit is **yoya-ui's own component boundary**, so no roster is needed: inside any module
@@ -230,12 +242,22 @@ but that baseline is a shape-coverage health check, **not** a profit threshold.
 The compiler is its **own package** — `@yoyaflow/yoya-compiler` (bin `yoya-compiler`, plus the
 `@yoyaflow/yoya-compiler/plugin` / `/registry` subpaths). The old `@yoyaflow/yoya-ui/compiler` subpath
 still works, but it is now a **forwarding shell**: install the compiler package in projects that compile.
-`@babel/parser`, `unplugin` and `magic-string` are **optional peers** of the compiler package (browser
+`@babel/parser`, `magic-string` and `unplugin` are **optional peers** of the compiler package (browser
 artifacts never contain them) and npm will not install them for you:
 
+**Node support**: this package supports **Node 18.12 through the latest release** (the `/rollup` entry
+and the CLI need no unplugin; the multi-bundler entry needs `unplugin@2` below Node 20.19). To re-check
+after switching Node versions (no test framework involved):
+
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
-# "Cannot find package '@babel/parser' / 'unplugin' / 'magic-string'" means this line is missing
+npm run build:packages && npm run smoke:compiler
+```
+
+```bash
+npm i -D @yoyaflow/yoya-compiler @babel/parser magic-string
+# Rollup / Vite (the `/rollup` entry): that is all; only other bundlers also need unplugin
+npm i -D unplugin   # below Node 20.19 install unplugin@2 (3.x needs Node 20.19+ / 22.12+)
+# "Cannot find package '@babel/parser' / 'magic-string' / 'unplugin'" means one of the two lines is missing
 ```
 
 **No configuration needed**: `--core` defaults to `@yoyaflow/yoya-core` and `--runtime` defaults to

@@ -8,19 +8,23 @@
 
 编译是**构建期的一次变换**，业务代码里不出现编译产物：
 
-插件用 [unplugin](https://unplugin.unjs.io/) 写一遍，Vite / Rollup / Webpack / esbuild / Rspack /
-Rolldown / Farm 各自取入口——只在自己已有的构建配置里加一行，**不需要额外脚本**：
+插件有两个入口，只在自己已有的构建配置里加一行，**不需要额外脚本**：Rollup / Vite 用原生入口
+（`@yoyaflow/yoya-compiler/rollup`，**不依赖 unplugin**，Node 18.12+）；其它打包器用
+[unplugin](https://unplugin.unjs.io/) 包装的 `yoyaCompile`（Node 20.19 以下装 `unplugin@2`）。
 
 ```js
-// vite.config.js（rollup / webpack / esbuild 同理：yoyaCompile.rollup / .webpack / .esbuild）
+// vite.config.js（rollup 同理：plugins 里放同一个插件对象）
 import { defineConfig } from 'vite';
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
+  plugins: [yoyaCompileRollup({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
 });
 ```
+
+其它打包器（webpack / esbuild / rspack / rolldown / farm）写 `yoyaCompile.webpack({ core })` /
+`.esbuild({ core })` …（`import { yoyaCompile } from '@yoyaflow/yoya-compiler'`，需要 unplugin）。
 
 **编译单元 = yoya-ui 自己的组件边界**，不需要「花名册」：凡是被打包器交给插件的模块（`node_modules`
 一律跳过），顶层**返回 UI 视图的工厂函数**就是编译单元——大驼峰（`Card` / `StatusPill`）＝组件，

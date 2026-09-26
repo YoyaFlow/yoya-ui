@@ -9,6 +9,7 @@
     ".": "./dist/index.js",
     "./bin": "./dist/bin.js",
     "./plugin": "./dist/plugin.js",
+    "./rollup": "./dist/rollup.js",
     "./registry": "./dist/registry.js",
     "./report": "./dist/report.js",
     "./internal/*": "./dist/*",
@@ -44,14 +45,14 @@
     "url": "https://github.com/yoyaflow/yoya-ui/issues"
   },
   "engines": {
-    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+    "node": ">=18.12.0"
   },
   "peerDependencies": {
     "@yoyaflow/yoya-core": "^0.7.0",
     "@babel/parser": "^7.29.0",
     "@yoyaflow/yoya-ui": "^0.7.0",
     "magic-string": "^1.4.1",
-    "unplugin": "^3.4.0"
+    "unplugin": "^2.3.11 || ^3.4.0"
   },
   "peerDependenciesMeta": {
     "@babel/parser": {

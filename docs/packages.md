@@ -42,7 +42,10 @@ import '@yoyaflow/yoya-ui/ui.css';
 要用**构建期编译**，再装一个只跑在构建期的包：
 
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
+# Rollup / Vite（/rollup 原生入口，不装 unplugin）
+npm i -D @yoyaflow/yoya-compiler @babel/parser magic-string
+# 其它打包器（unplugin 入口）：Node 20.19 以下装 unplugin@2
+npm i -D unplugin
 ```
 
 编译产物的**运行期**钩子在 `@yoyaflow/yoya-core/compiler-runtime`（只有编译过的项目才会加载它；

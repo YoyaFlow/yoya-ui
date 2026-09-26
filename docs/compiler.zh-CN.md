@@ -63,18 +63,29 @@ tbody((body) => {
 
 ### 2.2 业务源码零改动：构建期插件
 
-编译器用 [unplugin](https://unplugin.unjs.io/) 写一遍，自动导出 Vite / Rollup / Webpack / esbuild /
-Rspack / Rolldown / Farm 各自的入口（`yoyaCompile.vite(...)` / `.rollup(...)` / `.webpack(...)` /
-`.esbuild(...)` / `.rspack(...)` / `.rolldown(...)` / `.farm(...)`）——只在自己已有的构建配置里加一行：
+插件有两种入口，按打包器选，都是在已有的构建配置里加一行：
+
+- **Rollup / Vite**（推荐）：`@yoyaflow/yoya-compiler/rollup` —— 原生插件，**不依赖 unplugin**，
+  Node 18.12+ 可用；
+- **Webpack / esbuild / Rspack / Rolldown / Farm**：用 [unplugin](https://unplugin.unjs.io/) 包装的
+  `yoyaCompile`（`.vite(...)` / `.rollup(...)` / `.webpack(...)` / `.esbuild(...)` / `.rspack(...)` /
+  `.rolldown(...)` / `.farm(...)`）——Node 版本要求由所装的 unplugin 决定：**unplugin 2.3.x 支持
+  Node 18.12+**，unplugin 3.x 需要 Node 20.19+ / 22.12+。
 
 ```js
-// vite.config.js
+// vite.config.js（Rollup 同理：plugins 里放同一个插件对象）
 import * as core from '@yoyaflow/yoya-ui/core';
-import { yoyaCompile } from '@yoyaflow/yoya-ui/compiler';
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup';
 
 export default defineConfig({
-  plugins: [yoyaCompile.vite({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
+  plugins: [yoyaCompileRollup({ core })] // 默认：按组件边界自动发现（顶层返回 UI 视图的工厂）
 });
+```
+
+```js
+// 其它打包器：unplugin 入口（需要 unplugin）
+import { yoyaCompile } from '@yoyaflow/yoya-compiler';
+plugins: [yoyaCompile.webpack({ core })];
 ```
 
 **编译单元 = yoya-ui 自己的组件边界**，不需要花名册：被打包器交进来的模块（`node_modules` 跳过）里，
@@ -195,14 +206,23 @@ export default defineConfig({
 
 ### 4.1 命令行
 
-编译器是**独立的包**：`@yoyaflow/yoya-compiler`（`yoya-compiler` bin + `/plugin`、`/registry` 子路径）。
-老的 `@yoyaflow/yoya-ui/compiler` 子路径仍可用，但已经变成**转发壳** —— 要编译的项目请装编译器包。
-它把构建期依赖 `@babel/parser`、`unplugin`、`magic-string` 都外置了（浏览器产物不含它们），
+编译器是**独立的包**：`@yoyaflow/yoya-compiler`（`yoya-compiler` bin + `/rollup`、`/plugin`、`/registry`
+子路径）。老的 `@yoyaflow/yoya-ui/compiler` 子路径仍可用，但已经变成**转发壳** —— 要编译的项目请装
+编译器包。它把构建期依赖 `@babel/parser`、`magic-string`、`unplugin` 都外置了（浏览器产物不含它们），
 而它们是 **optional peer**、不会自动安装，所以本地要装一次：
 
+**Node 支持**：本包支持 **Node 18.12 → 最新版**（`/rollup` 与 CLI 不依赖 unplugin；多打包器入口在
+Node < 20.19 时装 `unplugin@2`）。换了 Node 版本可以这样自检（不跑测试框架）：
+
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser unplugin magic-string
-# 报 Cannot find package '@babel/parser' / 'unplugin' / 'magic-string' 就是漏了这条
+npm run build:packages && npm run smoke:compiler
+```
+
+```bash
+npm i -D @yoyaflow/yoya-compiler @babel/parser magic-string
+# Rollup / Vite（/rollup 入口）：以上就够；只有其它打包器才需要再装 unplugin
+npm i -D unplugin   # Node 20.19 以下请装 unplugin@2（3.x 要 Node 20.19+ / 22.12+）
+# 报 Cannot find package '@babel/parser' / 'magic-string' / 'unplugin' 就是对不上上面这两条
 ```
 
 **不需要配置**：`--core` 默认就是 `@yoyaflow/yoya-core`；`--runtime` 默认写 `./compiler-runtime.js`

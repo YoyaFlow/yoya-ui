@@ -23,12 +23,13 @@ export { runCli, runCliIfMain } from './cli.js';
 export {
   componentUnits,
   wireComponentModule,
-  yoyaCompile,
-  yoyaCompilePlugin,
   // 兼容别名（0.6.11 及更早）
   wireRowModule,
   viewFactoryUnits
-} from './plugin.js';
+} from './plugin-core.js';
+// `yoyaCompile` / `yoyaCompilePlugin` 按需加载 unplugin（老 Node 上不 import 就不会碰它）；
+// Rollup / Vite 项目建议直接用 `@yoyaflow/yoya-compiler/rollup`，无需 unplugin。
+export { yoyaCompile, yoyaCompilePlugin } from './unplugin-bridge.js';
 export {
   componentKeyOf,
   lookupComponent,

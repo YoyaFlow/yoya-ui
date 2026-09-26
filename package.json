@@ -19,6 +19,7 @@
     "report:compile": "node scripts/compiler-coverage.mjs",
     "report:compile:write": "node scripts/compiler-coverage.mjs --write",
     "report:bench": "node scripts/benchmark-report.mjs",
+    "smoke:compiler": "node scripts/compiler-node-smoke.mjs",
     "report:shapes": "node scripts/benchmark-shapes.mjs",
     "report:bench:write": "node scripts/benchmark-report.mjs --write",
     "report:bench:import": "node scripts/benchmark-report.mjs --import",

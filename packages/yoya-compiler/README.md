@@ -15,13 +15,39 @@ yoya-ui 的**构建期编译器**（可选工具，不属于运行期）。
 ## 用法
 
 ```bash
-npm i -D @yoyaflow/yoya-compiler @babel/parser
+npm i -D @yoyaflow/yoya-compiler @babel/parser magic-string
+```
+
+**Rollup / Vite** 用原生入口（不依赖 unplugin，Node 18.12+ 可用）：
+
+```js
+// vite.config.js（Rollup 同理：plugins 里放同一个插件对象）
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup';
+export default { plugins: [yoyaCompileRollup({ core })] };
+```
+
+**其它打包器**（webpack / esbuild / rspack / rolldown / farm）装 `unplugin` 后用 unplugin 入口：
+
+```bash
+npm i -D unplugin      # Node 20.19 以下装 unplugin@2
 ```
 
 ```js
-// vite.config.js
 import { yoyaCompile } from '@yoyaflow/yoya-compiler';
-export default { plugins: [yoyaCompile({ components: [{ file: 'src/row.js', export: 'Row' }] })] };
+export default { plugins: [yoyaCompile.webpack({ core })] };
+```
+
+Node 版本：`/rollup` 与 CLI 走 **Node 18.12+**；unplugin 2.3.x 同样 18.12+，unplugin 3.x 要
+**Node 20.19+ / 22.12+**（它在模块顶层用 `import.meta.dirname`）。根入口的 `yoyaCompile` 是**按需加载**
+unplugin 的——不碰它就不会加载，所以 CLI / 程序化 API / `/rollup` 在老 Node 上照常可用。
+
+也就是说：**本包支持 Node 18.12 到最新版**（要 unplugin 多打包器入口时，Node < 20.19 装 `unplugin@2`）。
+换 Node 版本自检（不需要测试框架）：
+
+```bash
+npm run build:packages     # 生成 dist
+nvm use 18 && npm run smoke:compiler
+nvm use 22 && npm run smoke:compiler
 ```
 
 编译产物的运行期钩子在 `@yoyaflow/yoya-ui/compiler-runtime`（运行期子入口，主入口不含）。
