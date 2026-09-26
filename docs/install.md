@@ -5,7 +5,7 @@ from for each capability, and the boundaries of each route (scaffold / bundler /
 behind the entry surface see [packages.md](packages.md); for the artifact inventory and naming rules see
 [artifacts-plan.md](artifacts-plan.md).
 
-Current version: `@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` are all **0.7.5**
+Current version: `@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` are all **0.7.6**
 (the build-time compiler `@yoyaflow/yoya-compiler` supports **Node ≥ 18.12** through the latest release; the
 runtime packages `yoya-core` / `yoya-ui` require Node `^20.19.0 || ^22.13.0 || >=24.0.0`; browser baseline:
 [browser-support.md](browser-support.md)).
@@ -159,7 +159,7 @@ with an `importmap`.
 <!-- Self-contained: no build step, ready to run -->
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.css"
+  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.ui.css"
 />
 <script type="module">
   import {
@@ -167,7 +167,7 @@ with an `importmap`.
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.core.min.js';
 </script>
 ```
 
@@ -176,8 +176,8 @@ with an `importmap`.
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.6/dist/index.js"
     }
   }
 </script>

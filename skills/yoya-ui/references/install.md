@@ -101,15 +101,15 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler';
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.core.min.js';
 </script>
 
 <!-- 想用包名写法：先加 import map -->
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.6/dist/index.js"
     }
   }
 </script>
