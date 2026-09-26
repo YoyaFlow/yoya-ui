@@ -201,10 +201,10 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler'; // 程序
           'CDN 上直接可用的是**自包含单文件**（core 内联在里面）；下面的增量入口是单行转发、core 走 peer，从 URL 直接 import 需要 import map。'
         ],
         code: `<!-- 自包含：core 单文件（引擎 + 元素面 + 图标集，≈95 kB min） -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.ui.css" />
 <script type="module">
   import { div, svg, ref, vText } from
-    'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
+    'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.core.min.js';
   // 全量（core + 组件 + 路由/SSR，≈349 kB min）：      dist/yoya.ui.full.min.js
   // 全量 + 路由（≈377 kB min）：                      dist/yoya.ui-router.full.min.js
 </script>
@@ -213,8 +213,8 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler'; // 程序
 <script type="importmap">
 {
   "imports": {
-    "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
-    "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
+    "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/ui.js",
+    "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.6/dist/index.js"
   }
 }
 </script>`

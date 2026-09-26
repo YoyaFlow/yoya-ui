@@ -1,6 +1,6 @@
 {
   "name": "yoya-ui-monorepo",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Monorepo root: workspace wiring, build/report scripts and the example site. The published packages live in packages/.",
   "type": "module",
   "private": true,
