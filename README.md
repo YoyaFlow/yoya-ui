@@ -47,7 +47,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -59,7 +59,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 

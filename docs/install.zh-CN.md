@@ -4,8 +4,10 @@
 （脚手架 / 打包器 / CDN）的边界。入口面的取舍理由见 [packages.md](packages.md)，产物清单与命名口径见
 [artifacts-plan.md](artifacts-plan.md)。
 
-当前版本：`@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` 均为 **0.7.4**
-（Node `^20.19.0 || ^22.13.0 || >=24.0.0`；浏览器基线见 [browser-support.zh-CN.md](browser-support.zh-CN.md)）。
+当前版本：`@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` 均为 **0.7.5**
+（构建期编译器 `@yoyaflow/yoya-compiler` 支持 **Node ≥ 18.12** 到最新版；运行期包 `yoya-core` /
+`yoya-ui` 为 Node `^20.19.0 || ^22.13.0 || >=24.0.0`；浏览器基线见
+[browser-support.zh-CN.md](browser-support.zh-CN.md)）。
 
 ## 1. 三种接入方式
 
@@ -123,12 +125,14 @@ import { enableDevtools } from '@yoyaflow/yoya-ui/dev';
 它是独立包，也可从 `@yoyaflow/yoya-ui/compiler` 转发引入；运行期钩子由产物自动从 core 引。
 
 ```js
-import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // unplugin 插件：.vite() / .rollup() / .esbuild() …
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup'; // Rollup / Vite 原生插件（不需要 unplugin）
+import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // 其它打包器：unplugin 插件 .vite() / .webpack() / .esbuild() …
 import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler'; // 程序化 API
 ```
 
 ```bash
 npm i -D @yoyaflow/yoya-compiler @babel/parser
+# Rollup / Vite：以上就够；其它打包器再装 unplugin（Node 20.19 以下用 unplugin@2）
 ```
 
 细节见 [compiler.zh-CN.md](compiler.zh-CN.md)。
@@ -150,7 +154,7 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
 <!-- 自包含：免构建，直接可用 -->
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
+  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.css"
 />
 <script type="module">
   import {
@@ -158,7 +162,7 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
 </script>
 ```
 
@@ -167,8 +171,8 @@ CDN 上**直接可用的是自包含单文件**（core 内联在里面，一个 
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.4/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
     }
   }
 </script>
