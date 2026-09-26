@@ -1,7 +1,8 @@
 # Third-party interop: hand over a real DOM element
 
-The claim behind "no wrapper, no adapter" is a single lifecycle contract. This document shows it
-with the official reference (`vEchart`), lists the extension points, and points at the live demos.
+Connecting a third-party library needs no second API: one lifecycle contract plus one thin component
+is enough. This document shows that contract with the official adapter (`vEchart`), lists the
+extension points, and points at the live demos.
 For the cross-library comparison (React / Vue / yoya-ui) see
 [component-comparison.zh-CN.md](component-comparison.zh-CN.md) (Chinese). For writing your own
 component, see [component-authoring.md](component-authoring.md).
@@ -32,8 +33,9 @@ div((page) => {
 }).bindTo('#app');
 ```
 
-The page only needs a `<div id="app"></div>`. No framework mount call, no reactive wrapper around
-ECharts' option object, no adapter layer to maintain.
+The page only needs a `<div id="app"></div>`. No framework mount call and no reactive wrapper around
+ECharts' option object; the only thing to write is that one thin component (`vEchart` already provides
+it), and ECharts itself is never re-packaged.
 
 ## Why this is not magic
 

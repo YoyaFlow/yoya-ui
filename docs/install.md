@@ -5,8 +5,10 @@ from for each capability, and the boundaries of each route (scaffold / bundler /
 behind the entry surface see [packages.md](packages.md); for the artifact inventory and naming rules see
 [artifacts-plan.md](artifacts-plan.md).
 
-Current version: `@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` are all **0.7.4**
-(Node `^20.19.0 || ^22.13.0 || >=24.0.0`; browser baseline: [browser-support.md](browser-support.md)).
+Current version: `@yoyaflow/yoya-core` / `@yoyaflow/yoya-ui` / `@yoyaflow/yoya-compiler` are all **0.7.5**
+(the build-time compiler `@yoyaflow/yoya-compiler` supports **Node ≥ 18.12** through the latest release; the
+runtime packages `yoya-core` / `yoya-ui` require Node `^20.19.0 || ^22.13.0 || >=24.0.0`; browser baseline:
+[browser-support.md](browser-support.md)).
 
 ## 1. Three ways in
 
@@ -127,12 +129,14 @@ writes". It is a separate package, also reachable through `@yoyaflow/yoya-ui/com
 pulled in from core by the generated artifacts.
 
 ```js
-import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // unplugin plugin: .vite() / .rollup() / .esbuild() …
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup'; // Rollup / Vite native plugin (no unplugin)
+import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // other bundlers: unplugin plugin .vite() / .webpack() / .esbuild() …
 import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler'; // programmatic API
 ```
 
 ```bash
 npm i -D @yoyaflow/yoya-compiler @babel/parser
+# Rollup / Vite: that is all; other bundlers also need unplugin (unplugin@2 below Node 20.19)
 ```
 
 Details: [compiler.md](compiler.md).
@@ -155,7 +159,7 @@ with an `importmap`.
 <!-- Self-contained: no build step, ready to run -->
 <link
   rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.ui.css"
+  href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.ui.css"
 />
 <script type="module">
   import {
@@ -163,7 +167,7 @@ with an `importmap`.
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
 </script>
 ```
 
@@ -172,8 +176,8 @@ with an `importmap`.
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.4/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
     }
   }
 </script>

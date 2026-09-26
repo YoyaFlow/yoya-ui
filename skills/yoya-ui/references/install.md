@@ -80,7 +80,8 @@ import '@yoyaflow/yoya-ui/ui.css';
 ## `@yoyaflow/yoya-compiler`（可选编译路径）
 
 ```js
-import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // unplugin 插件：.vite() / .rollup() / .esbuild() …
+import { yoyaCompileRollup } from '@yoyaflow/yoya-compiler/rollup'; // Rollup / Vite 原生入口（不需要 unplugin）
+import { yoyaCompile } from '@yoyaflow/yoya-compiler'; // 其它打包器：unplugin 插件 .vite() / .webpack() / .esbuild() …
 import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler';
 ```
 
@@ -100,15 +101,15 @@ import { compileFile, reportCoverage } from '@yoyaflow/yoya-compiler';
     svg,
     ref,
     vText
-  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/yoya.core.min.js';
+  } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/yoya.core.min.js';
 </script>
 
 <!-- 想用包名写法：先加 import map -->
 <script type="importmap">
   {
     "imports": {
-      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.4/dist/ui.js",
-      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.4/dist/index.js"
+      "@yoyaflow/yoya-ui": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.5/dist/ui.js",
+      "@yoyaflow/yoya-core": "https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-core@0.7.5/dist/index.js"
     }
   }
 </script>

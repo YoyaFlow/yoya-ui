@@ -379,7 +379,11 @@ vTableWrapper({
 
 ### vChart（第三方图表）
 
-图表容器：`adapter()`（ECharts 等）、`data()/options()`、`resize()`；ECharts 版本用 `vEchart`，需先以 `<script>` 引入 `echarts.min.js` 再传 `echartsLib`。
+图表宿主：props `adapter / data / options / width / height`，命令 `adapter()` / `data()` / `options()` / `width()` / `height()` / `resize(w, h)`。
+
+`adapter` 是一份契约对象 `{ init(host, context), update(instance, context), resize(instance, context), destroy(instance, context) }`（也可以直接传一个 `init` 函数），库内不带任何图表库实现；`context` 里有 `chart`（组件节点，改动用它自己的 `replaceChildren`）、`data` / `options` / `width` / `height` / `host`。
+
+ECharts 用官方适配器 `vEchart`：自备依赖（`import * as echarts from 'echarts'`）后调用 `chart.echartsLib(echarts)`，再 `chart.option({…})`；Three.js 同理用 `vThree`。
 
 ## C 端体验
 

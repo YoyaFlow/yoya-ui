@@ -136,7 +136,16 @@ const inlined = coreModules.filter((module) => existsSync(join(uiDist, module)))
 if (inlined.length === 0) ok('ui 的 dist 里没有 core 模块副本（单例）');
 else bad(`ui 的 dist 内联了 core：${inlined.join(', ')}`);
 // 编译器引擎不该落在运行期包里（只允许转发壳 + 运行期钩子）
-const engineFiles = ['analyze.js', 'emit.js', 'plugin.js', 'registry.js', 'discover.js'];
+const engineFiles = [
+  'analyze.js',
+  'emit.js',
+  'plugin.js',
+  'plugin-core.js',
+  'rollup.js',
+  'unplugin-bridge.js',
+  'registry.js',
+  'discover.js'
+];
 const engineLeft = engineFiles.filter((file) => existsSync(join(uiDist, 'compiler', file)));
 if (engineLeft.length === 0) ok('ui 的 dist 里没有编译器引擎（只在 @yoyaflow/yoya-compiler）');
 else bad(`ui 的 dist 里出现编译器引擎文件：${engineLeft.join(', ')}`);

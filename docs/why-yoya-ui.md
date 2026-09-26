@@ -13,7 +13,7 @@ this library exists, the positioning behind them, and the trade-offs we accept.
 | **One stack across scenarios**          | The same page factory and state logic covers a full SPA, server-side templates and SSR/hydration — one Web-UI development logic across the whole stack.                                                                                                                                     |
 | **Plain JS, assets that do not expire** | Highly adaptable plain JS with no virtual DOM or framework runtime: output is real HTML/DOM/JS, so standards-based Web software keeps running as browsers evolve.                                                                                                                           |
 | **Lifecycle control**                   | ViewNode is the handle for real DOM, with lifecycle and state management on par with virtual-DOM frameworks; subtree error boundaries (`whenFailed()`) degrade on their own, and very large lists stay smooth thanks to vScroll auto-virtualization, which renders only the visible window. |
-| **Inherit the native Web ecosystem**    | Built on browser-standard real-DOM operations: every native-capable Web component and tool library comes in directly through the extension points — most JS libraries already qualify, so ecosystem gaps are not a concern.                                                                 |
+| **Inherit the native Web ecosystem**    | Built on browser-standard real-DOM operations: a third-party library comes in through one thin component over one lifecycle contract (the official `vEchart` / `vThree` adapters are the reference) — most JS libraries already qualify, so ecosystem gaps are not a concern.               |
 | **Drop into existing projects**         | `bindTo()` mounts any local interaction into an existing HTML, PHP, JSP, Vue or React page for progressive enhancement — no migration required.                                                                                                                                             |
 | **AI-friendly by design**               | No framework context or build magic: AI-generated declarative components run directly, so prototyping and batch page generation rarely need rework.                                                                                                                                         |
 
@@ -42,10 +42,11 @@ not the limit of the platform.
 
 It is neither an ecosystem-monopoly framework nor a zero-component base: specialist domains such as
 rich-text editing, spreadsheets, maps and complex visualization belong to the Web's own professional
-ecosystems (Quill, Handsontable, MapLibre, ECharts…), which embed through their native APIs — no
-Wrapper, no Adapter — while high-frequency capabilities like forms, tables, navigation, feedback and
-dashboard boards are available out of the box. npm, Vite/webpack, TypeScript, CI/CD and SSR remain
-first-class: yoya-ui removes the framework runtime, not modern frontend engineering infrastructure.
+ecosystems (Quill, Handsontable, MapLibre, ECharts…), which embed through their native APIs behind one
+thin component (the official adapters `vEchart` / `vThree` are the reference); high-frequency
+capabilities like forms, tables, navigation, feedback and dashboard boards are available out of the
+box. npm, Vite/webpack, TypeScript, CI/CD and SSR remain first-class: yoya-ui removes the framework
+runtime, not modern frontend engineering infrastructure.
 
 In one sentence: **yoya-ui extends native Web development declaratively — common components come out
 of the box, third-party extensions plug in on demand, and the real DOM composes all of it freely in
@@ -111,4 +112,4 @@ the spec docs, the API alignment with Web standards — not the number next to t
 
 - [agents.md](agents.md): how AI coding agents should read and generate code for this project.
 - [highlights.md](highlights.md): what each capability does, with runnable snippets.
-- [interop.md](interop.md): the third-party extension pattern behind the "no wrapper" claim.
+- [interop.md](interop.md): how a third-party library plugs in — one thin adapter component over one lifecycle contract.

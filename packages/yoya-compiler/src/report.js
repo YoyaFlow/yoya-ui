@@ -9,7 +9,9 @@ import { join, relative, sep } from 'node:path';
 import { parse } from '@babel/parser';
 import { compileSource, elementWhitelistOf } from './compile.js';
 import { componentUnits } from './discover.js';
-import { compileModuleRegistry } from './plugin.js';
+// 注意：这里必须走 `plugin-core.js`（不 import unplugin）。`report.js` 被根入口 re-export，
+// 一旦这里 import `./plugin.js`，CLI / 程序化 API 在 Node 18 / 20.9 上会连包都加载不进来。
+import { compileModuleRegistry } from './plugin-core.js';
 import { topLevelFunctions } from './discover.js';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', 'coverage', '.scratch', '.cache']);

@@ -7,7 +7,8 @@ const SERIES_COLORS = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#8b5cf6'];
 /**
  * 图表卡片（形态 A 薄工厂）：vCard 外壳 + vChart 宿主，没有对外命令方法。
  *
- * `vChart` 只提供宿主与**适配器契约**（`init` / `update` / `resize` / `destroy`），库内没有内置适配器；
+ * `vChart` 只提供宿主与**适配器契约**（`init` / `update` / `resize` / `destroy`），自身不带图表库实现
+ * （ECharts / Three.js 另有官方适配器组件 `vEchart` / `vThree`）；
  * 下面这份 SVG 适配器是本模板自带的零依赖实现（bar 柱状图 / line 折线图）。
  * 适配器画出来的内容交给引擎落位：`context.chart.replaceChildren(节点…)`——`chart` 是组件节点，
  * `replaceChildren` 收的是**视图节点**（DOM 落盘与清理由引擎负责），不要自己调 `renderDom()`。

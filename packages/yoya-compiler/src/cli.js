@@ -219,7 +219,7 @@ export async function runCli(argv = process.argv.slice(2), io = {}) {
  * 以 CLI 方式被直接运行时才执行（`node dist/yoya.compiler.js …`）；被 import 时静默返回 null。
  * 入口 shim 因此只剩「导出 + 调这一句」，编译逻辑全部留在本目录。
  */
-export async function runCliIfMain(core, argv = process.argv.slice(2)) {
+export async function runCliIfMain(core, argv = process.argv.slice(2), mainUrl = import.meta.url) {
   const entry = process.argv[1];
   if (!entry) {
     return null;
@@ -227,7 +227,9 @@ export async function runCliIfMain(core, argv = process.argv.slice(2)) {
 
   let isMain;
   try {
-    isMain = pathToFileURL(entry).href === import.meta.url;
+    // `mainUrl` 是**调用方**自己的模块 URL：`bin.js` 与本文件不是同一个模块，
+    // 用本文件的 `import.meta.url` 比就永远不会命中（于是 CLI 静默什么都不做）。
+    isMain = pathToFileURL(entry).href === mainUrl;
   } catch {
     isMain = false;
   }

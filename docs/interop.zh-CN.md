@@ -1,7 +1,7 @@
 # 第三方接入：交出一个真实 DOM 元素
 
-"不需要 Wrapper、不需要 Adapter"这句话背后只有一条生命周期契约。本文用官方参照实现
-（`vEchart`）说明它，列出扩展开口，并指向在线演示。跨库对照（React / Vue / yoya-ui）见
+接入第三方库不需要第二套 API：一条生命周期契约加一个薄组件就够。本文用官方适配器（`vEchart`）
+说明这条契约、列出扩展开口，并指向在线演示。跨库对照（React / Vue / yoya-ui）见
 [component-comparison.zh-CN.md](component-comparison.zh-CN.md)；自己写组件的规范见
 [component-authoring.zh-CN.md](component-authoring.zh-CN.md)。
 
@@ -32,8 +32,8 @@ div((page) => {
 }).bindTo('#app');
 ```
 
-页面只需要一个 `<div id="app"></div>`。没有框架挂载调用、没有包裹 ECharts option 的响应式外壳、
-也不需要维护任何适配层。
+页面只需要一个 `<div id="app"></div>`。没有框架挂载调用，没有包裹 ECharts option 的响应式外壳；
+要写的只有那一个薄组件（`vEchart` 已经把它写好），ECharts 自己不会被重新打包。
 
 ## 为什么这不是魔法
 
