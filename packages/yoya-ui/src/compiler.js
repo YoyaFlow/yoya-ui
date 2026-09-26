@@ -14,5 +14,11 @@ export * from '@yoyaflow/yoya-compiler';
 
 // 直接执行本文件时（npm 的 bin shim 就是这么干的）转发到真正的 CLI 入口
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  await import('@yoyaflow/yoya-compiler/bin');
+  // 这里是**壳**：自己判断出「我是主模块」之后直接跑 CLI，别把判断交给 bin.js
+  // （bin.js 拿的是它自己的 URL，和本文件路径不相等，转过去只会静默退出）。
+  const [{ runCli }, core] = await Promise.all([
+    import('@yoyaflow/yoya-compiler'),
+    import('@yoyaflow/yoya-core')
+  ]);
+  process.exitCode = await runCli(process.argv.slice(2), { core });
 }

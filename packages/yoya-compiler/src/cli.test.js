@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFile } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -19,6 +20,48 @@ const record = () => {
 };
 
 const fixture = join(import.meta.dirname, 'fixtures/item-fixture.js');
+
+/** 以子进程跑真实 CLI 入口（覆盖「主模块判断」这条只有真跑才会暴露的路径）。 */
+const runBin = (args) =>
+  new Promise((resolve) => {
+    execFile(
+      process.execPath,
+      [join(import.meta.dirname, 'bin.js'), ...args],
+      (error, stdout, stderr) =>
+        resolve({
+          code: typeof error?.code === 'number' ? error.code : 0,
+          output: `${stdout}${stderr}`
+        })
+    );
+  });
+
+describe('bin 入口（真实子进程）', () => {
+  it('prints the usage when run as the main module', async () => {
+    const { code, output } = await runBin(['--help']);
+
+    expect(code).toBe(0);
+    expect(output).toContain('用法');
+  });
+
+  it('compiles a file and writes the artifact', async () => {
+    const out = join(root, 'bin-out', 'item.js');
+    mkdirSync(join(root, 'bin-out'), { recursive: true });
+
+    const { code } = await runBin([
+      '--file',
+      fixture,
+      '--component',
+      'Item',
+      '--mode',
+      'element',
+      '--out',
+      out
+    ]);
+
+    expect(code).toBe(0);
+    expect(existsSync(out)).toBe(true);
+  });
+});
 
 describe('runCli', () => {
   it('compiles a file and prints a summary that carries the bails', async () => {
