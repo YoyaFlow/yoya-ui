@@ -84,10 +84,13 @@ for (const pkg of PACKAGES) {
 cpSync('packages/yoya-ui/src/yoya.ui.css', 'packages/yoya-ui/dist/yoya.ui.css');
 mkdirSync('packages/yoya-ui/dist/chart', { recursive: true });
 cpSync('packages/yoya-ui/src/chart/echarts.min.js', 'packages/yoya-ui/dist/chart/echarts.min.js');
+// 生成的注册面镜像进 dist：浏览器壳（import map 消费方，如 genui-mcp）只能看 dist 树，
+// 而 `exports["./genui-plugin"]` 指向包根的产物——镜像一份让两种消费者同真。
+cpSync('packages/yoya-ui/genui-plugin.js', 'packages/yoya-ui/dist/genui-plugin.js');
 // 旧发布面的两个位置：dist/yoya.compiler.js（bin，转发壳）与 dist/echarts.min.js
 cpSync('packages/yoya-ui/dist/compiler.js', 'packages/yoya-ui/dist/yoya.compiler.js');
 cpSync('packages/yoya-ui/dist/chart/echarts.min.js', 'packages/yoya-ui/dist/echarts.min.js');
-console.log('assets: yoya.ui.css + chart/echarts.min.js');
+console.log('assets: yoya.ui.css + chart/echarts.min.js + genui-plugin.js');
 
 // ---------------------------------------------------------------------------
 // 发布路径兼容（§16/§17）：ui 的 dist 里**额外**产出旧命名的入口文件。
