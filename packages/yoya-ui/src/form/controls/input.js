@@ -362,4 +362,12 @@ export function VInput() {
   });
 }
 
+/**
+ * @genui 单行输入框（值经 $bind 双向绑定）
+ * @genui.contract props.value: { $bind: "/path" }；on.change 内建 set 回写
+ * @genui.use 表单字段；草稿输入
+ * @genui.notFor 长文本（A2UI 的 TextField longText 会映射过来）；勾选（用 vCheckbox）
+ * @genui.pitfall 忘记 on.change 的话输入不会写回数据模型
+ * @genui.example {"type":"vInput","props":{"name":"draft","placeholder":"输入…","value":{"$bind":"/draft"}},"on":{"change":{"$action":"set","params":{"path":"/draft","value":{"$event":"target.value"}}}}}
+ */
 export const vInput = createComponentShortcut(VInput);

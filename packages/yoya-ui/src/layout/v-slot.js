@@ -1,6 +1,6 @@
 import { HtmlElementNode } from '@yoyaflow/yoya-core/html';
 import { registerChildFactories } from '@yoyaflow/yoya-core/internal/core/node.js';
-import { PART_ATTRIBUTE } from '@yoyaflow/yoya-core/internal/core/slot.js';
+import { PART_SLOT_ATTRIBUTE } from '@yoyaflow/yoya-core/internal/core/slot.js';
 import { createComponentShortcut, resolveTextValue } from '../components/shared.js';
 
 /**
@@ -13,8 +13,14 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
  * 占位**只有属性、没有类名**（`yoya-component` / `yoya-vslot` 都不要）：零布局是内联样式，
  * 身份与样式钩子都走 `vn` / `vn_slot`（属性化迁移口径见票 15）。
  *
- * 落位只认标记：结构侧的占位与内容侧的 part 都写 `vn_slot`，把带标记的内容 `child()` 进组件，
- * 引擎就放进同名占位（ComponentNode 的 part 通道）——**没有手工插入的辅助函数**。
+ * 落位走**一对属性**，两侧各写一个（分工见 core/slot.js）：
+ * - **结构侧**（本文件）：占位自己带 `vn_slot="header"` = 落点，声明"这里能收哪份内容"；
+ *   `vSlot()` 不带名字时是 `vn_slot=""` = **匿名落点**（收未标记的 `child()` 内容）；
+ * - **内容侧**（调用方 / 部件工厂）：part 带 `to_slot="header"` = 投递，`child()` 进组件即自动
+ *   投影进同名落点（ComponentNode 的 part 通道）——**没有手工插入的辅助函数**。
+ *
+ * 两个属性不共用：读结构只认 `vn_slot`、读内容只认 `to_slot`，内容上的标记不会被误当成
+ * 结构里的落点（反之亦然）。
  *
  * 定义 / 快捷方法按统一口径分开：`VSlot()` 只建结构（span + `display: contents` + `vn`），
  * 调用方参数由快捷方法 `vSlot = createComponentShortcut(VSlot)` 按标准 setup 分派落位——
@@ -27,28 +33,28 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
  *   root.child(vSlot('header'), vSlot('body'), vSlot({ name: 'footer' }));
  * });
  *
- * // 组件侧：part 自带 vn_slot 标记，child() 进组件即自动落位
+ * // 组件侧：part 自带 to_slot 标记（落点是结构里的 vn_slot），child() 进组件即自动落位
  * api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
  * ```
  */
 export function VSlot() {
-  // `vn_slot=""` 是**默认占位**的标记：匿名内容（未标记 part 的 child）落进这个位置；
-  // 具名占位由下面的 setupString / setupObject 覆写成占位名。
+  // `vn_slot=""` 是**匿名落点**的标记：匿名内容（没写 `to_slot` 的 child）落进这个位置；
+  // 具名落点由下面的 setupString / setupObject 覆写成落点名。
   const node = new HtmlElementNode('span')
     .style('display', 'contents')
     .setup({ vn: 'VSlot', vn_slot: '' });
 
-  // 字符串 / 数字 = 占位名（占位名是构建期事实，不是活值：取当前文本值即可）
-  // 空字符串保留（`vSlot('')` = 匿名占位，与 `vSlot()` 等价），不做成 null
+  // 字符串 / 数字 = 落点名（落点名是构建期事实，不是活值：取当前文本值即可）
+  // 空字符串保留（`vSlot('')` = 匿名落点，与 `vSlot()` 等价），不做成 null
   node.setupString = (value) => {
     const name = resolveTextValue(value);
-    node.attr(PART_ATTRIBUTE, name ?? null);
+    node.attr(PART_SLOT_ATTRIBUTE, name ?? null);
   };
-  // 对象 = `name` 收成占位名，其余键原样交给 options 分派（class / style / attrs / 属性 / 事件）
+  // 对象 = `name` 收成落点名，其余键原样交给 options 分派（class / style / attrs / 属性 / 事件）
   node.setupObject = (config) => {
     const { name, ...rest } = config;
     if (name !== undefined) {
-      node.attr(PART_ATTRIBUTE, resolveTextValue(name) || null);
+      node.attr(PART_SLOT_ATTRIBUTE, resolveTextValue(name) || null);
     }
     node._setupObject(rest);
     return node;

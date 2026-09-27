@@ -185,6 +185,14 @@ export function VAvatar({
   });
 }
 
+/**
+ * @genui 头像（A2UI Image usageHint=avatar 映射）
+ * @genui.contract props.src / props.alt
+ * @genui.use 用户/条目头像
+ * @genui.notFor 普通配图（用 img）
+ * @genui.pitfall src 只允许 https
+ * @genui.example {"type":"vAvatar","props":{"src":"https://example.com/a.png","alt":"头像"}}
+ */
 export const vAvatar = createComponentShortcut(VAvatar, { props: true });
 
 function resolveAvatarText(value) {

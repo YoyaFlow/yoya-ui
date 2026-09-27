@@ -196,6 +196,13 @@ export function VRadios({
   });
 }
 
+/**
+ * @genui 单选组（A2UI MultipleChoice 单选映射）
+ * @genui.contract props.options: Array<{label,value}>；props.value 绑定选中值
+ * @genui.use 多选一
+ * @genui.notFor 多选（用 vCheckboxes）；开关（用 vCheckbox）
+ * @genui.example {"type":"vRadios","props":{"options":[{"label":"A","value":"a"}],"value":{"$bind":"/choice"}}}
+ */
 export const vRadios = createComponentShortcut(VRadios, { props: true });
 
 function createRadioGroupItem(option, index) {

@@ -13,7 +13,7 @@ import {
  *
  * - **结构一次写清、部件常驻**：
  *   `nav[VAnchor] > ul[VAnchorList] > li[VAnchorItem] > a[VAnchorLink] + ul[VAnchorChildren]`；
- *   列表是导航的**匿名占位**（`vn_slot: ''`）——`anchor.child(item)` 落进这张 `<ul>`；
+ *   列表是导航的**匿名落点**（`vn_slot: ''`）——`anchor.child(item)` 落进这张 `<ul>`；
  * - **列表 = 一份 `ref([])` + `keyed` 对账**：项从 `items` / `vAnchorItem` 来，增删改排序由引擎按身份键
  *   复用 / 搬动 / 销毁——**不 rebuild、也不 `replaceChildren` 全量重建**；`data-item-count`、子列表显隐、
  *   滚动扫描都读这一份数据，没有第二本账；

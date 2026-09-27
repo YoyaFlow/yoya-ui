@@ -136,7 +136,7 @@ vCard((card) => card.replaceClassName('card-plain', 'card-raised'));
 ## 7. 身份与类名契约
 
 - **身份 = 视图根上的 `vn` 属性**：`vn="VCard"`。包装型共用同一根时写多个名字、空格分隔（`vn="VTimer VInput"`），任一名字命中即命中。
-- **部件**用同一套写法带自己的名字（`vn="VCardHeader"`）；调用方投递的内容用 `vn_slot` 声明落位（写法见组件开发指南）。
+- **部件**用同一套写法带自己的名字（`vn="VCardHeader"`）；结构侧用 `vn_slot` 声明落点、调用方投递的内容用 `to_slot` 声明落哪（写法见组件开发指南）。
 - **预设规则一律从身份作用域起头**：`yoya.ui.css` 里的选择器都是 `[vn~="VXxx"] …`（无孤儿部件选择器），所以换掉身份就一次性把整棵子树从预设样式里摘出来——状态钩子同样失效（`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` 不再命中）。
 - **类名不是身份**：旧的 `yoya-component` / `yoya-v*` 两族已随票 15 波 6 全部退场，共享基规则只认 `[vn]`；跨组件能力类保留：`yoya-<feature>`（`yoya-icon`、`yoya-layout`、`yoya-control-clear`）。
 - 状态一律 kebab-case 的 `data-*` 属性，类名不承载状态。

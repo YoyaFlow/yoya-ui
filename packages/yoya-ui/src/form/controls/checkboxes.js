@@ -224,6 +224,13 @@ export function VCheckboxes({
   });
 }
 
+/**
+ * @genui 复选组（A2UI MultipleChoice 多选映射）
+ * @genui.contract props.options: Array<{label,value}>；props.value 绑定选中数组
+ * @genui.use 多选
+ * @genui.notFor 单选（用 vRadios）
+ * @genui.example {"type":"vCheckboxes","props":{"options":[{"label":"X","value":"x"}],"value":{"$bind":"/tags"}}}
+ */
 export const vCheckboxes = createComponentShortcut(VCheckboxes, { props: true });
 
 function createCheckboxGroupItem(option, index) {

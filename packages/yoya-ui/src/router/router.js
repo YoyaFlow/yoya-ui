@@ -529,9 +529,9 @@ export function vRouter(first = null, second = null, third = null) {
   return node;
 }
 
-/** 链接标签（形态 A）：`vn_slot` 标记 = 它在链接里的位置。 */
+/** 链接标签（形态 A）：`to_slot` 标记 = 它要落进的链接落点（结构侧是 `vn_slot="label"`）。 */
 export function VLinkLabel() {
-  return span({ vn: 'VLinkLabel', vn_slot: 'label' });
+  return span({ vn: 'VLinkLabel', to_slot: 'label' });
 }
 
 export const vLinkLabel = createComponentShortcut(VLinkLabel);
@@ -540,7 +540,7 @@ export const vLinkLabel = createComponentShortcut(VLinkLabel);
  * 链接（形态 B）：`a[VLink] > 标签占位`。
  *
  * - 地址 / 参数 / 查询 / 替换 / 精确匹配是命令，命令只写自己的快照（`href` / `aria-current` /
- *   `is-active` 类）；标签是内容位，内容（`VLinkLabel`）自带 `vn_slot`、投递即落位；
+ *   `is-active` 类）；标签是内容位，内容（`VLinkLabel`）自带 `to_slot`、投递即落位；
  * - 订阅路由器、退订走 `whenDestroy`；点击委托挂在元素自己身上，外部链接与文档路由交给浏览器。
  *
  * 定义 `VLink(routerInstance)` 收自己的依赖（路由器），调用方参数由 `vLink` 按标准分派。
@@ -551,7 +551,7 @@ export function VLink(routerInstance) {
   return vNode((api, self) => {
     const state = { exact: true, label: null, params: {}, query: {}, replace: false, to: '/' };
 
-    /** 标签内容：没显式设过标签时跟随 `to`（与旧实现一致）。内容自带 `vn_slot`，投递即落位。 */
+    /** 标签内容：没显式设过标签时跟随 `to`（与旧实现一致）。内容自带 `to_slot`，投递即落位。 */
     const writeLabel = (node, value) => {
       node.child(vLinkLabel(value));
       return api;

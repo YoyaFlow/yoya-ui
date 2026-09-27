@@ -339,4 +339,12 @@ export function VTextarea() {
   });
 }
 
+/**
+ * @genui 多行文本输入（A2UI TextField longText 映射到它）
+ * @genui.contract props.value: { $bind: path }
+ * @genui.use 备注、描述等长文本
+ * @genui.notFor 单行输入（用 vInput）
+ * @genui.pitfall 值经 $bind 绑定数据模型
+ * @genui.example {"type":"vTextarea","props":{"name":"note","value":{"$bind":"/note"}}}
+ */
 export const vTextarea = createComponentShortcut(VTextarea);

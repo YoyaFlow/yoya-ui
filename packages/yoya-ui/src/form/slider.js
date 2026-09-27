@@ -274,6 +274,13 @@ export function VSlider() {
   });
 }
 
+/**
+ * @genui 滑杆（A2UI Slider 映射）
+ * @genui.contract props.min/max/step/value
+ * @genui.use 数值区间选择
+ * @genui.notFor 精确文本输入（用 vInput）
+ * @genui.example {"type":"vSlider","props":{"value":{"$bind":"/progress"}}}
+ */
 export const vSlider = createComponentShortcut(VSlider);
 
 registerChildFactories(HtmlElementNode, { vSlider });

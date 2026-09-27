@@ -136,7 +136,7 @@ Component identity no longer lives on class names (§7), so this is an ordinary 
 ## 7. Identity and class-name contract
 
 - **Identity is the `vn` attribute** on the component's view root: `vn="VCard"`. A wrapper sharing one root writes several names, space separated (`vn="VTimer VInput"`); any of them matches.
-- **Parts** carry their own name the same way (`vn="VCardHeader"`); caller-supplied content declares its position with `vn_slot` (see the authoring guide).
+- **Parts** carry their own name the same way (`vn="VCardHeader"`); the structure declares the landing point with `vn_slot`, and caller-supplied content declares which one it wants with `to_slot` (see the authoring guide).
 - **Preset rules always start from the identity**: selectors in `yoya.ui.css` are `[vn~="VXxx"] …` (no orphan part selectors), so replacing the identity detaches the whole subtree from preset styles in one step — state hooks included (`[vn~="VTabs"] [vn~="VTabTrigger"][data-active]` stops applying).
 - **Class names are not identity**: the old `yoya-component` / `yoya-v*` families are gone (ticket 15, wave 6); the shared base rule is `[vn]`. Cross-component capability classes stay: `yoya-<feature>` (`yoya-icon`, `yoya-layout`, `yoya-control-clear`).
 - State always uses kebab-case `data-*` attributes; class names do not carry state.

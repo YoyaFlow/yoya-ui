@@ -74,6 +74,14 @@ export function stack(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 垂直布局容器（列）
+ * @genui.contract children: 节点数组；style.gap 控制间距
+ * @genui.use 表单/卡片内纵向排列；需要统一列间距
+ * @genui.notFor 横向并排（用 hstack）；二维网格（用 grid）
+ * @genui.pitfall children 里放字符串要用 { type: "p", text } 节点
+ * @genui.example {"type":"vstack","style":{"gap":"10px"},"children":[{"type":"p","text":"第一行"}]}
+ */
 export function vstack(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VStack' },
@@ -85,6 +93,14 @@ export function vstack(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 水平布局容器（行）
+ * @genui.contract children: 节点数组；style.alignItems / justifyContent
+ * @genui.use 图标+标题；操作按钮排（配 justifyContent: flex-end）
+ * @genui.notFor 换行流式文本（用 p / span）
+ * @genui.pitfall 默认不居中，垂直居中要显式 alignItems: center
+ * @genui.example {"type":"hstack","style":{"alignItems":"center","gap":"8px"},"children":[]}
+ */
 export function hstack(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VHStack' },
@@ -226,6 +242,14 @@ export function vCol(first = null, second = null, third = null) {
   return applyComponentArguments(node, args.options, args.callback);
 }
 
+/**
+ * @genui 二维网格布局
+ * @genui.contract children: 节点数组；style.gridTemplateColumns
+ * @genui.use 卡片墙；指标面板 2×2
+ * @genui.notFor 单行/单列（用 hstack/vstack 更直白）
+ * @genui.pitfall 不写 gridTemplateColumns 会退化成单列
+ * @genui.example {"type":"grid","style":{"gridTemplateColumns":"repeat(2, 1fr)"},"children":[]}
+ */
 export function grid(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VGrid' },
@@ -730,6 +754,13 @@ export function spacer(first = null, second = null, third = null) {
   return node;
 }
 
+/**
+ * @genui 分隔线
+ * @genui.contract 无 props
+ * @genui.use 卡片内分组之间
+ * @genui.notFor 布局间距（用 style.gap）
+ * @genui.example {"type":"divider"}
+ */
 export function divider(first = null, second = null, third = null) {
   const node = createLayoutNode({ vn: 'VDivider' }, {}, first, applyDividerOptions, second, third);
   node.attr('role', 'separator');

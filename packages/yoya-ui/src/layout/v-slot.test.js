@@ -17,9 +17,9 @@ describe('vSlot（零布局占位）', () => {
   it('takes the placeholder name through the standard setup entries', () => {
     // 定义 / 快捷方法分开：VSlot() 只建结构，占位名由 vSlot 的 setup 分派落位
     expect(vSlot).not.toBe(VSlot);
-    // 不带名字 = **默认占位**：`vn_slot=""`（匿名内容落这里），带名字时被覆写成占位名
+    // 不带名字 = **匿名落点**：`vn_slot=""`（未标记内容落这里），带名字时被覆写成落点名
     expect(VSlot().attr('vn_slot')).toBe('');
-    // 裸值 = 占位名：由 setupString 解释，和工厂首参同一条路
+    // 裸值 = 落点名：由 setupString 解释，和工厂首参同一条路
     const named = vSlot('footer');
     expect(named.attr('vn_slot')).toBe('footer');
     expect(vSlot(7).attr('vn_slot')).toBe('7');
@@ -28,7 +28,7 @@ describe('vSlot（零布局占位）', () => {
     applySetupValue(viaSetup, 'header');
     expect(viaSetup.attr('vn_slot')).toBe('header');
 
-    // 对象形式：`name` 收成占位名，其余键继续走 options 分派
+    // 对象形式：`name` 收成落点名，其余键继续走 options 分派
     const styled = vSlot({ attrs: { 'data-test': 'x' }, name: 'body', style: { gap: '4px' } });
     expect(styled.attr('vn_slot')).toBe('body');
     expect(styled.attr('data-test')).toBe('x');
@@ -39,6 +39,8 @@ describe('vSlot（零布局占位）', () => {
     const placeholder = vSlot({ name: 'header' }).renderDom();
 
     expect(placeholder.getAttribute('slot')).toBeNull();
+    // 落点只写 `vn_slot`：`to_slot` 是**内容侧**的投递标记，落点自己不带
+    expect(placeholder.getAttribute('to_slot')).toBeNull();
     expect(placeholder.getAttribute('vn_slot')).toBe('header');
     // 公开槽位名单里没有它：slot="x" 只认 slot 属性
     const host = div((root) => {
@@ -47,26 +49,42 @@ describe('vSlot（零布局占位）', () => {
     expect(host.renderDom().querySelector('[slot]')).toBeNull();
   });
 
-  it('routes content into the matching placeholder by the vn_slot marker alone', () => {
+  it('routes content into the matching landing point by the to_slot marker alone', () => {
     const host = vNode((api, self) => {
       api.body = (content) => self.node().child(content);
       return div((root) => root.child(vSlot({ name: 'body' })));
     });
     const element = host
       .body(
-        div({ vn_slot: 'body' }, (part) => {
+        div({ to_slot: 'body' }, (part) => {
           part.child(vText('正文'));
         })
       )
       .renderDom();
     const placeholders = element.querySelectorAll('[vn_slot="body"]');
 
-    // 落位由标记决定：占位进 DOM，part 自己不留标记（标记只是路由指令）
+    // 落位由标记决定：落点（`vn_slot`）进 DOM，part 自己的投递标记（`to_slot`）摘掉
     expect(placeholders).toHaveLength(1);
     expect(placeholders[0].tagName).toBe('SPAN');
     expect(placeholders[0].style.display).toBe('contents');
     expect(placeholders[0].textContent).toBe('正文');
+    expect(element.querySelectorAll('[to_slot]')).toHaveLength(0);
     expect(element.querySelector('[vn="VSlot"] > div')).not.toBeNull();
+  });
+
+  it('does not route content that only carries the landing-point attribute', () => {
+    const host = vNode((api, self) => {
+      api.body = (content) => self.node().child(content);
+      return div((root) => root.child(vSlot({ name: 'body' })));
+    });
+    // 内容写的是落点属性（`vn_slot`）而不是投递属性（`to_slot`）→ 不是 part，
+    // 按普通内容挂进组件根，落点自己空着
+    const element = host.body(div({ vn_slot: 'body' }, '不是投递')).renderDom();
+    const placeholders = element.querySelectorAll('[vn_slot="body"]');
+
+    expect(placeholders).toHaveLength(2);
+    expect(placeholders[0].textContent).toBe('');
+    expect(placeholders[1].textContent).toBe('不是投递');
   });
 
   it('works as a parent shortcut on containers', () => {
@@ -88,7 +106,7 @@ describe('vSlot（零布局占位）', () => {
   });
 
   it('lands a card part through plain child() as well (marker-only route)', () => {
-    // part 命令只是语法糖：同一份带 vn_slot 标记的节点走 child() 一样落位
+    // part 命令只是语法糖：同一份带 to_slot 标记的节点走 child() 一样落位
     const card = vCard((node) => node.child(vCardHeader('不走命令')));
     const element = card.renderDom();
     const placeholders = element.querySelectorAll('[vn_slot="header"]');

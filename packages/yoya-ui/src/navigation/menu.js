@@ -426,7 +426,7 @@ export function VMenu() {
  * - **一个组件函数 = 一个边界**（R1）：`MenuItemNode` 那层节点类型退场，状态与命令都在闭包里，
  *   视图由最后那个 `return` 一次写清（R2）；三个槽位盒（图标 / 标签 / 快捷键）常驻（R11 / R12：
  *   位置归组件自己，调用方不按名投递）；
- * - **匿名内容位 = 标签盒**：标签盒上写 `vn_slot: ''`（默认占位），调用方**未标记**的 `child(…)`
+ * - **匿名内容位 = 标签盒**：标签盒上写 `vn_slot: ''`（匿名落点），调用方**未标记**的 `child(…)`
  *   就落进它——与迁移前 `child()` 覆盖是**同一条落位路径**（票 16 第 7 条；面包屑的 `<ol>` 同款写法）；
  * - 状态（`active` / `danger` / `disabled` / `hovered` / `hoverable`）都是读值绑定（R4 / R6），
  *   命令只写状态；标签 / 图标 / 快捷键是**运行期可替换的内容位**，留取用器（16 号第 103 条）；
@@ -562,7 +562,7 @@ export function VMenuItem() {
           span({ attrs: { 'aria-hidden': 'true' }, vn: 'VMenuItemIcon' }, (box) => {
             iconBox = box;
           }),
-          // 匿名占位：未标记的内容（`vMenuItem(vText(...))` / `item.child(node)`）落进标签盒
+          // 匿名落点：未标记的内容（`vMenuItem(vText(...))` / `item.child(node)`）落进标签盒
           span({ vn: 'VMenuItemLabel', vn_slot: '' }, (box) => {
             labelBox = box;
           }),

@@ -13,10 +13,10 @@ import {
   rearmWhenMount
 } from './hooks.js';
 import {
-  PART_ATTRIBUTE,
+  PART_SLOT_ATTRIBUTE,
   collectSlots,
   createSlotRegistry,
-  partNameOf,
+  partTargetOf,
   projectPart,
   projectSlot,
   reclaimSlot,
@@ -3416,7 +3416,7 @@ export class ComponentNode extends ViewNode {
     // 槽位表在解析时无条件建：同名重复声明即便没有内容也要立刻报错（就近作用域，不进嵌套组件）
     if (!this._roots) {
       this._slots = collectSlots(this._resolved);
-      this._parts = collectSlots(this._resolved, null, PART_ATTRIBUTE);
+      this._parts = collectSlots(this._resolved, null, PART_SLOT_ATTRIBUTE);
     }
     this._adoptContentIntoRoot();
     if (
@@ -3450,17 +3450,19 @@ export class ComponentNode extends ViewNode {
     this._children = EMPTY_CHILDREN;
     this._childrenDirty = true;
     this._slots = collectSlots(this._resolved, this);
-    this._parts = collectSlots(this._resolved, this, PART_ATTRIBUTE);
+    this._parts = collectSlots(this._resolved, this, PART_SLOT_ATTRIBUTE);
     content.forEach((child) => this._placeContent(child));
   }
 
   /**
-   * 内容投递：带 `slot="x"` 标记的内容进同名槽位（信封不进 DOM），未标记的进根元素
-   * （普通元素语义）；标记找不到槽位 → 不 mount + 开发期提示（HTML 语义）。
+   * 内容投递：带 `slot="x"` 标记的内容进同名槽位（信封不进 DOM），带 `to_slot="x"` 的 part 进同名
+   * 落点（结构侧的 `vn_slot`），未标记的进根元素（普通元素语义）；标记找不到槽位 → 不 mount +
+   * 开发期提示（HTML 语义）。
    */
   _placeContent(content) {
-    // part 通道（vn_slot）：自动落进同名占位，part 作为子节点保留自己的类与样式
-    const part = partNameOf(content);
+    // part 通道（内容侧 `to_slot` → 结构侧 `vn_slot` 落点）：自动投影，part 作
+    // 为子节点保留自己的类与样式
+    const part = partTargetOf(content);
     if (part) {
       const partElement = this._parts?.get(part);
       if (partElement) {
@@ -3468,12 +3470,12 @@ export class ComponentNode extends ViewNode {
         projectPart(partElement, content);
         return;
       }
-      // 没有对应占位 → 退回普通内容（挂进根），不静默丢弃
+      // 没有对应落点 → 退回普通内容（挂进根），不静默丢弃
     }
 
     const name = slotNameOf(content);
     if (!name) {
-      // 默认 part 占位（结构里 `vSlot()` 不带名字）：匿名内容落进这个位置，**追加**不替换
+      // 匿名 part 落点（结构里 `vSlot()` 不带名字）：匿名内容落进这个位置，**追加**不替换
       const defaultPart = this._parts?.get('');
       if (defaultPart) {
         defaultPart.child(content);
@@ -3507,7 +3509,7 @@ export class ComponentNode extends ViewNode {
     }
 
     this._slots = collectSlots(this._resolved, this);
-    this._parts = collectSlots(this._resolved, this, PART_ATTRIBUTE);
+    this._parts = collectSlots(this._resolved, this, PART_SLOT_ATTRIBUTE);
     this._slots.forEach((element, name) =>
       projectSlot(this._slotRegistry, name, element, appendProjectedNodes)
     );

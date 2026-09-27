@@ -119,8 +119,10 @@ export function CounterCard() {
   - **身份**：组件视图根写 `vn: 'VXxx'`（值 = 导出名），内部块各写自己的 `vn: 'VXxxPart'`；
     包装型共用同一根时写多值（`vn: 'VTimer VInput'`，空格分隔，任一名字命中即命中）。
     身份既是**对象事实**（判定读它），也**落到真 DOM**（`vn="VXxx"`，GenUI 扫描与 CSS 作用域读它）。
-  - **部件（part）**：结构侧 `vSlot('name')` 零布局占位、内容侧 `vn_slot: 'name'` 标记，`child()` 进组件自动落位。
-  - **公开槽位**：`slot: 't-head'`（结构侧声明 + 内容侧信封），信封本身不进 DOM。`slot` 与 `vn_slot` 是两个名空间。
+  - **部件（part）**：一对属性、两侧各写一个——**结构侧**用 `vn_slot: 'name'` 声明零布局落点
+    （`vSlot('name')`），**内容侧**用 `to_slot: 'name'` 声明自己落哪，`child()` 进组件自动落位。
+  - **公开槽位**：`slot: 't-head'`（结构侧声明 + 内容侧信封），信封本身不进 DOM。
+    `slot`（公开槽位）与 `vn_slot` / `to_slot`（部件）是两个名空间。
   - 状态一律使用 kebab-case 的 `data-*` 属性（`data-variant`、`data-open`），属性不承载身份之外的语义。
   - **类名已退场**：`yoya-component` 与 `yoya-v*`（组件 + 部件）随票 15 波 6 全部删除——新规则一律从
     `[vn="VXxx"]` 起头；跨组件能力类 `yoya-<feature>`（`yoya-layout`、`yoya-icon`、`yoya-control-clear`）保留。
@@ -173,7 +175,7 @@ const count = ref(null);
 const visible = computed(() => count.value !== null);
 const node = span({ vn: 'VBadge' }, (root) =>
   root
-    .span({ vn: 'VBadgeContent', vn_slot: '' })
+    .span({ vn: 'VBadgeContent' })
     .span({ vn: 'VBadgeCount', style: { …静态… } })
       .style('display', () => (visible.value ? 'inline-flex' : 'none'))
       .attr('aria-label', () => (visible.value ? String(count.value) : null))
@@ -471,22 +473,24 @@ panel.child(p('普通内容')); // 未标记 → 追加到组件根元素末尾
 | 内容只是追加到组件末尾           | 不带标记的 `child(...)`                                                                    |
 | 独立创建、之后挂到某个组件的槽里 | 工厂产出就带标记（`span({ slot: 't-head' }, …)` 或自己的工厂封装），再 `panel.child(head)` |
 
-### 部件（part）：组件自己拥有的位置（`VSlot` + `vn_slot`）
+### 部件（part）：组件自己拥有的位置（`VSlot` + `vn_slot` / `to_slot`）
 
 槽位是**公开**通道：位置由使用方命名、内容由使用方投递。位置归**组件自己**所有时（卡片头 / 体 / 尾这类），
-用**部件**：结构声明位置，内容自带"我属于哪个位置"的标记，投递就是普通的 `child()`——**没有插入辅助函数**。
+用**部件**：结构声明落点（`vn_slot`），内容自带"我属于哪个落点"的标记（`to_slot`），投递就是普通的
+`child()`——**没有插入辅助函数**。
 
 ```js
-// 组件作者：位置由结构决定，与调用顺序无关
+// 内容侧：`to_slot` = 这份部件要落进的落点
 export function VCardHeader() {
-  return div({ vn: 'VCardHeader', vn_slot: 'header' }); // 标记 = 这份内容落哪里
+  return div({ vn: 'VCardHeader', to_slot: 'header' });
 }
 
+// 结构侧：`vn_slot` = 组件自己拥有的落点（零布局）
 export function VCard() {
   return vNode((api, self) => {
     api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
 
-    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header')));
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header'))); // vn_slot="header"
   });
 }
 
@@ -495,12 +499,14 @@ vCard((card) => card.vCardHeader('标题'));
 vCard((card) => card.child(vCardHeader('标题')));
 ```
 
-- `vSlot('name')` 是**零布局占位**（`display: contents`），part 保留自己的元素、类名与样式；
-  投递时 part 自己的标记只是路由指令，落位后会被摘掉（DOM 里只留占位的标记）。裸值走标准
-  `setupString` 入口——这个位置"裸值怎么解释"就由它决定；`vSlot({ name, … })` 只额外收 `name`，
-  其余键照旧走 options 分派（`class` / `style` / `attrs` / 属性 / 事件）。占位名是构建期事实，不是活值；
-- 标记是 `vn_slot` 而**不是** `slot`：部件与公开槽位两个名空间，互不干扰；一个占位一份内容（重复投递即替换）；
-- part 命令只是 `self.node().child(part)` 的语法糖——标记找不到对应占位时，内容按普通未标记内容处理（追加进组件根，不丢弃）。
+- `vSlot('name')` 是**零布局落点**（`display: contents`），自己带 `vn_slot="name"`；part 保留自己的元素、
+  类名与样式。投递时 part 自己的 `to_slot` 标记只是路由指令，落位后会被摘掉（DOM 里只留落点的
+  `vn_slot`）。裸值走标准 `setupString` 入口——这个位置"裸值怎么解释"就由它决定；`vSlot({ name, … })`
+  只额外收 `name`，其余键照旧走 options 分派（`class` / `style` / `attrs` / 属性 / 事件）。落点名是
+  构建期事实，不是活值。`vSlot()` 不带名字是**匿名落点**（`vn_slot=""`）：未标记的 `child(...)` 内容落这里；
+- 两个属性不换位：读结构只认 `vn_slot`、读内容只认 `to_slot`——内容上只写落点属性时它**不是**部件
+  （按普通内容处理）；两者又与公开槽位 `slot` 分名空间，互不干扰。一个落点一份内容（重复投递即替换）；
+- part 命令只是 `self.node().child(part)` 的语法糖——`to_slot` 找不到对应落点时，内容按普通未标记内容处理（追加进组件根，不丢弃）。
 
 ## 7.2 组件级钩子：`whenMount` / `whenDestroy`
 

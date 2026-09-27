@@ -1,7 +1,8 @@
 /**
  * 属性化迁移门禁（票 15 波 0 起，波 6 收口）——**类名存量已清零，只减不增**。
  *
- * 目标态：`yoya-component` / `yoya-v*` 类名全部退场，身份走 `vn` 属性、部件走 `vn_slot`。
+ * 目标态：`yoya-component` / `yoya-v*` 类名全部退场，身份走 `vn` 属性、部件走结构侧 `vn_slot`
+ * （落点）+ 内容侧 `to_slot`（投递）这一对属性。
  * 迁移是**逐组件**做的（JS 与 CSS 同一刀），这里冻结的就是"还剩多少"——收口后全部为空：
  *
  * - `js`：库内 JS 里每个文件还剩多少个 `yoya-v*` 字面量（注释不计）；`yoya-component` 已删除，
@@ -236,7 +237,7 @@ describe('属性化迁移门禁（只减不增）', () => {
     expect(unexpected, "有组件文件既没有 vn 身份、也不在基线里：结构里写 vn: 'VXxx'").toEqual([]);
   });
 
-  it('身份与部件命名符合契约（vn PascalCase / vn_slot 与小写占位名）', () => {
+  it('身份与部件命名符合契约（vn PascalCase / vn_slot 与 to_slot）', () => {
     const violations = [];
 
     for (const dir of libraryDirs) {
@@ -258,7 +259,8 @@ describe('属性化迁移门禁（只减不增）', () => {
           }
         }
 
-        // `vn_slot` 不做命名约束：空字符串 = 默认占位，其余名字由组件自己定
+        // `vn_slot`（结构侧落点）/ `to_slot`（内容侧投递）不做命名约束：
+        // 空字符串 = 匿名落点，其余名字由组件自己定
       }
     }
 

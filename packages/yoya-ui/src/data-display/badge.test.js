@@ -4,7 +4,7 @@ import { VBadge, div, ref, vBadge } from '../index.js';
 describe('vBadge', () => {
   it('defines the component as a named function and keeps nesting via .setup()', () => {
     const node = VBadge({ count: 9 }).setup((badge) => {
-      // 单内容位：内容走 props / `content()` 命令（没有 `vn_slot` 占位，不认组件外 `.child()` 投递）
+      // 单内容位：内容走 props / `content()` 命令（没有 `vn_slot` 落点，不认组件外 `.child()` 投递）
       badge.content('订单');
       badge.text('待处理');
       badge.count(10);

@@ -19,8 +19,8 @@ const RESERVED_COMMAND_KEYS = new Set(['render', 'methods', 'component']);
  * - 第二个参数 `self` 是组件自己的句柄（与 `whenMount` 收到的 `host` 同族，只有取用方法）：
  *   `self.node()` 给出**组件节点本身**。节点要等 setup 返回后才建，所以句柄放取用方法而不是字段——
  *   在 setup 里提前取会**直接报错**（时机不对就说时机不对，不静默给 null）。命令要往组件里加内容就写
- *   `self.node().child(part)`：part 自带的 `vn_slot` 标记决定它落哪个占位（自动投影见 core/slot.js
- *   的 part 通道），命令既不用自己找占位，也不用 `let root` 这类捕获。
+ *   `self.node().child(part)`：part 自带的 `to_slot` 标记决定它落哪个 `vn_slot` 落点（自动投影见
+ *   core/slot.js 的 part 通道），命令既不用自己找落点，也不用 `let root` 这类捕获。
  *
  * 句柄放在**第二个参数**而不是 api 上：api 的键归组件自己的命令所有（例如 VTree 就有 `api.node`），
  * 内部句柄占 api 的名会和真实命令撞名。

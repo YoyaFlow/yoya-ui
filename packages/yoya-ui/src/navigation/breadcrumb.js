@@ -13,7 +13,7 @@ import {
  *
  * - **结构一次写清、部件常驻**：
  *   `nav[VBreadcrumb] > ol[VBreadcrumbList] > li[VBreadcrumbItem] > a[VBreadcrumbLink] + span[VBreadcrumbCurrent] + span[VBreadcrumbSeparator]`；
- *   列表是导航的**匿名占位**（`vn_slot: ''`）——`breadcrumb.child(item)` 照旧落进这张 `<ol>`；
+ *   列表是导航的**匿名落点**（`vn_slot: ''`）——`breadcrumb.child(item)` 照旧落进这张 `<ol>`；
  * - **列表 = 一份 `ref([])` + `keyed` 对账**：层级只从 `items` / `vBreadcrumbItem` 来，增删改排序由引擎按
  *   身份键复用 / 搬动 / 销毁——不 `destroy()` 全量重建、也不 rebuild；`data-item-count` 直接读这份数据；
  * - **链接位 / 当前位 / 分隔符都是内部块**（R11 / R12：位置由组件自己定，调用方不按名投递），两块内容是

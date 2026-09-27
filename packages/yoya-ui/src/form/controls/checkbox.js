@@ -92,4 +92,11 @@ export function VCheckbox({
   });
 }
 
+/**
+ * @genui 勾选框（checked 经 $bind 绑定）
+ * @genui.contract props.checked: { $bind: path }；props.label
+ * @genui.use 布尔开关；任务完成态
+ * @genui.notFor 多选一（用单选/页签）
+ * @genui.example {"type":"vCheckbox","props":{"checked":{"$bind":"done"},"label":{"$bind":"title"}},"on":{"change":{"$action":"set","params":{"path":"done","value":{"$event":"target.checked"}}}}}
+ */
 export const vCheckbox = createComponentShortcut(VCheckbox, { props: true });

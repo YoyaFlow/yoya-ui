@@ -13,8 +13,9 @@ import { vButton } from '../actions/button.js';
  * - **命令委托**：按钮的命令面用 `delegateCommands` 挂到自己的 api 上（`glowButton.size(…)` 照旧），
  *   流光自己的命令（`glow` / `play` / `speed` / `direction` / `strength` / `motion` / `ripple`）写在 api 上；
  * - **状态 → 视图**：七个 `data-glow-*` 全部是 `computed` 派生（句柄 props 是活值），非法值读时回落默认；
- * - **点击涟漪**：节点自带 `vn_slot: 'extras'`（按钮结构里的零布局占位），几何是**量测出来的**（写行内），
- *   `animationend` 自毁；禁用 / `ripple: 'off'` 时不生成（判定读 DOM 属性，与迁移前同口径）。
+ * - **点击涟漪**：涟漪节点是按钮根的**匿名子节点**（未标记，按普通内容挂进组件根），几何是
+ *   **量测出来的**（写行内），`animationend` 自毁；禁用 / `ripple: 'off'` 时不生成
+ *   （判定读 DOM 属性，与迁移前同口径）。
  */
 
 const GLOW_DEFAULTS = {

@@ -8,15 +8,28 @@
  *
  * 作用域只到**直接父组件实例**：遍历结构时遇到嵌套组件就停（它的槽位归它自己），
  * 因此嵌套同名互不影响；找不到槽位的内容不 mount（HTML 语义）并给开发期提示。
+ *
+ * 部件（part）走**另一对属性**，两侧分开写（与公开槽位 `slot` 分名空间）：
+ * - 结构侧 `vn_slot="header"` = **落点**（`vSlot('header')` 的零布局占位，声明"这里能收哪份内容"）；
+ * - 内容侧 `to_slot="header"` = **投递**（这份内容要落进哪个落点，`child()` 进来即自动投影）。
+ *
+ * 两者不共用属性：读结构只认 `vn_slot`、读内容只认 `to_slot`，所以内容上的标记不会被误当成
+ * 结构里的落点，落点也不会被误当成待投递的内容（`vn_slot` 空值 = 匿名落点，见下）。
  */
 
 export const SLOT_ATTRIBUTE = 'slot';
 
 /**
- * part 占位标记（与公开槽位分名空间）：`vn_slot="header"`。
- * 结构侧的占位与内容侧的 part 都用它 → 自动投影，且不碰 `slot="x"` 那套。
+ * part **落点**标记（结构侧，与公开槽位分名空间）：`vn_slot="header"`；
+ * `vn_slot=""` 是**匿名落点**——组件结构里收未标记内容的那个位置，一个组件只有一个。
  */
-export const PART_ATTRIBUTE = 'vn_slot';
+export const PART_SLOT_ATTRIBUTE = 'vn_slot';
+
+/**
+ * part **投递**标记（内容侧）：`to_slot="header"` —— 这份内容要落进同名落点。
+ * 投影时摘掉（标记只是路由指令，DOM 里只留落点自己的标记）。
+ */
+export const PART_TARGET_ATTRIBUTE = 'to_slot';
 
 /** 读节点自己的槽位标记（空字符串 = 未标记）；`attribute` 可换成 part 标记。 */
 export function slotNameOf(node, attribute = SLOT_ATTRIBUTE) {
@@ -28,27 +41,27 @@ export function slotNameOf(node, attribute = SLOT_ATTRIBUTE) {
   return typeof name === 'string' && name.length > 0 ? name : null;
 }
 
-/** 读节点自己的 part 标记（空字符串 = **默认 part 占位**，见下）。 */
-export function partNameOf(node) {
-  return slotNameOf(node, PART_ATTRIBUTE);
+/** 读节点自己的 part **投递**标记（空字符串 = 未标记 → 按匿名 / 普通内容落位）。 */
+export function partTargetOf(node) {
+  return slotNameOf(node, PART_TARGET_ATTRIBUTE);
 }
 
 /**
- * 读节点上的 part 标记原文：`null` = 没写；`''` = 写了空值 = **默认占位**（匿名内容落这里）。
- * `partNameOf` 只认具名占位（与公开槽位共用"空 = 未标记"的口径），默认占位走这一条。
+ * 读节点上的 part **落点**标记原文：`null` = 没写；`''` = 写了空值 = **匿名落点**（匿名内容落这里）。
+ * `slotNameOf` 只认具名落点（与公开槽位共用"空 = 未标记"的口径），匿名落点走这一条。
  */
-export function rawPartNameOf(node) {
+export function rawPartSlotNameOf(node) {
   if (!node || typeof node.attr !== 'function') {
     return null;
   }
 
-  const value = node.attr(PART_ATTRIBUTE);
+  const value = node.attr(PART_SLOT_ATTRIBUTE);
   return typeof value === 'string' ? value : null;
 }
 
 /**
  * 收集组件**自身结构**里的槽位：同名重复声明 → 报错；遇到嵌套组件即停（就近作用域）。
- * `attribute` 决定收哪一套标记（公开槽位 `slot` / part 占位 `vn_slot`），两套各收各的。
+ * `attribute` 决定收哪一套标记（公开槽位 `slot` / part 落点 `vn_slot`），两套各收各的。
  */
 export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
   const slots = new Map();
@@ -60,8 +73,8 @@ export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
     }
 
     const name = slotNameOf(node, attribute);
-    // 默认 part 占位：`vn_slot=""`（`vSlot()` 不带名字）——匿名内容落这里，只有一个
-    if (attribute === PART_ATTRIBUTE && !name && rawPartNameOf(node) === '') {
+    // 匿名 part 落点：`vn_slot=""`（`vSlot()` 不带名字）——匿名内容落这里，只有一个
+    if (attribute === PART_SLOT_ATTRIBUTE && !name && rawPartSlotNameOf(node) === '') {
       if (slots.has('') && slots.get('') !== node) {
         throw new TypeError('Duplicate default slot: one default slot per component.');
       }
@@ -107,16 +120,16 @@ export function collectSlots(root, host = null, attribute = SLOT_ATTRIBUTE) {
 }
 
 /**
- * 把 part 内容放进 `vn_slot` 占位：part **作为子节点**保留自己的类与样式
- * （占位是 `display: contents`，不生成盒子，所以不能把 part 的类/样式合并到占位上）。
+ * 把 part 内容放进 `vn_slot` 落点：part **作为子节点**保留自己的类与样式
+ * （落点是 `display: contents`，不生成盒子，所以不能把 part 的类/样式合并到落点上）。
  */
 export function projectPart(partElement, content) {
   if (!partElement || !content || typeof partElement.child !== 'function') {
     return null;
   }
 
-  // 标记只是路由指令：进了占位就从 part 上摘掉（DOM 里只留占位自己的标记）
-  content.attr?.(PART_ATTRIBUTE, null);
+  // 标记只是路由指令：进了落点就从 part 上摘掉（DOM 里只留落点自己的标记）
+  content.attr?.(PART_TARGET_ATTRIBUTE, null);
   partElement.clearChildren();
   partElement.child(content);
   return content;

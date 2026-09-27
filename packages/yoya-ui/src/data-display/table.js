@@ -301,7 +301,7 @@ export const vTableScroll = createComponentShortcut(VTableScroll);
 
 /**
  * 表格本体（形态 A）：只声明结构 + 身份。
- * 谁要用它当插槽，就在**使用处**指定（`vTableGrid({ vn_slot: '' })`）——定义侧不预设槽位。
+ * 谁要用它当落点，就在**使用处**指定（`vTableGrid({ vn_slot: '' })`）——定义侧不预设落点。
  */
 export function VTableGrid() {
   return table({ vn: 'VTableGrid' });
@@ -349,7 +349,7 @@ export const vTableCaption = createComponentShortcut(VTableCaption);
  * 表格：**壳 + 用户侧受控 API**（票 15 §11）。
  *
  * - 结构只用定义组合：`div[VTable] > vTableScroll(→ vTableGrid({ vn_slot: '' }))`，
- *   匿名插槽在使用处指定，`<table>` 自己就是内容位（零额外节点）；
+ *   匿名落点在使用处指定，`<table>` 自己就是内容位（零额外节点）；
  * - **props 只收 `caption` 与元素选项**：`function VTable({ caption, ...rest })`，`...rest` 照 JSX 摊进根
  *   元素工厂；**段 / 行一律走命令**（`vTable((table) => table.vThead(…))` 或运行期 `table.vThead(…)`）——
  *   写进 props 直接报错，不会被当成同名 DOM 属性静默写下去；

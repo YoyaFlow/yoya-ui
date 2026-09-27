@@ -7,7 +7,7 @@ import { createComponentShortcut } from '../components/shared.js';
 /**
  * 走马灯（票 15 §4：**结构 + 身份 + 命令**，组件里没有元素节点类）。
  *
- * - 结构：`div[VCarousel] > div[VCarouselViewport]`；**视口的匿名占位**接轨道
+ * - 结构：`div[VCarousel] > div[VCarouselViewport]`；**视口的匿名落点**接轨道
  *   （`self.node().child(track)` 落进视口），轨道、箭头 `button[VCarouselArrow][data-dir]`、圆点容器
  *   `div[VCarouselDots]` 都由命令**按需建、建过复用**（它们不在视图里，命令要写 transform / disabled / 显隐）；
  * - 轨道自己是个组件：幻灯片是它的孩子、位移是它自己的 `transform`——命令写自己的节点，
@@ -103,7 +103,7 @@ export function VCarousel() {
     let dots = [];
     let swipeStart = null;
 
-    /** 轨道：用到才建、建过复用（交给视口匿名占位）。 */
+    /** 轨道：用到才建、建过复用（交给视口匿名落点）。 */
     const trackOf = () => {
       if (!trackPart) {
         trackPart = carouselTrack();
@@ -534,7 +534,7 @@ export function VCarousel() {
       unbindSwipe.forEach((unbind) => unbind());
     };
 
-    // 结构里就带默认快照（命令只覆盖自己那一项）；轨道的匿名占位接幻灯片
+    // 结构里就带默认快照（命令只覆盖自己那一项）；轨道的匿名落点接幻灯片
     const view = div(
       {
         'aria-label': '走马灯，第 1 / 0 项',
@@ -564,7 +564,7 @@ export function VCarousel() {
           }
         });
         root.child(
-          // 视口是匿名占位：轨道由命令造好后落进来
+          // 视口是匿名落点：轨道由命令造好后落进来
           div({ vn: 'VCarouselViewport', vn_slot: '' }, (viewport) => {
             viewport
               .style('touchAction', 'pan-y')

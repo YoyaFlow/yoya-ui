@@ -9,7 +9,8 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
  *
  * - **结构**：`button[VButton](type, data-variant, data-size, data-interaction) >
  *   span[VButtonSpinner] + span[VButtonLabel]`；两个部件盒常驻（构造期节点字段退场），
- *   **标签盒同时是匿名占位**（`vn_slot: ''`）——位置参数 / `child()` 的内容落进标签盒；
+ *   文本标签走 `labelText`（`vButton('文案')` 的位置参数与 `label()` 命令都写它）；标签盒**不是**
+ *   落点（没有 `vn_slot`）——未标记的 `child(...)` 按普通内容挂进按钮根；
  * - **状态 → 视图全是读值绑定**：`variant` / `size` / `disabled` / `loading` / `formType` 写句柄，
  *   属性与加载文案都由 `computed` 派生；交互态（hover / press / focus）由元素事件写状态、派生
  *   `data-interaction`（优先级 disabled > active > focus > hover，与迁移前 `_interactionState()` 同口径）；
@@ -277,4 +278,12 @@ export function VButton({
   });
 }
 
+/**
+ * @genui 按钮（触发宿主动作或内建动作）
+ * @genui.contract props.label: string|值表达式；on.click: { $action, params }
+ * @genui.use 提交表单；触发 $action（宿主动作 / agent 回传）；内建 set/toggle/push 等
+ * @genui.notFor 纯链接跳转（用 a）；表单输入（用 vInput）
+ * @genui.pitfall props.label 而不是 text；动作名必须是宿主已注册的动作；未注册会在控制台告警
+ * @genui.example {"type":"vButton","props":{"label":"提交"},"on":{"click":{"$action":"submit","params":{"id":{"$bind":"/id"}}}}}
+ */
 export const vButton = createComponentShortcut(VButton, { props: true });

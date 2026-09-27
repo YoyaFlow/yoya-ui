@@ -2,7 +2,7 @@
  * 票 42 / T3：槽位路由（标记驱动 + 就近作用域）。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { div, p, vNode } from '@yoyaflow/yoya-core';
+import { div, p, span, vNode } from '@yoyaflow/yoya-core';
 
 let warnSpy = null;
 
@@ -129,5 +129,66 @@ describe('slot routing', () => {
 
     expect(host.innerHTML).toContain('A');
     expect(host.innerHTML).toContain('B');
+  });
+});
+
+/**
+ * 部件（part）走**一对属性**：结构侧 `vn_slot` = 落点，内容侧 `to_slot` = 投递。
+ * 两侧不共用属性，所以内容上的标记不会被误当成结构里的落点（反之亦然）。
+ */
+describe('part routing', () => {
+  /** 结构侧只有一个具名落点 `body` 的容器组件。 */
+  const panel = () => vNode(() => div((root) => root.span({ vn_slot: 'body' }, 'default')));
+
+  it('routes content into the matching vn_slot landing point by to_slot alone', () => {
+    const card = panel();
+    card.child(span({ to_slot: 'body' }, 'from-user'));
+
+    const host = mountToHost(card);
+
+    // 落点保留自己的 `vn_slot`；part 作为子节点进落点，自己的 `to_slot` 摘掉（标记只是路由指令）
+    expect(host.innerHTML).toBe('<div><span vn_slot="body"><span>from-user</span></span></div>');
+  });
+
+  it('does not treat the landing-point attribute as a delivery marker', () => {
+    const card = panel();
+    card.child(span({ vn_slot: 'body' }, 'not-a-part'));
+
+    const host = mountToHost(card);
+
+    // 内容只写落点属性 → 不是 part：按普通内容挂进组件根，落点的默认内容原样保留
+    expect(host.innerHTML).toBe(
+      '<div><span vn_slot="body">default</span><span vn_slot="body">not-a-part</span></div>'
+    );
+  });
+
+  it('routes unmarked content into the anonymous landing point (vn_slot="")', () => {
+    const card = vNode(() => div((root) => root.span({ vn_slot: '' })));
+    card.child(p('anonymous'));
+
+    const host = mountToHost(card);
+
+    expect(host.innerHTML).toBe('<div><span vn_slot=""><p>anonymous</p></span></div>');
+  });
+
+  it('keeps a part with no matching landing point as plain root content', () => {
+    const card = panel();
+    card.child(span({ to_slot: 'footer' }, 'orphan'));
+
+    const host = mountToHost(card);
+
+    expect(host.innerHTML).toBe(
+      '<div><span vn_slot="body">default</span><span to_slot="footer">orphan</span></div>'
+    );
+  });
+
+  it('replaces the previous part content when the same landing point receives twice', () => {
+    const card = panel();
+    card.child(span({ to_slot: 'body' }, 'first'));
+    card.child(span({ to_slot: 'body' }, 'second'));
+
+    const host = mountToHost(card);
+
+    expect(host.innerHTML).toBe('<div><span vn_slot="body"><span>second</span></span></div>');
   });
 });

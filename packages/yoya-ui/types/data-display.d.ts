@@ -97,13 +97,14 @@ export const VBadge: { (props?: BadgeOptions): VBadge };
  * 卡片句柄：部件投递命令 + 引擎委托的元素面。
  *
  * 定义函数**没有 props**（`VCard()` 只建结构）；元素级选项走快捷方法
- * （`vCard({ class, style, onXxx })`），部件（header / body / footer）走命令投递、`vn_slot` 决定落位。
+ * （`vCard({ class, style, onXxx })`），部件（header / body / footer）走命令投递、part 自带的
+ * `to_slot` 决定落进哪个 `vn_slot` 落点。
  */
 export interface VCard extends ComponentNode {
   child(...children: ChildInput[]): this;
 }
 
-/** 卡片部件（A 形态薄工厂，返回元素节点）：位置由自己的 `vn_slot` 定。 */
+/** 卡片部件（A 形态薄工厂，返回元素节点）：位置由自己的 `to_slot` 定（卡片结构侧是 `vn_slot` 落点）。 */
 export interface VCardHeader extends HtmlElementNode {}
 export interface VCardBody extends HtmlElementNode {}
 export interface VCardFooter extends HtmlElementNode {}

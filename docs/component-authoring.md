@@ -129,10 +129,12 @@ For the field-access rules see §7.3.
     own `vn: 'VXxxPart'`. A wrapper sharing one root writes several names (`vn: 'VTimer VInput'`, whitespace
     separated — any name matches). Identity is an **object fact** (the check reads it) that also **reaches the
     real DOM** (`vn="VXxx"` — read by the GenUI scan and by CSS scoping).
-  - **Parts**: `vSlot('name')` declares the zero-layout position in the structure, `vn_slot: 'name'` marks the
-    content, and `child()` into the component projects it into position automatically.
+  - **Parts**: two attributes, one per side — the structure declares the landing point with `vn_slot: 'name'`
+    (`vSlot('name')`), the content declares where it belongs with `to_slot: 'name'`, and `child()` into the
+    component projects it into position automatically.
   - **Public slots**: `slot: 't-head'` (declaration on the structure side, envelope on the content side); the
-    envelope never enters the DOM. `slot` and `vn_slot` are separate namespaces.
+    envelope never enters the DOM. `slot` (public slots) and `vn_slot` / `to_slot` (parts) are separate
+    namespaces.
   - State always uses kebab-case `data-*` attributes (`data-variant`, `data-open`).
   - **Class names retired**: `yoya-component` and `yoya-v*` (component and part) are gone as of ticket 15,
     wave 6 — rules are written from `[vn="VXxx"]`. Cross-component capability classes `yoya-<feature>`
@@ -187,7 +189,7 @@ const count = ref(null);
 const visible = computed(() => count.value !== null);
 const node = span({ vn: 'VBadge' }, (root) =>
   root
-    .span({ vn: 'VBadgeContent', vn_slot: '' })
+    .span({ vn: 'VBadgeContent' })
     .span({ vn: 'VBadgeCount', style: { ...static... } })
       .style('display', () => (visible.value ? 'inline-flex' : 'none'))
       .attr('aria-label', () => (visible.value ? String(count.value) : null))
@@ -532,24 +534,25 @@ Rules:
 | Content is simply appended at the end                           | `child(...)` without a marker                                                                 |
 | Build the content first, attach it later                        | Have the factory produce the marker (`span({ slot: 't-head' }, …)`), then `panel.child(head)` |
 
-### Parts: positions the component owns (`VSlot` + `vn_slot`)
+### Parts: positions the component owns (`VSlot` + `vn_slot` / `to_slot`)
 
 A slot is the **public** channel: the consumer names the position and delivers the content. When the
 _component itself_ owns the insertion points — a card header / body / footer — use a **part**: the structure
-declares the position, and the content carries a marker saying where it belongs. Delivery is plain
-`child()`; **no insert helper**.
+declares the position (`vn_slot`), and the content carries a marker saying where it belongs (`to_slot`).
+Delivery is plain `child()`; **no insert helper**.
 
 ```js
-// Component author: the position comes from the structure, not from the call order
+// Content side: `to_slot` = the landing point this part wants
 export function VCardHeader() {
-  return div({ vn: 'VCardHeader', vn_slot: 'header' }); // the marker = where this content lands
+  return div({ vn: 'VCardHeader', to_slot: 'header' });
 }
 
+// Structure side: `vn_slot` = the landing point the component owns (zero layout)
 export function VCard() {
   return vNode((api, self) => {
     api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
 
-    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header')));
+    return div({ vn: 'VCard' }, (root) => root.child(vSlot('header'))); // vn_slot="header"
   });
 }
 
@@ -558,15 +561,19 @@ vCard((card) => card.vCardHeader('Title'));
 vCard((card) => card.child(vCardHeader('Title')));
 ```
 
-- `vSlot('name')` renders a **zero-layout placeholder** (`display: contents`), so the part keeps its own
-  element, class names and styles; the marker on the delivered content is a routing instruction and is
-  dropped once it has landed (the DOM keeps only the placeholder's marker). The bare value goes through the
-  standard `setupString` entry — the place where a position decides how to read a naked value — and
-  `vSlot({ name, … })` only extracts the name, so every other key keeps the ordinary options dispatch
-  (`class` / `style` / `attrs` / attributes / events). Part names are build-time facts, not live values;
-- the marker is `vn_slot`, **not** `slot`: parts and public slots are separate namespaces and never
-  interfere; one part placeholder holds one piece of content (delivering again replaces it);
-- a part command is only sugar for `self.node().child(part)` — if the marker has no matching placeholder, the
+- `vSlot('name')` renders a **zero-layout landing point** (`display: contents`) carrying `vn_slot="name"`, so
+  the part keeps its own element, class names and styles; the `to_slot` marker on the delivered content is a
+  routing instruction and is dropped once it has landed (the DOM keeps only the landing point's `vn_slot`).
+  The bare value goes through the standard `setupString` entry — the place where a position decides how to
+  read a naked value — and `vSlot({ name, … })` only extracts the name, so every other key keeps the ordinary
+  options dispatch (`class` / `style` / `attrs` / attributes / events). Part names are build-time facts, not
+  live values. `vSlot()` without a name is the **anonymous landing point** (`vn_slot=""`): unmarked
+  `child(...)` content lands there;
+- the two attributes never swap roles: structure is read through `vn_slot`, content through `to_slot`, so a
+  node carrying the landing-point attribute is **not** a part (it stays ordinary content). Both are separate
+  from `slot`, the public-slot namespace; one landing point holds one piece of content (delivering again
+  replaces it);
+- a part command is only sugar for `self.node().child(part)` — if `to_slot` has no matching landing point, the
   content behaves as ordinary unmarked content (it is appended to the component root, not dropped).
 
 ## 7.2 Component hooks: `whenMount` / `whenDestroy`

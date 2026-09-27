@@ -6,8 +6,8 @@
     "genui": ">=0.1 <0.2"
   },
   "generated": {
-    "from": "source-scan + curated docs",
-    "notice": "工厂清单勿手改——重跑 scripts/generate-genui-kit.mjs"
+    "from": "source-scan + JSDoc @genui tags",
+    "notice": "工厂清单勿手改——重跑 scripts/generate-genui-kit.mjs；文档写在组件源码 JSDoc（@genui* 标签）"
   },
   "components": [
     {
@@ -39,11 +39,10 @@
       "notFor": [
         "布局间距（用 style.gap）"
       ],
-      "props": {},
       "example": {
         "type": "divider"
       },
-      "pitfalls": []
+      "needsDocs": false
     },
     {
       "name": "flex",
@@ -67,10 +66,9 @@
       "notFor": [
         "单行/单列（用 hstack/vstack 更直白）"
       ],
-      "props": {
-        "children": "节点数组",
-        "style": "{ gridTemplateColumns: \"repeat(2, 1fr)\" }"
-      },
+      "pitfalls": [
+        "不写 gridTemplateColumns 会退化成单列"
+      ],
       "example": {
         "type": "grid",
         "style": {
@@ -78,9 +76,7 @@
         },
         "children": []
       },
-      "pitfalls": [
-        "不写 gridTemplateColumns 会退化成单列"
-      ]
+      "needsDocs": false
     },
     {
       "name": "hstack",
@@ -96,10 +92,9 @@
       "notFor": [
         "换行流式文本（用 p / span）"
       ],
-      "props": {
-        "children": "节点数组",
-        "style": "{ alignItems: \"center\", gap: \"8px\" }"
-      },
+      "pitfalls": [
+        "默认不居中，垂直居中要显式 alignItems: center"
+      ],
       "example": {
         "type": "hstack",
         "style": {
@@ -108,9 +103,7 @@
         },
         "children": []
       },
-      "pitfalls": [
-        "默认不居中，垂直居中要显式 alignItems: center"
-      ]
+      "needsDocs": false
     },
     {
       "name": "mobileLayout",
@@ -150,6 +143,15 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "active": "",
+        "activeHref": "",
+        "ariaLabel": "",
+        "children": "",
+        "items": "",
+        "offset": "",
+        "target": ""
+      },
       "needsDocs": true
     },
     {
@@ -158,6 +160,17 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "active": "",
+        "children": "",
+        "content": "",
+        "href": "",
+        "items": "",
+        "label": "",
+        "nested": "",
+        "text": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -189,10 +202,9 @@
       "notFor": [
         "普通配图（用 img）"
       ],
-      "props": {
-        "src": "图片地址",
-        "alt": "描述"
-      },
+      "pitfalls": [
+        "src 只允许 https"
+      ],
       "example": {
         "type": "vAvatar",
         "props": {
@@ -200,9 +212,19 @@
           "alt": "头像"
         }
       },
-      "pitfalls": [
-        "src 只允许 https"
-      ]
+      "props": {
+        "alt": "",
+        "children": "",
+        "color": "",
+        "content": "",
+        "icon": "",
+        "shape": "",
+        "size": "",
+        "src": "",
+        "status": "",
+        "text": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vAvatarUpload",
@@ -218,6 +240,20 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "color": "",
+        "content": "",
+        "count": "",
+        "dot": "",
+        "label": "",
+        "offset": "",
+        "overflowCount": "",
+        "showZero": "",
+        "status": "",
+        "text": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -234,6 +270,12 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "ariaLabel": "",
+        "children": "",
+        "items": "",
+        "separator": ""
+      },
       "needsDocs": true
     },
     {
@@ -242,6 +284,16 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "active": "",
+        "children": "",
+        "content": "",
+        "current": "",
+        "href": "",
+        "label": "",
+        "text": "",
+        "to": ""
+      },
       "needsDocs": true
     },
     {
@@ -260,10 +312,11 @@
         "纯链接跳转（用 a）",
         "表单输入（用 vInput）"
       ],
-      "props": {
-        "label": "按钮文案",
-        "variant": "\"ghost\" 次要按钮；缺省为主要按钮"
-      },
+      "pitfalls": [
+        "props.label 而不是 text",
+        "动作名必须是宿主已注册的动作",
+        "未注册会在控制台告警"
+      ],
       "example": {
         "type": "vButton",
         "props": {
@@ -280,10 +333,19 @@
           }
         }
       },
-      "pitfalls": [
-        "props.label 而不是 text",
-        "动作名必须是宿主已注册的动作；未注册会在控制台告警"
-      ]
+      "props": {
+        "children": "",
+        "disabled": "",
+        "formType": "",
+        "label": "",
+        "loading": "",
+        "size": "",
+        "text": "",
+        "type": "",
+        "value": "",
+        "variant": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vButtons",
@@ -291,6 +353,17 @@
       "category": "actions",
       "scenes": [],
       "summary": "",
+      "props": {
+        "change": "",
+        "children": "",
+        "disabled": "",
+        "joined": "",
+        "options": "",
+        "selectable": "",
+        "size": "",
+        "value": "",
+        "variant": ""
+      },
       "needsDocs": true
     },
     {
@@ -307,9 +380,9 @@
       "notFor": [
         "纯排版（直接用 vstack 更轻）"
       ],
-      "props": {
-        "children": "vCardHeader|vCardBody|vCardFooter 节点数组"
-      },
+      "pitfalls": [
+        "内容不要直接塞 vCard——先包一层 vCardBody"
+      ],
       "example": {
         "type": "vCard",
         "children": [
@@ -333,9 +406,7 @@
           }
         ]
       },
-      "pitfalls": [
-        "内容不要直接塞 vCard——先包一层 vCardBody"
-      ]
+      "needsDocs": false
     },
     {
       "name": "vCardBody",
@@ -350,9 +421,6 @@
       "notFor": [
         "标题/操作栏（用 Header/Footer）"
       ],
-      "props": {
-        "children": "节点数组"
-      },
       "example": {
         "type": "vCardBody",
         "children": [
@@ -362,7 +430,7 @@
           }
         ]
       },
-      "pitfalls": []
+      "needsDocs": false
     },
     {
       "name": "vCardFooter",
@@ -377,14 +445,11 @@
       "notFor": [
         "正文内容"
       ],
-      "props": {
-        "children": "节点数组"
-      },
       "example": {
         "type": "vCardFooter",
         "children": []
       },
-      "pitfalls": []
+      "needsDocs": false
     },
     {
       "name": "vCardHeader",
@@ -399,9 +464,6 @@
       "notFor": [
         "正文内容（放 vCardBody）"
       ],
-      "props": {
-        "children": "节点数组"
-      },
       "example": {
         "type": "vCardHeader",
         "children": [
@@ -411,7 +473,7 @@
           }
         ]
       },
-      "pitfalls": []
+      "needsDocs": false
     },
     {
       "name": "vCarousel",
@@ -435,6 +497,12 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "adapter": "",
+        "data": "",
+        "height": "",
+        "options": ""
+      },
       "needsDocs": true
     },
     {
@@ -451,10 +519,6 @@
       "notFor": [
         "多选一（用单选/页签）"
       ],
-      "props": {
-        "checked": "{ $bind: \"done\" }",
-        "label": "文案"
-      },
       "example": {
         "type": "vCheckbox",
         "props": {
@@ -477,7 +541,20 @@
           }
         }
       },
-      "pitfalls": []
+      "props": {
+        "checked": "",
+        "children": "",
+        "content": "",
+        "description": "",
+        "disabled": "",
+        "label": "",
+        "name": "",
+        "optionValue": "",
+        "required": "",
+        "text": "",
+        "value": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vCheckboxes",
@@ -492,10 +569,6 @@
       "notFor": [
         "单选（用 vRadios）"
       ],
-      "props": {
-        "options": "选项数组",
-        "value": "{ $bind: \"/tags\" }"
-      },
       "example": {
         "type": "vCheckboxes",
         "props": {
@@ -510,7 +583,17 @@
           }
         }
       },
-      "pitfalls": []
+      "props": {
+        "children": "",
+        "columns": "",
+        "disabled": "",
+        "multiple": "",
+        "name": "",
+        "options": "",
+        "required": "",
+        "value": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vCode",
@@ -518,6 +601,14 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "content": "",
+        "copyLabel": "",
+        "copyable": "",
+        "language": "",
+        "text": ""
+      },
       "needsDocs": true
     },
     {
@@ -558,6 +649,17 @@
       "category": "actions",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "closeOnSelect": "",
+        "content": "",
+        "menu": "",
+        "menuContent": "",
+        "open": "",
+        "target": "",
+        "x": "",
+        "y": ""
+      },
       "needsDocs": true
     },
     {
@@ -582,6 +684,13 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "closable": "",
+        "content": "",
+        "onClose": "",
+        "open": ""
+      },
       "needsDocs": true
     },
     {
@@ -606,6 +715,18 @@
       "category": "actions",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "closeOnSelect": "",
+        "content": "",
+        "label": "",
+        "menu": "",
+        "menuContent": "",
+        "open": "",
+        "placement": "",
+        "text": "",
+        "trigger": ""
+      },
       "needsDocs": true
     },
     {
@@ -638,6 +759,17 @@
       "category": "actions",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "disabled": "",
+        "fixed": "",
+        "icon": "",
+        "label": "",
+        "position": "",
+        "size": "",
+        "text": "",
+        "variant": ""
+      },
       "needsDocs": true
     },
     {
@@ -670,6 +802,12 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "max": "",
+        "tone": "",
+        "unit": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {
@@ -678,6 +816,15 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "direction": "",
+        "glow": "",
+        "motion": "",
+        "play": "",
+        "ripple": "",
+        "speed": "",
+        "strength": ""
+      },
       "needsDocs": true
     },
     {
@@ -711,11 +858,9 @@
         "长文本（A2UI 的 TextField longText 会映射过来）",
         "勾选（用 vCheckbox）"
       ],
-      "props": {
-        "name": "字段名",
-        "placeholder": "提示文案",
-        "value": "{ $bind: \"/draft\" }"
-      },
+      "pitfalls": [
+        "忘记 on.change 的话输入不会写回数据模型"
+      ],
       "example": {
         "type": "vInput",
         "props": {
@@ -737,9 +882,7 @@
           }
         }
       },
-      "pitfalls": [
-        "忘记 on.change 的话输入不会写回数据模型"
-      ]
+      "needsDocs": false
     },
     {
       "name": "vLanguageSwitch",
@@ -747,6 +890,14 @@
       "category": "basic",
       "scenes": [],
       "summary": "",
+      "props": {
+        "ariaLabel": "",
+        "languages": "",
+        "locale": "",
+        "onChange": "",
+        "size": "",
+        "variant": ""
+      },
       "needsDocs": true
     },
     {
@@ -755,6 +906,11 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "alt": "",
+        "defer": "",
+        "src": ""
+      },
       "needsDocs": true
     },
     {
@@ -787,6 +943,11 @@
       "category": "layout",
       "scenes": [],
       "summary": "",
+      "props": {
+        "columns": "",
+        "gap": "",
+        "minColumnWidth": ""
+      },
       "needsDocs": true
     },
     {
@@ -835,6 +996,15 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "closable": "",
+        "content": "",
+        "countdown": "",
+        "duration": "",
+        "text": "",
+        "type": ""
+      },
       "needsDocs": true
     },
     {
@@ -843,6 +1013,10 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "inline": "",
+        "placement": ""
+      },
       "needsDocs": true
     },
     {
@@ -859,6 +1033,18 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "actions": "",
+        "ariaLabel": "",
+        "brand": "",
+        "children": "",
+        "content": "",
+        "menu": "",
+        "menuContent": "",
+        "sticky": "",
+        "subtitle": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -883,6 +1069,19 @@
       "category": "form",
       "scenes": [],
       "summary": "",
+      "props": {
+        "checked": "",
+        "children": "",
+        "content": "",
+        "description": "",
+        "disabled": "",
+        "label": "",
+        "name": "",
+        "optionValue": "",
+        "required": "",
+        "text": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {
@@ -899,10 +1098,6 @@
         "多选（用 vCheckboxes）",
         "开关（用 vCheckbox）"
       ],
-      "props": {
-        "options": "选项数组",
-        "value": "{ $bind: \"/choice\" }"
-      },
       "example": {
         "type": "vRadios",
         "props": {
@@ -917,7 +1112,16 @@
           }
         }
       },
-      "pitfalls": []
+      "props": {
+        "change": "",
+        "children": "",
+        "disabled": "",
+        "name": "",
+        "options": "",
+        "required": "",
+        "value": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vRate",
@@ -925,6 +1129,21 @@
       "category": "form",
       "scenes": [],
       "summary": "",
+      "props": {
+        "allowClear": "",
+        "allowHalf": "",
+        "character": "",
+        "clearable": "",
+        "count": "",
+        "disabled": "",
+        "error": "",
+        "max": "",
+        "name": "",
+        "readonly": "",
+        "required": "",
+        "size": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {
@@ -933,6 +1152,14 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "label": "",
+        "percent": "",
+        "size": "",
+        "strokeWidth": "",
+        "tone": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {
@@ -981,6 +1208,26 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "block": "",
+        "blocked": "",
+        "children": "",
+        "content": "",
+        "endText": "",
+        "itemHeight": "",
+        "items": "",
+        "loadMore": "",
+        "onLoadMore": "",
+        "loading": "",
+        "loadingText": "",
+        "loop": "",
+        "overscan": "",
+        "page": "",
+        "renderItem": "",
+        "reset": "",
+        "threshold": "",
+        "virtual": ""
+      },
       "needsDocs": true
     },
     {
@@ -1005,6 +1252,15 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "active": "",
+        "avatarSize": "",
+        "barHeight": "",
+        "gap": "",
+        "motion": "",
+        "rows": "",
+        "variant": ""
+      },
       "needsDocs": true
     },
     {
@@ -1020,12 +1276,6 @@
       "notFor": [
         "精确文本输入（用 vInput）"
       ],
-      "props": {
-        "min": 0,
-        "max": 100,
-        "step": 1,
-        "value": "{ $bind: \"/progress\" }"
-      },
       "example": {
         "type": "vSlider",
         "props": {
@@ -1034,7 +1284,7 @@
           }
         }
       },
-      "pitfalls": []
+      "needsDocs": false
     },
     {
       "name": "vSlot",
@@ -1050,6 +1300,12 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "data": "",
+        "fill": "",
+        "strokeWidth": "",
+        "tone": ""
+      },
       "needsDocs": true
     },
     {
@@ -1058,6 +1314,13 @@
       "category": "layout",
       "scenes": [],
       "summary": "",
+      "props": {
+        "direction": "",
+        "first": "",
+        "minSize": "",
+        "second": "",
+        "size": ""
+      },
       "needsDocs": true
     },
     {
@@ -1075,10 +1338,9 @@
         "横向并排（用 hstack）",
         "二维网格（用 grid）"
       ],
-      "props": {
-        "children": "节点数组",
-        "style": "{ gap: \"10px\" }"
-      },
+      "pitfalls": [
+        "children 里放字符串要用 { type: \"p\", text } 节点"
+      ],
       "example": {
         "type": "vstack",
         "style": {
@@ -1091,9 +1353,7 @@
           }
         ]
       },
-      "pitfalls": [
-        "children 里放字符串要用 { type: \"p\", text } 节点"
-      ]
+      "needsDocs": false
     },
     {
       "name": "vStep",
@@ -1101,6 +1361,15 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "desc": "",
+        "description": "",
+        "icon": "",
+        "status": "",
+        "text": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -1109,6 +1378,14 @@
       "category": "navigation",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "current": "",
+        "direction": "",
+        "items": "",
+        "size": "",
+        "status": ""
+      },
       "needsDocs": true
     },
     {
@@ -1133,6 +1410,19 @@
       "category": "form",
       "scenes": [],
       "summary": "",
+      "props": {
+        "checked": "",
+        "children": "",
+        "content": "",
+        "description": "",
+        "disabled": "",
+        "label": "",
+        "name": "",
+        "optionValue": "",
+        "required": "",
+        "text": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {
@@ -1141,6 +1431,11 @@
       "category": "actions",
       "scenes": [],
       "summary": "",
+      "props": {
+        "ariaLabel": "",
+        "icon": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -1156,16 +1451,28 @@
       "notFor": [
         "独立使用（必须挂在 vTabs 下）"
       ],
-      "props": {},
+      "pitfalls": [
+        "单独放一个 vTab 不会显示"
+      ],
       "example": {
         "type": "vTabs",
         "props": {
           "tabs": []
         }
       },
-      "pitfalls": [
-        "单独放一个 vTab 不会显示"
-      ]
+      "props": {
+        "active": "",
+        "children": "",
+        "content": "",
+        "disabled": "",
+        "icon": "",
+        "key": "",
+        "label": "",
+        "text": "",
+        "title": "",
+        "value": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vTable",
@@ -1173,6 +1480,9 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "caption": ""
+      },
       "needsDocs": true
     },
     {
@@ -1220,18 +1530,28 @@
       "notFor": [
         "应用级导航（归固定骨架/手写外壳，红线）"
       ],
-      "props": {
-        "tabs": "页签定义（标题 + 内容）"
-      },
+      "pitfalls": [
+        "不要把整站导航塞进 vTabs"
+      ],
       "example": {
         "type": "vTabs",
         "props": {
           "tabs": []
         }
       },
-      "pitfalls": [
-        "不要把整站导航塞进 vTabs"
-      ]
+      "props": {
+        "active": "",
+        "ariaLabel": "",
+        "change": "",
+        "children": "",
+        "items": "",
+        "onChange": "",
+        "onTabChange": "",
+        "orientation": "",
+        "size": "",
+        "variant": ""
+      },
+      "needsDocs": false
     },
     {
       "name": "vTagsInput",
@@ -1270,11 +1590,9 @@
       "notFor": [
         "单行输入（用 vInput）"
       ],
-      "props": {
-        "name": "字段名",
-        "placeholder": "提示",
-        "value": "{ $bind: \"/note\" }"
-      },
+      "pitfalls": [
+        "值经 $bind 绑定数据模型"
+      ],
       "example": {
         "type": "vTextarea",
         "props": {
@@ -1284,9 +1602,7 @@
           }
         }
       },
-      "pitfalls": [
-        "值经 $bind 绑定数据模型"
-      ]
+      "needsDocs": false
     },
     {
       "name": "vTfoot",
@@ -1318,6 +1634,10 @@
       "category": "basic",
       "scenes": [],
       "summary": "",
+      "props": {
+        "modes": "",
+        "persist": ""
+      },
       "needsDocs": true
     },
     {
@@ -1326,6 +1646,20 @@
       "category": "media",
       "scenes": [],
       "summary": "",
+      "props": {
+        "autoRender": "",
+        "autoResize": "",
+        "camera": "",
+        "devicePixelRatio": "",
+        "height": "",
+        "onFrame": "",
+        "onReady": "",
+        "onResize": "",
+        "rendererOptions": "",
+        "scene": "",
+        "threeLib": "",
+        "width": ""
+      },
       "needsDocs": true
     },
     {
@@ -1334,6 +1668,9 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": ""
+      },
       "needsDocs": true
     },
     {
@@ -1342,6 +1679,12 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "content": "",
+        "status": "",
+        "time": "",
+        "title": ""
+      },
       "needsDocs": true
     },
     {
@@ -1366,6 +1709,14 @@
       "category": "feedback",
       "scenes": [],
       "summary": "",
+      "props": {
+        "children": "",
+        "content": "",
+        "open": "",
+        "placement": "",
+        "target": "",
+        "trigger": ""
+      },
       "needsDocs": true
     },
     {
@@ -1422,6 +1773,14 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "columns": "",
+        "expandedKeys": "",
+        "lazyLoad": "",
+        "nodes": "",
+        "rowKey": "",
+        "rowSelection": ""
+      },
       "needsDocs": true
     },
     {
@@ -1430,6 +1789,15 @@
       "category": "data-display",
       "scenes": [],
       "summary": "",
+      "props": {
+        "data": "",
+        "delta": "",
+        "title": "",
+        "tone": "",
+        "unit": "",
+        "up": "",
+        "value": ""
+      },
       "needsDocs": true
     },
     {

@@ -246,6 +246,14 @@ export function VTab({
 const tabShortcut = createComponentShortcut(VTab, { props: true });
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+/**
+ * @genui 单个页签内容区（vTabs 的子项）
+ * @genui.contract 由 vTabs 的页签定义引用，不单独使用
+ * @genui.use vTabs 内某一页的内容容器
+ * @genui.notFor 独立使用（必须挂在 vTabs 下）
+ * @genui.pitfall 单独放一个 vTab 不会显示
+ * @genui.example {"type":"vTabs","props":{"tabs":[]}}
+ */
 export function vTab(...args) {
   const node = tabShortcut(...args);
   // 标在节点上而不是查组件名：容器自己认自己的项
@@ -621,6 +629,14 @@ export function VTabs({
   });
 }
 
+/**
+ * @genui 页签（页面内导航）
+ * @genui.contract props: 页签数组，每个页签指到子容器/子节点
+ * @genui.use 一块区域内的视图切换
+ * @genui.notFor 应用级导航（归固定骨架/手写外壳，红线）
+ * @genui.pitfall 不要把整站导航塞进 vTabs
+ * @genui.example {"type":"vTabs","props":{"tabs":[]}}
+ */
 export const vTabs = createComponentShortcut(VTabs, { props: true });
 
 /** 项归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */
