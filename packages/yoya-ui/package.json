@@ -94,7 +94,8 @@
     },
     "./ui.css": "./dist/yoya.ui.css",
     "./internal/*": "./dist/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./genui-kit.json": "./genui-kit.json"
   },
   "bin": {
     "yoya-compiler": "./dist/yoya.compiler.js"
@@ -105,7 +106,8 @@
     "!types/tests",
     "!dist/examples",
     "LICENSES",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "genui-kit.json"
   ],
   "scripts": {
     "build": "node ../../scripts/build-packages.mjs ui",
