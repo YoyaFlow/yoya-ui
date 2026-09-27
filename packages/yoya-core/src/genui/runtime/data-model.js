@@ -1,4 +1,5 @@
-import { ref } from '../../index.js';
+import { isSignal, ref } from '../../index.js';
+import { ERROR_CODES, GenUIError } from '../protocol/errors.js';
 import {
   isPathPrefix,
   isPlainObject,
@@ -50,6 +51,7 @@ export class DataModel {
     this._root = cloneValue(isPlainObject(initial) || Array.isArray(initial) ? initial : {});
     this._cells = new Map();
     this._listeners = new Set();
+    this._computed = new Map();
   }
 
   get root() {
@@ -81,9 +83,49 @@ export class DataModel {
     return normalized === '/' || readPath(this._root, normalized) !== undefined;
   }
 
+  /** 注册 computed cell：目标只读，来源变化时由信号图自动重算。 */
+  defineComputed(path, handle) {
+    if (!isSignal(handle)) {
+      throw new GenUIError('defineComputed 需要 signal 句柄', {
+        code: ERROR_CODES.protocol,
+        path
+      });
+    }
+
+    const normalized = normalizePath(path);
+    const dispose = handle.subscribe(() => {
+      this._notify({ path: normalized, value: handle.value });
+    });
+
+    this._cells.set(normalized, handle);
+    this._computed.set(normalized, { dispose, handle });
+
+    return () => {
+      dispose();
+      const current = this._computed.get(normalized);
+
+      if (current?.handle === handle) {
+        this._computed.delete(normalized);
+        this._cells.delete(normalized);
+      }
+    };
+  }
+
+  isComputed(path) {
+    return this._computed.has(normalizePath(path));
+  }
+
   /** 写路径（不可变），并刷新受影响的 cell。 */
   write(path, value) {
     const normalized = normalizePath(path);
+
+    if (this._computed.has(normalized)) {
+      throw new GenUIError(`computed 目标 "${normalized}" 只读`, {
+        code: ERROR_CODES.action,
+        path: normalized
+      });
+    }
+
     // 叶子值**按引用**落库：`keyed` 靠行引用判断「要不要重建」，深拷贝会让每次写入都换新行。
     // 代价是调用方要按不可变风格使用（写入传新对象，不去改手里那一份）。
     this._root = writePath(this._root, normalized, value);
@@ -139,7 +181,9 @@ export class DataModel {
   replace(next) {
     this._root = cloneValue(next ?? {});
     this._cells.forEach((cell, path) => {
-      cell.value = readPath(this._root, path);
+      if (!this._computed.has(path)) {
+        cell.value = readPath(this._root, path);
+      }
     });
     this._notify({ path: '/', value: this._root });
     return this;
@@ -159,6 +203,8 @@ export class DataModel {
   }
 
   destroy() {
+    this._computed.forEach(({ dispose }) => dispose());
+    this._computed.clear();
     this._cells.clear();
     this._listeners.clear();
   }
@@ -167,6 +213,10 @@ export class DataModel {
     const changed = `/${segments.join('/')}`;
 
     this._cells.forEach((cell, path) => {
+      if (this._computed.has(path)) {
+        return;
+      }
+
       // 祖先（写进去了）与后代（被写出的对象里）都可能变，两个方向都刷新
       if (isPathPrefix(path, changed) || isPathPrefix(changed === '/' ? '/' : changed, path)) {
         cell.value = readPath(this._root, path);

@@ -2,7 +2,7 @@
   "$schema": "genui-kit/1",
   "namespace": "fixture/kitgen-lib",
   "version": "1.2.3",
-  "runtime": { "genui": ">=0.1 <0.2" },
+  "runtime": { "genui": ">=0.2 <0.3" },
   "generated": {
     "from": "source-scan + JSDoc @genui tags",
     "notice": "工厂清单勿手改——重跑 kitgen；文档写在组件源码 JSDoc（@genui* 标签）"

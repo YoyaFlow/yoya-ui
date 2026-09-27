@@ -6,6 +6,7 @@ import {
   isYoyaGenUISchema,
   joinPath,
   normalizePath,
+  PROTOCOL_VERSION,
   readPath,
   splitPath,
   validateSchema,
@@ -46,6 +47,10 @@ describe('路径工具', () => {
 });
 
 describe('schema 校验', () => {
+  it('数据语言落地后协议版本进入 0.2', () => {
+    expect(PROTOCOL_VERSION).toBe('0.2');
+  });
+
   const valid = {
     data: { title: 'hi' },
     protocol: 'yoya-genui',

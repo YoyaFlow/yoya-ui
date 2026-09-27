@@ -50,7 +50,7 @@ export const DEFAULT_CONFIG = {
   /** 版本来源 package.json */
   pkg: 'package.json',
   /** 运行期版本约束（写进 manifest，装库时校验） */
-  runtime: { genui: '>=0.1 <0.2' },
+  runtime: { genui: '>=0.2 <0.3' },
   /** generated 元信息（提示库作者勿手改） */
   generated: {
     from: 'source-scan + JSDoc @genui tags',

@@ -8,7 +8,7 @@
 export const PROTOCOL_ID = 'yoya-genui';
 
 /** 协议版本：末位是同一份 schema 内的向后兼容修订，主版本变化才是破坏性变更。 */
-export const PROTOCOL_VERSION = '0.1';
+export const PROTOCOL_VERSION = '0.2';
 
 /** 值表达式保留键（协议只认这几个 `$` 开头的键）。 */
 export const BIND_KEY = '$bind';
@@ -42,6 +42,7 @@ export const SCHEMA_KEYS = Object.freeze([
   'version',
   'surfaceId',
   'data',
+  'computed',
   'theme',
   'root',
   COMPONENTS_KEY,

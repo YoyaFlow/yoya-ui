@@ -6,6 +6,7 @@ import { assertNode, assertSchema } from '../protocol/validate.js';
 import { ActionBus, installProtocolActions } from './actions.js';
 import { DataModel } from './data-model.js';
 import { createCustodianRegistry } from './custodians.js';
+import { installComputed } from './computed.js';
 import { normalizeSugarDeep } from '../protocol/references.js';
 import { createRenderContext, renderNode, resolveForDelivery } from './render.js';
 import { createDefaultRegistry } from './default-registry.js';
@@ -30,6 +31,11 @@ export class GenUISurface {
     this._schema = normalizeSchema(normalizeSugarDeep(schema), { onUnknown: options.onUnknown });
     this._data =
       options.data instanceof DataModel ? options.data : new DataModel(this._schema.data ?? {});
+    this._disposeComputed = installComputed(
+      this._schema.computed ?? {},
+      this._data,
+      options.functions ?? {}
+    );
     this._actions = new ActionBus();
     this._listeners = new Map();
     this._warnings = Array.isArray(this._schema.meta?.warnings)
@@ -145,6 +151,13 @@ export class GenUISurface {
 
     this._schema = schema;
     this.surfaceId = schema.surfaceId ?? this.surfaceId;
+
+    this._disposeComputed();
+    this._disposeComputed = installComputed(
+      schema.computed ?? {},
+      this._data,
+      this.options.functions ?? {}
+    );
 
     if (schema.data !== undefined) {
       this._data.replace(schema.data);
@@ -268,6 +281,7 @@ export class GenUISurface {
     this._unsubscribeData();
     this._disposeHandlers();
     this._disposeActions();
+    this._disposeComputed();
     this._actions.destroy();
     this._data.destroy();
     this._listeners.clear();

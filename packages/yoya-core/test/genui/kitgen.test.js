@@ -88,6 +88,7 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
     expect(manifest.$schema).toBe('genui-kit/1');
     expect(manifest.namespace).toBe('fixture/kitgen-lib');
     expect(manifest.version).toBe('1.2.3');
+    expect(manifest.runtime).toEqual({ genui: '>=0.2 <0.3' });
     // script / iframe 被黑名单拦下，普通标签在
     expect(manifest.htmlElements).toContain('div');
     expect(manifest.htmlElements).not.toContain('script');

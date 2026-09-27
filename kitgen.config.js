@@ -8,7 +8,7 @@ export default {
   out: 'packages/yoya-ui/genui-kit.json',
   namespace: 'yoyaflow/yoya-ui',
   pkg: 'packages/yoya-ui/package.json',
-  runtime: { genui: '>=0.1 <0.2' },
+  runtime: { genui: '>=0.2 <0.3' },
   generated: {
     from: 'source-scan + JSDoc @genui tags',
     notice:

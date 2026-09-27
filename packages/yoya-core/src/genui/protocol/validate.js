@@ -8,6 +8,7 @@ import {
   TEXT_NODE_TYPE
 } from './constants.js';
 import { ERROR_CODES, GenUIError } from './errors.js';
+import { validateComputed } from './computed.js';
 import { isActionExpr, isPlainObject, isValueExpr, normalizeRepeat } from './values.js';
 
 const NODE_KEY_SET = new Set(NODE_KEYS);
@@ -59,6 +60,18 @@ export function validateSchema(schema, options = {}) {
 
   if (schema.theme !== undefined && !isPlainObject(schema.theme)) {
     report(errors, 'theme', 'theme 必须是对象');
+  }
+
+  if (schema.computed !== undefined) {
+    if (!isPlainObject(schema.computed)) {
+      report(errors, 'computed', 'computed 必须是对象（目标 → 派生声明）');
+    } else {
+      try {
+        validateComputed(schema.computed, schema.data ?? {});
+      } catch (error) {
+        report(errors, 'computed', error instanceof Error ? error.message : String(error));
+      }
+    }
   }
 
   if (schema.root === undefined || schema.root === null) {
