@@ -7,6 +7,7 @@ import { ActionBus, installProtocolActions } from './actions.js';
 import { DataModel } from './data-model.js';
 import { createCustodianRegistry } from './custodians.js';
 import { installComputed } from './computed.js';
+import { installValidation } from './validation.js';
 import { normalizeSugarDeep } from '../protocol/references.js';
 import { createRenderContext, renderNode, resolveForDelivery } from './render.js';
 import { createDefaultRegistry } from './default-registry.js';
@@ -35,6 +36,12 @@ export class GenUISurface {
       this._schema.computed ?? {},
       this._data,
       options.functions ?? {}
+    );
+    this._disposeValidation = installValidation(
+      this._schema.validate ?? {},
+      this._data,
+      options.functions ?? {},
+      this._custodians
     );
     this._actions = new ActionBus();
     this._listeners = new Map();
@@ -157,6 +164,13 @@ export class GenUISurface {
       schema.computed ?? {},
       this._data,
       this.options.functions ?? {}
+    );
+    this._disposeValidation();
+    this._disposeValidation = installValidation(
+      schema.validate ?? {},
+      this._data,
+      this.options.functions ?? {},
+      this._custodians
     );
 
     if (schema.data !== undefined) {
@@ -282,6 +296,7 @@ export class GenUISurface {
     this._disposeHandlers();
     this._disposeActions();
     this._disposeComputed();
+    this._disposeValidation();
     this._actions.destroy();
     this._data.destroy();
     this._listeners.clear();

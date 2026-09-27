@@ -9,7 +9,8 @@ import {
 } from './constants.js';
 import { ERROR_CODES, GenUIError } from './errors.js';
 import { validateComputed } from './computed.js';
-import { isActionExpr, isPlainObject, isValueExpr, normalizeRepeat } from './values.js';
+import { validateDeclarations } from './validation.js';
+import { isActionExpr, isBindExpr, isPlainObject, isValueExpr, normalizeRepeat } from './values.js';
 
 const NODE_KEY_SET = new Set(NODE_KEYS);
 
@@ -62,6 +63,18 @@ export function validateSchema(schema, options = {}) {
     report(errors, 'theme', 'theme 必须是对象');
   }
 
+  if (schema.validate !== undefined) {
+    if (!isPlainObject(schema.validate)) {
+      report(errors, 'validate', 'validate 必须是目标 → 规则数组的对象');
+    } else {
+      try {
+        validateDeclarations(schema.validate);
+      } catch (error) {
+        report(errors, 'validate', error instanceof Error ? error.message : String(error));
+      }
+    }
+  }
+
   if (schema.computed !== undefined) {
     if (!isPlainObject(schema.computed)) {
       report(errors, 'computed', 'computed 必须是对象（目标 → 派生声明）');
@@ -94,6 +107,8 @@ export function validateSchema(schema, options = {}) {
       );
     }
   }
+
+  collectSchemaErrors(schema).forEach((error) => report(errors, error.path, error.message));
 
   const unknownSchemaKeys = Object.keys(schema).filter((key) => !SCHEMA_KEYS.includes(key));
   unknownSchemaKeys.forEach((key) =>
@@ -277,6 +292,89 @@ function validateNode(node, path, context, region = 'structure') {
       path,
       'to / to_slot 只能写在 components 的顶层项上：结构里（root 及其 children）只声明位置'
     );
+  }
+}
+
+/** 收集所有事件动作里的 params.data 描述符并校验形状（collect / fields / transform）。 */
+function collectSchemaErrors(schema) {
+  const errors = [];
+  const visitAction = (expr, path) => {
+    if (isActionExpr(expr)) {
+      visitCollectData(expr.params?.data, `${path}.params.data`, errors);
+    }
+  };
+  const visitNode = (node, path) => {
+    if (!isPlainObject(node)) {
+      return;
+    }
+
+    Object.entries(node.on ?? {}).forEach(([event, expr]) =>
+      visitAction(expr, `${path}.on.${event}`)
+    );
+    (node.children ?? []).forEach((child, index) => visitNode(child, `${path}.children[${index}]`));
+
+    if (isPlainObject(node.template)) {
+      visitNode(node.template, `${path}.template`);
+    }
+  };
+
+  visitNode(schema.root, 'root');
+  (schema[COMPONENTS_KEY] ?? []).forEach((node, index) =>
+    visitNode(node, `${COMPONENTS_KEY}[${index}]`)
+  );
+  return errors;
+}
+
+function visitCollectData(value, path, errors) {
+  if (!isPlainObject(value) || !('collect' in value || 'fields' in value)) {
+    return;
+  }
+
+  const keys = Object.keys(value);
+  const allowed = new Set(['collect', 'fields', 'transform']);
+
+  if (keys.some((key) => !allowed.has(key))) {
+    errors.push({
+      message: `collect 描述符只允许 collect / fields / transform，得到 ${keys.join(', ')}`,
+      path
+    });
+    return;
+  }
+
+  if ('collect' in value && 'fields' in value) {
+    errors.push({ message: 'collect 与 fields 不能混用：要么子树快照，要么字段映射', path });
+    return;
+  }
+
+  if (!('collect' in value) && !('fields' in value)) {
+    errors.push({ message: 'collect 描述符需要 collect 或 fields', path });
+    return;
+  }
+
+  if ('collect' in value && !isBindExpr(value.collect)) {
+    errors.push({ message: 'collect 必须是 @:/… 数据引用', path: `${path}.collect` });
+  }
+
+  if ('fields' in value) {
+    if (!isPlainObject(value.fields)) {
+      errors.push({
+        message: 'fields 必须是输出字段 → @:/… 引用映射',
+        path: `${path}.fields`
+      });
+    } else {
+      Object.entries(value.fields).forEach(([key, item]) => {
+        if (!isBindExpr(item)) {
+          errors.push({
+            message: `fields.${key} 必须是 @:/… 数据引用`,
+            path: `${path}.fields.${key}`
+          });
+        }
+      });
+    }
+  }
+
+  if (value.transform !== undefined && typeof value.transform !== 'string') {
+    errors.push({ message: 'transform 只接受宿主注册函数名', path: `${path}.transform` });
   }
 }
 

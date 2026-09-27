@@ -43,6 +43,7 @@ export const SCHEMA_KEYS = Object.freeze([
   'surfaceId',
   'data',
   'computed',
+  'validate',
   'theme',
   'root',
   COMPONENTS_KEY,

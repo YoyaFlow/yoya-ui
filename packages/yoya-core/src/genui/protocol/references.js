@@ -152,9 +152,10 @@ export function normalizeSugarDeep(value, path = []) {
     const out = {};
 
     Object.entries(value).forEach(([key, item]) => {
-      // repeat 的 $each 是路径位，不是普通值位；保留引用字符串给 normalizeRepeat 解析。
-      out[key] =
-        key === 'data' || key === '$each' ? item : normalizeSugarDeep(item, [...path, key]);
+      // 只有 schema 顶层的 data 是用户种子数据；动作里的 params.data 是 collect 描述符。
+      const isSeedData = key === 'data' && path.length === 0;
+      const isRepeatPath = key === '$each';
+      out[key] = isSeedData || isRepeatPath ? item : normalizeSugarDeep(item, [...path, key]);
     });
 
     return out;

@@ -115,6 +115,16 @@ export class DataModel {
     return this._computed.has(normalizePath(path));
   }
 
+  /** 指定前缀下是否存在非空 computed 值（validate gate 检查 /ui/errors）。 */
+  hasComputedValue(prefix) {
+    const normalized = normalizePath(prefix);
+
+    return [...this._computed].some(
+      ([path, { handle }]) =>
+        (path === normalized || path.startsWith(`${normalized}/`)) && handle.value !== null
+    );
+  }
+
   /** 写路径（不可变），并刷新受影响的 cell。 */
   write(path, value) {
     const normalized = normalizePath(path);

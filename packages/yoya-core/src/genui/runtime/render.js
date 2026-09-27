@@ -905,6 +905,10 @@ function planEvents(descriptor, ctx, entry) {
     const run = (arg, event = null) => {
       const wiring = { arg, event };
 
+      if (isCollectDescriptor(expr.params?.data) && ctx.data.hasComputedValue('/ui/errors')) {
+        return Promise.resolve(undefined);
+      }
+
       return ctx.actions.dispatch({
         event,
         name: expr[ACTION_KEY],
@@ -1062,6 +1066,65 @@ function resolveAssignmentValue(value, ctx, wiring, descriptor) {
   return resolveActionParams(value, ctx, wiring);
 }
 
+/** params.data 的 collect 描述符：DataModel 快照 / fields 重组 / 注册 transform。 */
+function isCollectDescriptor(value) {
+  return isPlainObject(value) && ('collect' in value || 'fields' in value);
+}
+
+function resolveCollectData(descriptor, ctx) {
+  if ('collect' in descriptor && 'fields' in descriptor) {
+    throw new GenUIError('collect 与 fields 不能混用', {
+      code: ERROR_CODES.action
+    });
+  }
+
+  let data;
+
+  if (descriptor.collect !== undefined) {
+    data = clonePlainValue(ctx.data.read(resolveReferencePath(descriptor.collect, ctx)));
+  } else if (isPlainObject(descriptor.fields)) {
+    data = {};
+    Object.entries(descriptor.fields).forEach(([key, value]) => {
+      data[key] = clonePlainValue(ctx.data.read(resolveReferencePath(value, ctx)));
+    });
+  } else {
+    throw new GenUIError('collect 描述符需要 collect 或 fields', {
+      code: ERROR_CODES.action
+    });
+  }
+
+  if (descriptor.transform === undefined) {
+    return data;
+  }
+
+  const transform = ctx.functions?.[descriptor.transform];
+  if (typeof transform !== 'function') {
+    throw new GenUIError(`未注册的 collect transform "${descriptor.transform}"`, {
+      code: ERROR_CODES.action
+    });
+  }
+
+  return transform(data);
+}
+
+function clonePlainValue(value) {
+  if (value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(clonePlainValue);
+  }
+
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, clonePlainValue(item)])
+    );
+  }
+
+  return value;
+}
+
 /** 事件名归一：`onClick` / `onclick` / `click` 都认。 */
 function normalizeEventName(name) {
   const text = String(name).trim();
@@ -1158,7 +1221,10 @@ function walkParams(raw, ctx, wiring, key = '') {
   if (isPlainObject(raw)) {
     const resolved = {};
     Object.entries(raw).forEach(([childKey, value]) => {
-      resolved[childKey] = walkParams(value, ctx, wiring, childKey);
+      resolved[childKey] =
+        childKey === 'data' && isCollectDescriptor(value)
+          ? resolveCollectData(value, ctx)
+          : walkParams(value, ctx, wiring, childKey);
     });
     return resolved;
   }

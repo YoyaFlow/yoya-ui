@@ -4,6 +4,7 @@ export { createDefaultRegistry } from './default-registry.js';
 export { createCustodianRegistry, DATA_CUSTODIAN, NEAREST_COMPONENT } from './custodians.js';
 export { DataModel } from './data-model.js';
 export { installComputed } from './computed.js';
+export { installValidation } from './validation.js';
 export { resolveReferencePath, resolveRepeatSource, resolveScopePath } from './references.js';
 export {
   createRenderContext,
