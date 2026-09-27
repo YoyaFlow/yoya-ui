@@ -1,0 +1,516 @@
+{
+  "components": [
+    {
+      "name": "vstack",
+      "summary": "垂直布局容器（列）",
+      "dataContract": "children: 节点数组；style.gap 控制间距",
+      "whenToUse": [
+        "表单/卡片内纵向排列",
+        "需要统一列间距"
+      ],
+      "notFor": [
+        "横向并排（用 hstack）",
+        "二维网格（用 grid）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ gap: \"10px\" }"
+      },
+      "example": {
+        "type": "vstack",
+        "style": {
+          "gap": "10px"
+        },
+        "children": [
+          {
+            "type": "p",
+            "text": "第一行"
+          }
+        ]
+      },
+      "pitfalls": [
+        "children 里放字符串要用 { type: \"p\", text } 节点"
+      ]
+    },
+    {
+      "name": "hstack",
+      "summary": "水平布局容器（行）",
+      "dataContract": "children: 节点数组；style.alignItems / justifyContent",
+      "whenToUse": [
+        "图标+标题",
+        "操作按钮排（配 justifyContent: flex-end）"
+      ],
+      "notFor": [
+        "换行流式文本（用 p / span）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ alignItems: \"center\", gap: \"8px\" }"
+      },
+      "example": {
+        "type": "hstack",
+        "style": {
+          "alignItems": "center",
+          "gap": "8px"
+        },
+        "children": []
+      },
+      "pitfalls": [
+        "默认不居中，垂直居中要显式 alignItems: center"
+      ]
+    },
+    {
+      "name": "grid",
+      "summary": "二维网格布局",
+      "dataContract": "children: 节点数组；style.gridTemplateColumns",
+      "whenToUse": [
+        "卡片墙",
+        "指标面板 2×2"
+      ],
+      "notFor": [
+        "单行/单列（用 hstack/vstack 更直白）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ gridTemplateColumns: \"repeat(2, 1fr)\" }"
+      },
+      "example": {
+        "type": "grid",
+        "style": {
+          "gridTemplateColumns": "repeat(2, 1fr)"
+        },
+        "children": []
+      },
+      "pitfalls": [
+        "不写 gridTemplateColumns 会退化成单列"
+      ]
+    },
+    {
+      "name": "vCard",
+      "summary": "卡片容器（含 Header/Body/Footer 三个结构子组件）",
+      "dataContract": "children: vCardHeader / vCardBody / vCardFooter",
+      "whenToUse": [
+        "信息分组呈现",
+        "详情页/面板骨架"
+      ],
+      "notFor": [
+        "纯排版（直接用 vstack 更轻）"
+      ],
+      "props": {
+        "children": "vCardHeader|vCardBody|vCardFooter 节点数组"
+      },
+      "example": {
+        "type": "vCard",
+        "children": [
+          {
+            "type": "vCardHeader",
+            "children": [
+              {
+                "type": "h3",
+                "text": "标题"
+              }
+            ]
+          },
+          {
+            "type": "vCardBody",
+            "children": [
+              {
+                "type": "p",
+                "text": "内容"
+              }
+            ]
+          }
+        ]
+      },
+      "pitfalls": [
+        "内容不要直接塞 vCard——先包一层 vCardBody"
+      ]
+    },
+    {
+      "name": "vCardHeader",
+      "summary": "卡片头部区",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "卡片标题行"
+      ],
+      "notFor": [
+        "正文内容（放 vCardBody）"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardHeader",
+        "children": [
+          {
+            "type": "h3",
+            "text": "标题"
+          }
+        ]
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCardBody",
+      "summary": "卡片正文区",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "卡片主体内容"
+      ],
+      "notFor": [
+        "标题/操作栏（用 Header/Footer）"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardBody",
+        "children": [
+          {
+            "type": "p",
+            "text": "内容"
+          }
+        ]
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCardFooter",
+      "summary": "卡片底部区（常放操作）",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "提交/次要按钮排"
+      ],
+      "notFor": [
+        "正文内容"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardFooter",
+        "children": []
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vButton",
+      "summary": "按钮（触发宿主动作或内建动作）",
+      "dataContract": "props.label: string|值表达式；on.click: { $action, params }",
+      "whenToUse": [
+        "提交表单",
+        "触发 $action（宿主动作 / agent 回传）",
+        "内建 set/toggle/push 等"
+      ],
+      "notFor": [
+        "纯链接跳转（用 a）",
+        "表单输入（用 vInput）"
+      ],
+      "props": {
+        "label": "按钮文案",
+        "variant": "\"ghost\" 次要按钮；缺省为主要按钮"
+      },
+      "example": {
+        "type": "vButton",
+        "props": {
+          "label": "提交"
+        },
+        "on": {
+          "click": {
+            "$action": "submit",
+            "params": {
+              "id": {
+                "$bind": "/id"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": [
+        "props.label 而不是 text",
+        "动作名必须是宿主已注册的动作；未注册会在控制台告警"
+      ]
+    },
+    {
+      "name": "vInput",
+      "summary": "单行输入框（值经 $bind 双向绑定）",
+      "dataContract": "props.value: { $bind: \"/path\" }；on.change 内建 set 回写",
+      "whenToUse": [
+        "表单字段",
+        "草稿输入"
+      ],
+      "notFor": [
+        "长文本（A2UI 的 TextField longText 会映射过来）",
+        "勾选（用 vCheckbox）"
+      ],
+      "props": {
+        "name": "字段名",
+        "placeholder": "提示文案",
+        "value": "{ $bind: \"/draft\" }"
+      },
+      "example": {
+        "type": "vInput",
+        "props": {
+          "name": "draft",
+          "placeholder": "输入…",
+          "value": {
+            "$bind": "/draft"
+          }
+        },
+        "on": {
+          "change": {
+            "$action": "set",
+            "params": {
+              "path": "/draft",
+              "value": {
+                "$event": "target.value"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": [
+        "忘记 on.change 的话输入不会写回数据模型"
+      ]
+    },
+    {
+      "name": "vCheckbox",
+      "summary": "勾选框（checked 经 $bind 绑定）",
+      "dataContract": "props.checked: { $bind: path }；props.label",
+      "whenToUse": [
+        "布尔开关",
+        "任务完成态"
+      ],
+      "notFor": [
+        "多选一（用单选/页签）"
+      ],
+      "props": {
+        "checked": "{ $bind: \"done\" }",
+        "label": "文案"
+      },
+      "example": {
+        "type": "vCheckbox",
+        "props": {
+          "checked": {
+            "$bind": "done"
+          },
+          "label": {
+            "$bind": "title"
+          }
+        },
+        "on": {
+          "change": {
+            "$action": "set",
+            "params": {
+              "path": "done",
+              "value": {
+                "$event": "target.checked"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vTabs",
+      "summary": "页签（页面内导航）",
+      "dataContract": "props: 页签数组，每个页签指到子容器/子节点",
+      "whenToUse": [
+        "一块区域内的视图切换"
+      ],
+      "notFor": [
+        "应用级导航（归固定骨架/手写外壳，红线）"
+      ],
+      "props": {
+        "tabs": "页签定义（标题 + 内容）"
+      },
+      "example": {
+        "type": "vTabs",
+        "props": {
+          "tabs": []
+        }
+      },
+      "pitfalls": [
+        "不要把整站导航塞进 vTabs"
+      ]
+    },
+    {
+      "name": "vTab",
+      "summary": "单个页签内容区（vTabs 的子项）",
+      "dataContract": "由 vTabs 的页签定义引用，不单独使用",
+      "whenToUse": [
+        "vTabs 内某一页的内容容器"
+      ],
+      "notFor": [
+        "独立使用（必须挂在 vTabs 下）"
+      ],
+      "props": {},
+      "example": {
+        "type": "vTabs",
+        "props": {
+          "tabs": []
+        }
+      },
+      "pitfalls": [
+        "单独放一个 vTab 不会显示"
+      ]
+    },
+    {
+      "name": "vTextarea",
+      "summary": "多行文本输入（A2UI TextField longText 映射到它）",
+      "dataContract": "props.value: { $bind: path }",
+      "whenToUse": [
+        "备注、描述等长文本"
+      ],
+      "notFor": [
+        "单行输入（用 vInput）"
+      ],
+      "props": {
+        "name": "字段名",
+        "placeholder": "提示",
+        "value": "{ $bind: \"/note\" }"
+      },
+      "example": {
+        "type": "vTextarea",
+        "props": {
+          "name": "note",
+          "value": {
+            "$bind": "/note"
+          }
+        }
+      },
+      "pitfalls": [
+        "值经 $bind 绑定数据模型"
+      ]
+    },
+    {
+      "name": "vAvatar",
+      "summary": "头像（A2UI Image usageHint=avatar 映射）",
+      "dataContract": "props.src / props.alt",
+      "whenToUse": [
+        "用户/条目头像"
+      ],
+      "notFor": [
+        "普通配图（用 img）"
+      ],
+      "props": {
+        "src": "图片地址",
+        "alt": "描述"
+      },
+      "example": {
+        "type": "vAvatar",
+        "props": {
+          "src": "https://example.com/a.png",
+          "alt": "头像"
+        }
+      },
+      "pitfalls": [
+        "src 只允许 https"
+      ]
+    },
+    {
+      "name": "vSlider",
+      "summary": "滑杆（A2UI Slider 映射）",
+      "dataContract": "props.min/max/step/value",
+      "whenToUse": [
+        "数值区间选择"
+      ],
+      "notFor": [
+        "精确文本输入（用 vInput）"
+      ],
+      "props": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "value": "{ $bind: \"/progress\" }"
+      },
+      "example": {
+        "type": "vSlider",
+        "props": {
+          "value": {
+            "$bind": "/progress"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vRadios",
+      "summary": "单选组（A2UI MultipleChoice 单选映射）",
+      "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中值",
+      "whenToUse": [
+        "多选一"
+      ],
+      "notFor": [
+        "多选（用 vCheckboxes）",
+        "开关（用 vCheckbox）"
+      ],
+      "props": {
+        "options": "选项数组",
+        "value": "{ $bind: \"/choice\" }"
+      },
+      "example": {
+        "type": "vRadios",
+        "props": {
+          "options": [
+            {
+              "label": "A",
+              "value": "a"
+            }
+          ],
+          "value": {
+            "$bind": "/choice"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCheckboxes",
+      "summary": "复选组（A2UI MultipleChoice 多选映射）",
+      "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中数组",
+      "whenToUse": [
+        "多选"
+      ],
+      "notFor": [
+        "单选（用 vRadios）"
+      ],
+      "props": {
+        "options": "选项数组",
+        "value": "{ $bind: \"/tags\" }"
+      },
+      "example": {
+        "type": "vCheckboxes",
+        "props": {
+          "options": [
+            {
+              "label": "X",
+              "value": "x"
+            }
+          ],
+          "value": {
+            "$bind": "/tags"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "divider",
+      "summary": "分隔线",
+      "dataContract": "无 props",
+      "whenToUse": [
+        "卡片内分组之间"
+      ],
+      "notFor": [
+        "布局间距（用 style.gap）"
+      ],
+      "props": {},
+      "example": {
+        "type": "divider"
+      },
+      "pitfalls": []
+    }
+  ]
+}

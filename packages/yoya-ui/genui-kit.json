@@ -1,0 +1,1590 @@
+{
+  "$schema": "genui-kit/1",
+  "namespace": "yoyaflow/yoya-ui",
+  "version": "0.7.6",
+  "runtime": {
+    "genui": ">=0.1 <0.2"
+  },
+  "generated": {
+    "from": "source-scan + curated docs",
+    "notice": "工厂清单勿手改——重跑 scripts/generate-genui-kit.mjs"
+  },
+  "components": [
+    {
+      "name": "center",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "container",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "divider",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "分隔线",
+      "dataContract": "无 props",
+      "whenToUse": [
+        "卡片内分组之间"
+      ],
+      "notFor": [
+        "布局间距（用 style.gap）"
+      ],
+      "props": {},
+      "example": {
+        "type": "divider"
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "flex",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "grid",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "二维网格布局",
+      "dataContract": "children: 节点数组；style.gridTemplateColumns",
+      "whenToUse": [
+        "卡片墙",
+        "指标面板 2×2"
+      ],
+      "notFor": [
+        "单行/单列（用 hstack/vstack 更直白）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ gridTemplateColumns: \"repeat(2, 1fr)\" }"
+      },
+      "example": {
+        "type": "grid",
+        "style": {
+          "gridTemplateColumns": "repeat(2, 1fr)"
+        },
+        "children": []
+      },
+      "pitfalls": [
+        "不写 gridTemplateColumns 会退化成单列"
+      ]
+    },
+    {
+      "name": "hstack",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "水平布局容器（行）",
+      "dataContract": "children: 节点数组；style.alignItems / justifyContent",
+      "whenToUse": [
+        "图标+标题",
+        "操作按钮排（配 justifyContent: flex-end）"
+      ],
+      "notFor": [
+        "换行流式文本（用 p / span）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ alignItems: \"center\", gap: \"8px\" }"
+      },
+      "example": {
+        "type": "hstack",
+        "style": {
+          "alignItems": "center",
+          "gap": "8px"
+        },
+        "children": []
+      },
+      "pitfalls": [
+        "默认不居中，垂直居中要显式 alignItems: center"
+      ]
+    },
+    {
+      "name": "mobileLayout",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "responsiveGrid",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "spacer",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "stack",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vAnchor",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vAnchorItem",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vAside",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vAutocomplete",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vAvatar",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "头像（A2UI Image usageHint=avatar 映射）",
+      "dataContract": "props.src / props.alt",
+      "whenToUse": [
+        "用户/条目头像"
+      ],
+      "notFor": [
+        "普通配图（用 img）"
+      ],
+      "props": {
+        "src": "图片地址",
+        "alt": "描述"
+      },
+      "example": {
+        "type": "vAvatar",
+        "props": {
+          "src": "https://example.com/a.png",
+          "alt": "头像"
+        }
+      },
+      "pitfalls": [
+        "src 只允许 https"
+      ]
+    },
+    {
+      "name": "vAvatarUpload",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vBadge",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vBody",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vBreadcrumb",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vBreadcrumbItem",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vButton",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "按钮（触发宿主动作或内建动作）",
+      "dataContract": "props.label: string|值表达式；on.click: { $action, params }",
+      "whenToUse": [
+        "提交表单",
+        "触发 $action（宿主动作 / agent 回传）",
+        "内建 set/toggle/push 等"
+      ],
+      "notFor": [
+        "纯链接跳转（用 a）",
+        "表单输入（用 vInput）"
+      ],
+      "props": {
+        "label": "按钮文案",
+        "variant": "\"ghost\" 次要按钮；缺省为主要按钮"
+      },
+      "example": {
+        "type": "vButton",
+        "props": {
+          "label": "提交"
+        },
+        "on": {
+          "click": {
+            "$action": "submit",
+            "params": {
+              "id": {
+                "$bind": "/id"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": [
+        "props.label 而不是 text",
+        "动作名必须是宿主已注册的动作；未注册会在控制台告警"
+      ]
+    },
+    {
+      "name": "vButtons",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vCard",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "卡片容器（含 Header/Body/Footer 三个结构子组件）",
+      "dataContract": "children: vCardHeader / vCardBody / vCardFooter",
+      "whenToUse": [
+        "信息分组呈现",
+        "详情页/面板骨架"
+      ],
+      "notFor": [
+        "纯排版（直接用 vstack 更轻）"
+      ],
+      "props": {
+        "children": "vCardHeader|vCardBody|vCardFooter 节点数组"
+      },
+      "example": {
+        "type": "vCard",
+        "children": [
+          {
+            "type": "vCardHeader",
+            "children": [
+              {
+                "type": "h3",
+                "text": "标题"
+              }
+            ]
+          },
+          {
+            "type": "vCardBody",
+            "children": [
+              {
+                "type": "p",
+                "text": "内容"
+              }
+            ]
+          }
+        ]
+      },
+      "pitfalls": [
+        "内容不要直接塞 vCard——先包一层 vCardBody"
+      ]
+    },
+    {
+      "name": "vCardBody",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "卡片正文区",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "卡片主体内容"
+      ],
+      "notFor": [
+        "标题/操作栏（用 Header/Footer）"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardBody",
+        "children": [
+          {
+            "type": "p",
+            "text": "内容"
+          }
+        ]
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCardFooter",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "卡片底部区（常放操作）",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "提交/次要按钮排"
+      ],
+      "notFor": [
+        "正文内容"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardFooter",
+        "children": []
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCardHeader",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "卡片头部区",
+      "dataContract": "children: 节点数组",
+      "whenToUse": [
+        "卡片标题行"
+      ],
+      "notFor": [
+        "正文内容（放 vCardBody）"
+      ],
+      "props": {
+        "children": "节点数组"
+      },
+      "example": {
+        "type": "vCardHeader",
+        "children": [
+          {
+            "type": "h3",
+            "text": "标题"
+          }
+        ]
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCarousel",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vCascader",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vChart",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vCheckbox",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "勾选框（checked 经 $bind 绑定）",
+      "dataContract": "props.checked: { $bind: path }；props.label",
+      "whenToUse": [
+        "布尔开关",
+        "任务完成态"
+      ],
+      "notFor": [
+        "多选一（用单选/页签）"
+      ],
+      "props": {
+        "checked": "{ $bind: \"done\" }",
+        "label": "文案"
+      },
+      "example": {
+        "type": "vCheckbox",
+        "props": {
+          "checked": {
+            "$bind": "done"
+          },
+          "label": {
+            "$bind": "title"
+          }
+        },
+        "on": {
+          "change": {
+            "$action": "set",
+            "params": {
+              "path": "done",
+              "value": {
+                "$event": "target.checked"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCheckboxes",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "复选组（A2UI MultipleChoice 多选映射）",
+      "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中数组",
+      "whenToUse": [
+        "多选"
+      ],
+      "notFor": [
+        "单选（用 vRadios）"
+      ],
+      "props": {
+        "options": "选项数组",
+        "value": "{ $bind: \"/tags\" }"
+      },
+      "example": {
+        "type": "vCheckboxes",
+        "props": {
+          "options": [
+            {
+              "label": "X",
+              "value": "x"
+            }
+          ],
+          "value": {
+            "$bind": "/tags"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vCode",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vCol",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vColorPicker",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vConfirm",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vContainer",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vContextMenu",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDetail",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDetailItem",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDialog",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDigitalBoard",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDigitalBoardItem",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDropdownMenu",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vDynamicLoader",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vEchart",
+      "factory": true,
+      "category": "media",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vField",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vFloatButton",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vFooter",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vForm",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vFormItem",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vGauge",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vGlowButton",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vHeader",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vImagePreview",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vInput",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "单行输入框（值经 $bind 双向绑定）",
+      "dataContract": "props.value: { $bind: \"/path\" }；on.change 内建 set 回写",
+      "whenToUse": [
+        "表单字段",
+        "草稿输入"
+      ],
+      "notFor": [
+        "长文本（A2UI 的 TextField longText 会映射过来）",
+        "勾选（用 vCheckbox）"
+      ],
+      "props": {
+        "name": "字段名",
+        "placeholder": "提示文案",
+        "value": "{ $bind: \"/draft\" }"
+      },
+      "example": {
+        "type": "vInput",
+        "props": {
+          "name": "draft",
+          "placeholder": "输入…",
+          "value": {
+            "$bind": "/draft"
+          }
+        },
+        "on": {
+          "change": {
+            "$action": "set",
+            "params": {
+              "path": "/draft",
+              "value": {
+                "$event": "target.value"
+              }
+            }
+          }
+        }
+      },
+      "pitfalls": [
+        "忘记 on.change 的话输入不会写回数据模型"
+      ]
+    },
+    {
+      "name": "vLanguageSwitch",
+      "factory": true,
+      "category": "basic",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vLazyImage",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vLink",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vLinkLabel",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMain",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMasonry",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMenu",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMenuDivider",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMenuGroup",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMenuItem",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMenuWrapper",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMessage",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMessageContainer",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vMessageManager",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vNavbar",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vPagination",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vProgress",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRadio",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRadios",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "单选组（A2UI MultipleChoice 单选映射）",
+      "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中值",
+      "whenToUse": [
+        "多选一"
+      ],
+      "notFor": [
+        "多选（用 vCheckboxes）",
+        "开关（用 vCheckbox）"
+      ],
+      "props": {
+        "options": "选项数组",
+        "value": "{ $bind: \"/choice\" }"
+      },
+      "example": {
+        "type": "vRadios",
+        "props": {
+          "options": [
+            {
+              "label": "A",
+              "value": "a"
+            }
+          ],
+          "value": {
+            "$bind": "/choice"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vRate",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRingStat",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRoute",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRouter",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRouterView",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRouterViews",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vRow",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vScroll",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSelect",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSidebar",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSkeleton",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSlider",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "滑杆（A2UI Slider 映射）",
+      "dataContract": "props.min/max/step/value",
+      "whenToUse": [
+        "数值区间选择"
+      ],
+      "notFor": [
+        "精确文本输入（用 vInput）"
+      ],
+      "props": {
+        "min": 0,
+        "max": 100,
+        "step": 1,
+        "value": "{ $bind: \"/progress\" }"
+      },
+      "example": {
+        "type": "vSlider",
+        "props": {
+          "value": {
+            "$bind": "/progress"
+          }
+        }
+      },
+      "pitfalls": []
+    },
+    {
+      "name": "vSlot",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSparkline",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSplitPanel",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vstack",
+      "factory": true,
+      "category": "layout",
+      "scenes": [],
+      "summary": "垂直布局容器（列）",
+      "dataContract": "children: 节点数组；style.gap 控制间距",
+      "whenToUse": [
+        "表单/卡片内纵向排列",
+        "需要统一列间距"
+      ],
+      "notFor": [
+        "横向并排（用 hstack）",
+        "二维网格（用 grid）"
+      ],
+      "props": {
+        "children": "节点数组",
+        "style": "{ gap: \"10px\" }"
+      },
+      "example": {
+        "type": "vstack",
+        "style": {
+          "gap": "10px"
+        },
+        "children": [
+          {
+            "type": "p",
+            "text": "第一行"
+          }
+        ]
+      },
+      "pitfalls": [
+        "children 里放字符串要用 { type: \"p\", text } 节点"
+      ]
+    },
+    {
+      "name": "vStep",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSteps",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSubMenu",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSvgIconPicker",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSwitch",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vSymbolButton",
+      "factory": true,
+      "category": "actions",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTab",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "单个页签内容区（vTabs 的子项）",
+      "dataContract": "由 vTabs 的页签定义引用，不单独使用",
+      "whenToUse": [
+        "vTabs 内某一页的内容容器"
+      ],
+      "notFor": [
+        "独立使用（必须挂在 vTabs 下）"
+      ],
+      "props": {},
+      "example": {
+        "type": "vTabs",
+        "props": {
+          "tabs": []
+        }
+      },
+      "pitfalls": [
+        "单独放一个 vTab 不会显示"
+      ]
+    },
+    {
+      "name": "vTable",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTableCaption",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTableGrid",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTableScroll",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTableWrapper",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTabs",
+      "factory": true,
+      "category": "navigation",
+      "scenes": [],
+      "summary": "页签（页面内导航）",
+      "dataContract": "props: 页签数组，每个页签指到子容器/子节点",
+      "whenToUse": [
+        "一块区域内的视图切换"
+      ],
+      "notFor": [
+        "应用级导航（归固定骨架/手写外壳，红线）"
+      ],
+      "props": {
+        "tabs": "页签定义（标题 + 内容）"
+      },
+      "example": {
+        "type": "vTabs",
+        "props": {
+          "tabs": []
+        }
+      },
+      "pitfalls": [
+        "不要把整站导航塞进 vTabs"
+      ]
+    },
+    {
+      "name": "vTagsInput",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTbody",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTd",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTextarea",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "多行文本输入（A2UI TextField longText 映射到它）",
+      "dataContract": "props.value: { $bind: path }",
+      "whenToUse": [
+        "备注、描述等长文本"
+      ],
+      "notFor": [
+        "单行输入（用 vInput）"
+      ],
+      "props": {
+        "name": "字段名",
+        "placeholder": "提示",
+        "value": "{ $bind: \"/note\" }"
+      },
+      "example": {
+        "type": "vTextarea",
+        "props": {
+          "name": "note",
+          "value": {
+            "$bind": "/note"
+          }
+        }
+      },
+      "pitfalls": [
+        "值经 $bind 绑定数据模型"
+      ]
+    },
+    {
+      "name": "vTfoot",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTh",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vThead",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vThemeModeSwitch",
+      "factory": true,
+      "category": "basic",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vThree",
+      "factory": true,
+      "category": "media",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTimeline",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTimelineItem",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTimer",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTimerRange",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTooltip",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTr",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTransition",
+      "factory": true,
+      "category": "feedback",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTree",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTreeNode",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTreeRanger",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTreeRangerColumn",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTreeTable",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vTrendCard",
+      "factory": true,
+      "category": "data-display",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    },
+    {
+      "name": "vUpload",
+      "factory": true,
+      "category": "form",
+      "scenes": [],
+      "summary": "",
+      "needsDocs": true
+    }
+  ],
+  "htmlElements": [
+    "a",
+    "abbr",
+    "address",
+    "area",
+    "article",
+    "aside",
+    "audio",
+    "b",
+    "bdi",
+    "bdo",
+    "blockquote",
+    "br",
+    "button",
+    "caption",
+    "cite",
+    "code",
+    "col",
+    "colgroup",
+    "data",
+    "datalist",
+    "dd",
+    "del",
+    "details",
+    "dfn",
+    "dialog",
+    "div",
+    "dl",
+    "dt",
+    "em",
+    "fieldset",
+    "figcaption",
+    "figure",
+    "footer",
+    "form",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "hgroup",
+    "hr",
+    "i",
+    "img",
+    "input",
+    "ins",
+    "kbd",
+    "label",
+    "legend",
+    "li",
+    "main",
+    "map",
+    "mark",
+    "menu",
+    "meter",
+    "nav",
+    "ol",
+    "optgroup",
+    "option",
+    "output",
+    "p",
+    "picture",
+    "pre",
+    "progress",
+    "q",
+    "rp",
+    "rt",
+    "ruby",
+    "s",
+    "samp",
+    "search",
+    "section",
+    "select",
+    "selectedcontent",
+    "small",
+    "source",
+    "span",
+    "strong",
+    "style",
+    "sub",
+    "summary",
+    "sup",
+    "table",
+    "tbody",
+    "td",
+    "textarea",
+    "tfoot",
+    "th",
+    "thead",
+    "time",
+    "tr",
+    "track",
+    "u",
+    "ul",
+    "varTag",
+    "video",
+    "wbr"
+  ],
+  "svgFactories": [
+    "ArrowDownOutlined",
+    "ArrowLeftOutlined",
+    "ArrowRightOutlined",
+    "ArrowUpOutlined",
+    "BellOutlined",
+    "CalendarOutlined",
+    "CheckOutlined",
+    "ChevronDownOutlined",
+    "ChevronLeftOutlined",
+    "ChevronRightOutlined",
+    "ChevronUpOutlined",
+    "CloseOutlined",
+    "CodeOutlined",
+    "CopyOutlined",
+    "DownloadOutlined",
+    "EditOutlined",
+    "ExternalOutlined",
+    "EyeOutlined",
+    "FileOutlined",
+    "FolderOpenOutlined",
+    "FolderOutlined",
+    "HeartOutlined",
+    "HomeOutlined",
+    "ImageOutlined",
+    "InfoOutlined",
+    "LockOutlined",
+    "LogoutOutlined",
+    "MailOutlined",
+    "MenuOutlined",
+    "MinusOutlined",
+    "MonitorOutlined",
+    "MoonOutlined",
+    "MoreHorizontalOutlined",
+    "PlusOutlined",
+    "RefreshOutlined",
+    "SearchOutlined",
+    "SettingsOutlined",
+    "StarOutlined",
+    "SunOutlined",
+    "TrashOutlined",
+    "UploadOutlined",
+    "UserOutlined",
+    "WarningOutlined",
+    "svg"
+  ]
+}

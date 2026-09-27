@@ -42,7 +42,8 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json && tsc -p packages/yoya-core/tsconfig.json",
-    "test:types": "npm run typecheck"
+    "test:types": "npm run typecheck",
+    "kit:generate": "node scripts/generate-genui-kit.mjs"
   },
   "keywords": [
     "vite",
