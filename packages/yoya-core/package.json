@@ -59,8 +59,16 @@
     "./internal/core/signals/handle.js": "./dist/core/signals/handle.js",
     "./internal/svg/icons.js": "./dist/svg/icons.js",
     "./internal/types/*": "./types/*",
-    "./internal/types/*": "./types/*",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./genui": "./dist/genui/index.js",
+    "./genui/core": "./dist/genui/core.js",
+    "./genui/protocol": "./dist/genui/protocol/index.js",
+    "./genui/dialects": "./dist/genui/dialects/index.js",
+    "./genui/dialects/a2ui": "./dist/genui/dialects/a2ui/index.js",
+    "./genui/create-plugin": "./dist/genui/create-plugin.js",
+    "./genui/kitgen": "./dist/genui/kitgen/index.js",
+    "./genui/kitgen/cli": "./dist/genui/kitgen/cli.js",
+    "./genui/dialects/a2ui/cli": "./dist/genui/dialects/a2ui/cli.js"
   },
   "files": [
     "dist",
@@ -101,5 +109,8 @@
     "firefox >= 120",
     "safari >= 17.5",
     "ios_saf >= 17.5"
-  ]
+  ],
+  "bin": {
+    "yoya-a2ui": "./dist/genui/dialects/a2ui/cli.js"
+  }
 }

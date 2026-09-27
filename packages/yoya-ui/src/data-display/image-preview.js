@@ -304,4 +304,11 @@ export function VImagePreview() {
   });
 }
 
+/**
+ * @genui 图片预览（缩略图点击放大）
+ * @genui.contract src；thumb；alt；缩放/拖拽命令
+ * @genui.use 图库缩略图；详情页大图
+ * @genui.notFor 纯展示图（用 img / vLazyImage）
+ * @genui.example {"type":"vImagePreview"}
+ */
 export const vImagePreview = createComponentShortcut(VImagePreview);

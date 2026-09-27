@@ -27,7 +27,16 @@ const FORM_TYPES = new Set(['button', 'submit', 'reset']);
 
 const textOf = (value) => resolveTextValue(value);
 
-/** 按钮 props：`label` / `text` / `children` 三键同义（节点在构建期落位到标签盒）。 */
+/** 按钮 props：`label` / `text` / `children` 三键同义（节点在构建期落位到标签盒）。  *
+ * @genui.event click dom
+ * @genui.prop disabled to=command:disabled read=command:isDisabled
+ * @genui.prop label
+ * @genui.prop loading to=command:loading read=command:isLoading
+ * @genui.prop size
+ * @genui.prop value
+ * @genui.prop variant
+ * @genui.text label
+ */
 export function VButton({
   children: labelOption,
   disabled,

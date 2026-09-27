@@ -59,7 +59,9 @@ const glowValueOf = (key, state) =>
     return GLOW_OPTIONS[key].has(value) ? value : GLOW_DEFAULTS[key];
   });
 
-/** 流光按钮 props：按钮自己的 props 走 `...rest` 交给内层 `vButton`；`glow` 选项见 `GlowButtonOptions`。 */
+/** 流光按钮 props：按钮自己的 props 走 `...rest` 交给内层 `vButton`；`glow` 选项见 `GlowButtonOptions`。  *
+ * @genui.text label
+ */
 export function VGlowButton({
   direction,
   glow: glowOptions,
@@ -183,4 +185,11 @@ export function VGlowButton({
   });
 }
 
+/**
+ * @genui 流光按钮（动效强调操作）
+ * @genui.contract text / label；play；glow；motion；speed；strength；direction；ripple
+ * @genui.use 营销/演示页主操作
+ * @genui.notFor 常规表单操作（用 vButton）
+ * @genui.example {"type":"vGlowButton","text":"开始"}
+ */
 export const vGlowButton = createComponentShortcut(VGlowButton, { props: true });

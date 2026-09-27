@@ -168,4 +168,11 @@ export function VRingStat({
   });
 }
 
+/**
+ * @genui 环形统计（圆环进度 + 中心数值）
+ * @genui.contract percent / value；label；size；strokeWidth；tone
+ * @genui.use 完成率、占比类指标
+ * @genui.notFor 区间仪表（用 vGauge）
+ * @genui.example {"type":"vRingStat","percent":64,"label":"完成率"}
+ */
 export const vRingStat = createComponentShortcut(VRingStat, { props: true });

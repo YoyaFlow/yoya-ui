@@ -20,6 +20,8 @@ const statusNames = new Set(Object.keys(timelineStatusColors));
  * - 结构只有「根 + 一条竖线」：线在视图里，**永远是第一个孩子**；条目走匿名内容通道
  *   （`timeline.vTimelineItem(…)` 投递进来的项排在线的后面，与迁移前一致）。
  * - 静态样式（定位 / 颜色 / 宽度）在 `yoya.ui.css`。
+ *
+ * @genui.content bridge=vTimelineItem content=content
  */
 export function VTimeline({ children, ...rest } = {}) {
   return vNode(() =>
@@ -32,6 +34,13 @@ export function VTimeline({ children, ...rest } = {}) {
   );
 }
 
+/**
+ * @genui 时间线（竖向事件流）
+ * @genui.contract children: vTimelineItem
+ * @genui.use 操作历史；流程记录
+ * @genui.notFor 步骤指引（用 vSteps）
+ * @genui.example {"type":"vTimeline","children":[]}
+ */
 export const vTimeline = createComponentShortcut(VTimeline, { props: true });
 
 /**
@@ -41,6 +50,11 @@ export const vTimeline = createComponentShortcut(VTimeline, { props: true });
  *   其余样式在 `yoya.ui.css`。
  * - `content(setup)` 保留**内容通道**口径（`setupContentSlot`：函数 / 节点 / 文本 + 无参返回内容盒）：
  *   内容盒在结构里，命令拿到它就写——与 `VField` 的查看面 / 编辑面同一写法。
+ *
+ * @genui.content content
+ * @genui.prop status
+ * @genui.prop time
+ * @genui.prop title
  */
 export function VTimelineItem({
   content,
@@ -123,4 +137,10 @@ export function VTimelineItem({
   });
 }
 
+/**
+ * @genui 时间线条目（状态点 + 标题 + 时间）
+ * @genui.contract title；time；status；content / text
+ * @genui.use 配 vTimeline 的单条事件
+ * @genui.example {"type":"vTimelineItem","title":"创建","time":"09:00"}
+ */
 export const vTimelineItem = createComponentShortcut(VTimelineItem, { props: true });

@@ -36,6 +36,8 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
  * // 组件侧：part 自带 to_slot 标记（落点是结构里的 vn_slot），child() 进组件即自动落位
  * api.vCardHeader = (setup) => self.node().child(vCardHeader(setup));
  * ```
+ *
+ * @genui.text setupString
  */
 export function VSlot() {
   // `vn_slot=""` 是**匿名落点**的标记：匿名内容（没写 `to_slot` 的 child）落进这个位置；
@@ -64,6 +66,14 @@ export function VSlot() {
 }
 
 /** 快捷方法：建 VSlot 节点 + 应用调用方参数（与其它组件同一套分派）。 */
+/**
+ * @genui 组件部件落点（零布局占位）
+ * @genui.contract 字符串 = 落点名；缺省 = 匿名落点
+ * @genui.use 组件模板里声明可投递位置
+ * @genui.notFor 页面内容占位（那是普通 children）
+ * @genui.pitfall 属 part 通道（vn_slot / to_slot），与公开 slot 不同名空间
+ * @genui.example {"type":"vSlot","text":"body"}
+ */
 export const vSlot = createComponentShortcut(VSlot);
 
 // 父节点快捷方法：`root.vSlot('header')` / `page.vSlot({ name: 'header' })`（与其它布局工厂同一口径）

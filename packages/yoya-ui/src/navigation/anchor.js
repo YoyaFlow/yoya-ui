@@ -45,6 +45,8 @@ const asList = (value) =>
  * 锚点项（形态 B）：结构 = `li > a[VAnchorLink] + ul[VAnchorChildren]`，两块部件**常驻**。
  * 字符串 = 标题；props 见 `AnchorItemOptions`（`children` 是子项列表的兼容别名）；
  * 子项走 `nested` / `items` / `vAnchorItem`（落进子列表，结构由 `keyed` 对账）。
+ *
+ * @genui.text title
  */
 export function VAnchorItem({
   active = false,
@@ -221,6 +223,14 @@ export function VAnchorItem({
 const anchorItemShortcut = createComponentShortcut(VAnchorItem, { props: true });
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+/**
+ * @genui 锚点导航项（可嵌套子项）
+ * @genui.contract href；label / text；items / nested（子项）
+ * @genui.use 配 vAnchor 逐项声明
+ * @genui.notFor 独立链接（用 vLink）
+ * @genui.pitfall 当前态由容器 activeHref 统一推导
+ * @genui.example {"type":"vAnchorItem","href":"#a","label":"概览"}
+ */
 export function vAnchorItem(...args) {
   const node = anchorItemShortcut(...args);
   // 标在节点上而不是查组件名：本模块自己认自己的子项（含嵌套层）
@@ -232,6 +242,8 @@ export function vAnchorItem(...args) {
  * 锚点导航：`nav > ul[VAnchorList]`；滚动跟当前项、点击滚动到目标并高亮。
  * props 见 `AnchorOptions`（`children` 是锚点项列表的兼容别名），项只从 `items` / `vAnchorItem` 来——
  * 匿名 `child()` 的内容照旧渲染，但不计入项数与当前态（见 16 号清单第 7 条）。
+ *
+ * @genui.content bridge=vAnchorItem
  */
 export function VAnchor({
   active,
@@ -517,6 +529,14 @@ export function VAnchor({
   });
 }
 
+/**
+ * @genui 锚点导航（滚动定位，支持嵌套）
+ * @genui.contract items: 项数组；activeHref；offset；ariaLabel
+ * @genui.use 长文档侧栏目录；设置页分区导航
+ * @genui.notFor 页面跳转（用 vLink）
+ * @genui.pitfall offset 默认 80，配粘性页头要自己调
+ * @genui.example {"type":"vAnchor","items":[{"href":"#a","label":"概览"}]}
+ */
 export const vAnchor = createComponentShortcut(VAnchor, { props: true });
 
 /** 子项归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */

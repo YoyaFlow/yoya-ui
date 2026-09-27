@@ -12,6 +12,14 @@ import { applyBooleanControlProps, createBooleanControl } from './shared.js';
  *
  * 结构与命令收在同族的 `createBooleanControl`（见 `./shared.js`），这里只写**自己的三件事**：
  * 身份（根 + 五块部件的 `vn` 字面量）、内层 `<input type="checkbox">`、勾选态视觉（✓ 与配色）。
+ *
+ * @genui.event change dom
+ * @genui.prop checked to=command:checked read=command:checked live=false
+ * @genui.prop disabled
+ * @genui.prop label
+ * @genui.prop name
+ * @genui.prop optionValue
+ * @genui.text label
  */
 export function VCheckbox({
   checked,

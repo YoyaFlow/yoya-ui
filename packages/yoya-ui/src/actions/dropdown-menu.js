@@ -28,6 +28,8 @@ import {
  *   （不再读私有方法，见 16 号第 27 条）；
  * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 触发器文案
  *   （迁移前 `_setupDropdownMenu` 的兜底分支同口径）。
+ *
+ * @genui.content children
  */
 export function VDropdownMenu({
   children,
@@ -259,4 +261,11 @@ export function VDropdownMenu({
   });
 }
 
+/**
+ * @genui 下拉菜单（点击 / 悬停触发）
+ * @genui.contract label / text；menu / menuContent；trigger；placement；open；closeOnSelect
+ * @genui.use 行内操作收纳；更多操作
+ * @genui.notFor 右键触发（用 vContextMenu）
+ * @genui.example {"type":"vDropdownMenu","label":"操作"}
+ */
 export const vDropdownMenu = createComponentShortcut(VDropdownMenu, { props: true });

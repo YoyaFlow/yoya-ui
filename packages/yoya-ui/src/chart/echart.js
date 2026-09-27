@@ -363,6 +363,14 @@ export function VEChart({
   });
 }
 
+/**
+ * @genui ECharts 宿主（options 直连）
+ * @genui.contract options；height；主题相关配置
+ * @genui.use 标准统计图表
+ * @genui.notFor 其它图表库（用 vChart + 适配器）
+ * @genui.pitfall ECharts 本体由使用方提供
+ * @genui.example {"type":"vEchart"}
+ */
 export const vEchart = createComponentShortcut(VEChart, { props: true });
 
 // 旧名（导出名 = 身份名）：`VEChart` 是定义函数，`vEchart` 是快捷方法

@@ -512,6 +512,13 @@ export function createRouter(first = null, second = null, third = null) {
 
 export const router = createRouter;
 
+/**
+ * @genui 路由记录（地址 → 视图）
+ * @genui.contract path；children: 视图
+ * @genui.use 配 vRouter 声明路由表
+ * @genui.notFor 导航入口（用 vLink）
+ * @genui.example {"type":"vRoute","path":"/home","children":[]}
+ */
 export function vRoute(pattern, config) {
   return { config, pattern };
 }
@@ -519,6 +526,13 @@ export function vRoute(pattern, config) {
 /** 旧名保留：Router 现在是 `VRouter` 这个组件定义（身份 `vn="VRouter"`）。 */
 export const Router = VRouter;
 
+/**
+ * @genui 路由器（地址分发到出口）
+ * @genui.contract children: vRoute
+ * @genui.use SPA 路由表声明
+ * @genui.notFor 单视图切换（自己写状态）
+ * @genui.example {"type":"vRouter","children":[]}
+ */
 export function vRouter(first = null, second = null, third = null) {
   const args = normalizeSetupArguments(first, second, third);
   const node = VRouter();
@@ -534,6 +548,12 @@ export function VLinkLabel() {
   return span({ vn: 'VLinkLabel', to_slot: 'label' });
 }
 
+/**
+ * @genui 链接标签占位
+ * @genui.contract 文本 / 节点
+ * @genui.use 自定义 vLink 的标签位
+ * @genui.example {"type":"vLinkLabel","text":"首页"}
+ */
 export const vLinkLabel = createComponentShortcut(VLinkLabel);
 
 /**
@@ -682,6 +702,13 @@ export function VLink(routerInstance) {
   });
 }
 
+/**
+ * @genui SPA 链接（拦截地址变化）
+ * @genui.contract to（目标地址）；标签内容
+ * @genui.use 应用内跳转
+ * @genui.notFor 外部地址（浏览器原生 a）
+ * @genui.example {"type":"vLink","to":"/home","text":"首页"}
+ */
 export function vLink(routerInstance, setup = null, callback = null) {
   // 定义函数吃的是**位置依赖**（router 句柄）而不是 props，所以不走 `createComponentShortcut`：
   // 「定义 + 参数按序分派」就是新写法。
@@ -707,6 +734,12 @@ export function VRouterView(routerInstance) {
   });
 }
 
+/**
+ * @genui 路由出口（渲染当前视图）
+ * @genui.contract 无 props
+ * @genui.use 布局中留路由渲染位
+ * @genui.example {"type":"vRouterView"}
+ */
 export function vRouterView(routerInstance, setup = null, callback = null) {
   return applyComponentArguments(VRouterView(routerInstance), setup, callback);
 }
@@ -1338,6 +1371,13 @@ export function VRouterViews(routerInstance) {
   });
 }
 
+/**
+ * @genui 多标签路由视图（keep-alive 标签条）
+ * @genui.contract children: vRoute；标签条由容器管理
+ * @genui.use 后台多标签页工作区
+ * @genui.notFor 单出口（用 vRouterView）
+ * @genui.example {"type":"vRouterViews","children":[]}
+ */
 export function vRouterViews(routerInstance, setup = null, callback = null) {
   return applyComponentArguments(VRouterViews(routerInstance), setup, callback);
 }

@@ -231,4 +231,11 @@ export function VNavbar({
   });
 }
 
+/**
+ * @genui 顶栏导航（品牌 + 菜单 + 操作区）
+ * @genui.contract title / subtitle；brand；menu；actions；sticky
+ * @genui.use 应用顶栏；页面级导航壳
+ * @genui.notFor 简单标题行（用 vHeader + hstack）
+ * @genui.example {"type":"vNavbar","title":"应用"}
+ */
 export const vNavbar = createComponentShortcut(VNavbar, { props: true });

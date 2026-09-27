@@ -129,4 +129,11 @@ export function VSparkline({ data, fill = false, strokeWidth, tone = 'primary', 
   });
 }
 
+/**
+ * @genui 迷你走势（无坐标轴的折线/面积）
+ * @genui.contract data（数值数组）；fill；tone；strokeWidth
+ * @genui.use 卡片内嵌趋势线
+ * @genui.notFor 完整图表（用 vChart / vEchart）
+ * @genui.example {"type":"vSparkline","data":[1,3,2,5]}
+ */
 export const vSparkline = createComponentShortcut(VSparkline, { props: true });

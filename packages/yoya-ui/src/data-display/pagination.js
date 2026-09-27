@@ -18,6 +18,13 @@ import {
 } from '../components/shared.js';
 import { applySetupValue } from '@yoyaflow/yoya-core/internal/core/node.js';
 
+/**
+ * @genui 分页（页码导航）
+ * @genui.contract current / total / pageSize 命令；change
+ * @genui.use 列表分页跳转
+ * @genui.notFor 滚动加载（用 vScroll）
+ * @genui.example {"type":"vPagination"}
+ */
 export function vPagination(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
 

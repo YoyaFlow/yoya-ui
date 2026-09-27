@@ -19,6 +19,8 @@ import { applyControlValue, findFieldControl, readControlValue } from './form-va
  * - 控件是**投递进来的内容**（`control(setup)` 进编辑面），字段没有它的句柄：
  *   按自己造出来的编辑面找（`findFieldControl`，见 16 号清单第 15 条的取用器口径）。
  * - 落位与聚焦在 `whenMount` / 切态时做，读元素一律走 `renderDom()`（不再读 `_el`）。
+ *
+ * @genui.content command=control
  */
 export function VField() {
   return vNode((api) => {
@@ -427,4 +429,11 @@ export function VField() {
   });
 }
 
+/**
+ * @genui 字段（查看态 / 编辑态切换）
+ * @genui.contract label；value；编辑面配置
+ * @genui.use 详情页就地编辑
+ * @genui.notFor 纯展示字段（用 vDetailItem）
+ * @genui.example {"type":"vField","label":"名称"}
+ */
 export const vField = createComponentShortcut(VField);

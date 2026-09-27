@@ -27,6 +27,12 @@ const LEAVE_KEYFRAMES = [
   { opacity: 0, transform: 'translateY(-12px) scale(0.98)' }
 ];
 
+/**
+ * @genui 过渡包装（进出场动画）
+ * @genui.contract children；过渡模式配置
+ * @genui.use 条件内容的显隐动画
+ * @genui.example {"type":"vTransition"}
+ */
 export function vTransition(first = null, second = null, third = null) {
   const rest = [...arguments].slice(3);
 

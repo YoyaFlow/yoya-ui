@@ -41,6 +41,13 @@ const asList = (value) =>
 /**
  * 页签项：触发器是视图根（进导航），面板在构建期建好（进面板容器）。
  * 字符串 = 标签；props 见 `TabItemOptions`；选中态由容器 `track(context)` 进来。
+ *
+ * @genui.content children
+ * @genui.prop disabled
+ * @genui.prop icon
+ * @genui.prop label
+ * @genui.prop value
+ * @genui.text label
  */
 export function VTab({
   active = false,
@@ -264,6 +271,12 @@ export function vTab(...args) {
 /**
  * 页签容器：`div[VTabs]` + 常驻的导航 / 面板容器。
  * props 见 `TabsOptions`（`children` 是页签列表的兼容别名），页签只从 `items` / `vTab` 来。
+ *
+ * @genui.event change callback
+ * @genui.content bridge=vTab content=children
+ * @genui.prop active to=command:active live=false
+ * @genui.prop ariaLabel
+ * @genui.prop orientation
  */
 export function VTabs({
   active,

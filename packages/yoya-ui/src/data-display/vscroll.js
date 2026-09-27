@@ -640,4 +640,12 @@ export function VScroll({
   return node;
 }
 
+/**
+ * @genui 滚动列表（虚拟滚动 / 无限加载）
+ * @genui.contract items；virtual；itemHeight；overscan；renderItem；loadMore / onLoadMore；loading
+ * @genui.use 长列表高性能滚动；下拉加载更多
+ * @genui.notFor 短列表（直接用 vstack）
+ * @genui.pitfall 开 virtual 必须给 itemHeight
+ * @genui.example {"type":"vScroll"}
+ */
 export const vScroll = createComponentShortcut(VScroll, { props: true });

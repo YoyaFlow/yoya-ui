@@ -17,6 +17,8 @@ import {
  * - 状态与命令收进 `vNode` 闭包（`columns` / `column` / `items`）；
  * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素；**数组不再是 items**
  *   （按标准分派当子节点列表），要整批替换条目请用 `items([...])` 或 `vDetail({ items })`。
+ *
+ * @genui.content bridge=vDetailItem
  */
 export function VDetail() {
   return vNode((api) => {
@@ -98,6 +100,13 @@ export function VDetail() {
   });
 }
 
+/**
+ * @genui 详情列表（dl 语义）
+ * @genui.contract children: vDetailItem
+ * @genui.use 对象字段平铺展示
+ * @genui.notFor 键值对编辑（用 vForm）
+ * @genui.example {"type":"vDetail","children":[]}
+ */
 export const vDetail = createComponentShortcut(VDetail);
 
 /**
@@ -199,6 +208,12 @@ export function VDetailItem() {
   });
 }
 
+/**
+ * @genui 详情条目（term + 内容）
+ * @genui.contract label / title（字段名）；text / content（值）
+ * @genui.use 配 vDetail 的单条字段
+ * @genui.example {"type":"vDetailItem","label":"状态","text":"运行中"}
+ */
 export const vDetailItem = createComponentShortcut(VDetailItem);
 
 function normalizeDetailItem(item) {

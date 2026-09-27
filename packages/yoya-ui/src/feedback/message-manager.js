@@ -96,6 +96,12 @@ export class VMessageManager extends ViewNode {
   }
 }
 
+/**
+ * @genui 全局消息管理器（创建/派发消息）
+ * @genui.contract 命令面管理消息生命周期
+ * @genui.use 任意位置触发全局消息
+ * @genui.example {"type":"vMessageManager"}
+ */
 export function vMessageManager(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const manager =

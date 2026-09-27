@@ -201,4 +201,12 @@ export function VContextMenu({
   });
 }
 
+/**
+ * @genui 右键菜单（绑定目标节点）
+ * @genui.contract target；menu / menuContent；open；x / y；closeOnSelect
+ * @genui.use 列表项右键操作；画布右键菜单
+ * @genui.notFor 点击触发（用 vDropdownMenu）
+ * @genui.pitfall 按坐标定位，目标须已挂载
+ * @genui.example {"type":"vContextMenu"}
+ */
 export const vContextMenu = createComponentShortcut(VContextMenu, { props: true });

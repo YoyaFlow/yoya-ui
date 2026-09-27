@@ -648,6 +648,13 @@ function applyMenuItemProps(api, view, setup) {
  * 朝向不进 `ref` 绑定：菜单在**挂载前**就把朝向写到每个子单元的视图根上，而"挂载前改 ref
  * 不会更新首帧"（绑定在构建期取值）——所以走 `applyMenuOrientation` 的直接属性写。
  */
+/**
+ * @genui 菜单分隔线
+ * @genui.contract 无 props
+ * @genui.use 菜单功能分组之间
+ * @genui.notFor 页面内容分隔（用 divider）
+ * @genui.example {"type":"vMenuDivider"}
+ */
 export function vMenuDivider(setup = null) {
   return vNode(() =>
     div(
@@ -1533,14 +1540,50 @@ function bindSidebarSubMenu(sidebar, submenu) {
   });
 }
 
+/**
+ * @genui 菜单容器（支持键盘漫游）
+ * @genui.contract children: vMenuItem / vMenuGroup / vSubMenu
+ * @genui.use 侧栏导航；功能分组菜单
+ * @genui.notFor 下拉浮层菜单（用 vDropdownMenu）
+ * @genui.pitfall 折叠态需配 vSidebar / vMenuWrapper
+ * @genui.example {"type":"vMenu","children":[]}
+ */
 export const vMenu = createComponentShortcut(VMenu);
 
+/**
+ * @genui 菜单项
+ * @genui.contract label / text；href；disabled
+ * @genui.use 配 vMenu 逐项声明
+ * @genui.notFor 独立锚点链接（用 vAnchorItem）
+ * @genui.example {"type":"vMenuItem","label":"首页"}
+ */
 export const vMenuItem = createComponentShortcut(VMenuItem);
 
+/**
+ * @genui 菜单分组（带标题）
+ * @genui.contract label / title；children: 菜单单元
+ * @genui.use 侧栏按功能分组
+ * @genui.notFor 可展开子级（用 vSubMenu）
+ * @genui.example {"type":"vMenuGroup","label":"分组","children":[]}
+ */
 export const vMenuGroup = createComponentShortcut(VMenuGroup);
 
+/**
+ * @genui 可展开子菜单
+ * @genui.contract label / title；items / children（子项）
+ * @genui.use 多级导航层级
+ * @genui.notFor 平级分组（用 vMenuGroup）
+ * @genui.example {"type":"vSubMenu","label":"系统","children":[]}
+ */
 export const vSubMenu = createComponentShortcut(VSubMenu);
 
+/**
+ * @genui 侧栏壳（开合状态，通知内部菜单）
+ * @genui.contract children: vMenu / 自定义内容；collapsed 命令
+ * @genui.use 后台侧栏；可折叠导航壳
+ * @genui.notFor 静态侧区（用 vAside）
+ * @genui.example {"type":"vSidebar","children":[]}
+ */
 export const vSidebar = createComponentShortcut(VSidebar);
 
 /**
@@ -1694,4 +1737,11 @@ export function VMenuWrapper() {
   });
 }
 
+/**
+ * @genui 菜单外包装（折叠 / 响应式控制）
+ * @genui.contract children: vMenu；折叠态由包装推进
+ * @genui.use 需要折叠成图标列的侧栏菜单
+ * @genui.notFor 普通菜单容器（直接用 vMenu）
+ * @genui.example {"type":"vMenuWrapper","children":[]}
+ */
 export const vMenuWrapper = createComponentShortcut(VMenuWrapper);

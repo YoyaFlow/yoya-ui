@@ -15,6 +15,8 @@ const positionPresets = new Set(['bottom-left', 'bottom-right', 'top-left', 'top
  *   JS 只写 `data-*` 状态与两个内容位；
  * - 图标位 / 标签位是**内容通道**（`rebuildable()` 区域 + `icon()` / `label()` 整体替换）；
  *   "有没有内容"看两个来源（内容框实况 + 写入标记），不缓存结构（R6 / 47 条）。
+ *
+ * @genui.text label
  */
 export function VFloatButton({
   children,
@@ -154,4 +156,11 @@ export function VFloatButton({
   });
 }
 
+/**
+ * @genui 悬浮操作按钮（固定定位的圆形入口）
+ * @genui.contract icon；label / text；position；fixed；size；variant；disabled
+ * @genui.use 页面级新增/快捷操作
+ * @genui.notFor 行内按钮（用 vButton）
+ * @genui.example {"type":"vFloatButton","label":"新增"}
+ */
 export const vFloatButton = createComponentShortcut(VFloatButton, { props: true });

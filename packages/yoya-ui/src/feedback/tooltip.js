@@ -40,6 +40,8 @@ const tooltipTriggers = ['click', 'focus', 'manual'];
  * - 元素级行为就地绑在目标区上（`box.on(…)`），文档级监听在 `whenDestroy` 里释放；
  * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 目标区
  *   （迁移前 `_setupTooltip` 的兜底分支同口径）。
+ *
+ * @genui.content children
  */
 export function VTooltip({ children, content, open, placement, target, trigger, ...rest } = {}) {
   // 状态是句柄原样 / 普通值包 ref，归一放在读时的派生上（R9）
@@ -265,4 +267,11 @@ export function VTooltip({ children, content, open, placement, target, trigger, 
   });
 }
 
+/**
+ * @genui 文字提示（悬浮解释）
+ * @genui.contract content / text；placement；trigger；open；target
+ * @genui.use 图标/缩写的悬浮解释
+ * @genui.notFor 重要信息展示（用 vMessage）
+ * @genui.example {"type":"vTooltip","content":"说明"}
+ */
 export const vTooltip = createComponentShortcut(VTooltip, { props: true });

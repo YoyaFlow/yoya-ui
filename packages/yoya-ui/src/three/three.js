@@ -540,6 +540,14 @@ export function VThree({
   });
 }
 
+/**
+ * @genui Three.js 宿主（3D 场景容器）
+ * @genui.contract threeLib；scene；camera；width；height；autoRender；autoResize；onFrame / onReady / onResize
+ * @genui.use 3D 展示与交互场景
+ * @genui.notFor 2D 图表（用 vChart / vEchart）
+ * @genui.pitfall threeLib 必须由使用方注入
+ * @genui.example {"type":"vThree"}
+ */
 export const vThree = createComponentShortcut(VThree, { props: true });
 
 registerChildFactories(HtmlElementNode, { vThree });

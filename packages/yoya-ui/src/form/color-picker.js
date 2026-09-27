@@ -536,6 +536,13 @@ export function VColorPicker() {
   });
 }
 
+/**
+ * @genui 颜色选择器（色板 + 弹窗）
+ * @genui.contract value（色值）；change
+ * @genui.use 主题色配置；样式微调
+ * @genui.notFor 文本输入色值（用 vInput）
+ * @genui.example {"type":"vColorPicker"}
+ */
 export const vColorPicker = createComponentShortcut(VColorPicker);
 
 registerChildFactories(HtmlElementNode, { vColorPicker });

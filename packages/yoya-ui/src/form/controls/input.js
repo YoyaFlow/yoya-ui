@@ -21,6 +21,18 @@ import { createClearButton, syncClearButton } from './shared.js';
  * - 两个元素机制挂在局部节点上（渲染路径按节点调用）：SSR 回读 `hydrateSnapshot` 走内层 input，
  *   权限落位 `_applyAccessState` 走视图根（与 `VTextarea` 同一写法，见 16 号清单第 27 条）；
  * - 内层输入元素的取用方法 `inputUnit()`：族内（vField 浮动编辑面等）需要它时不用解包视图根。
+ *
+ * @genui.event change dom
+ * @genui.event input dom
+ * @genui.prop disabled to=command:disabled read=command:isDisabled
+ * @genui.prop error to=command:error
+ * @genui.prop name
+ * @genui.prop placeholder
+ * @genui.prop readonly to=command:readonly read=command:isReadonly
+ * @genui.prop required to=command:required
+ * @genui.prop type
+ * @genui.prop value to=command:value read=command:value live=true
+ * @genui.expose value command=value
  */
 export function VInput() {
   return vNode((api) => {

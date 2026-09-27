@@ -580,4 +580,11 @@ export function VCarousel() {
   });
 }
 
+/**
+ * @genui 走马灯（轮播图）
+ * @genui.contract children: 轮播页；自动播放 / 指示器命令
+ * @genui.use 首页 banner 轮播；图片展示
+ * @genui.notFor 静态图片（用 vLazyImage / img）
+ * @genui.example {"type":"vCarousel","children":[]}
+ */
 export const vCarousel = createComponentShortcut(VCarousel);

@@ -238,6 +238,14 @@ export function VSplitPanel({
   });
 }
 
+/**
+ * @genui 可拖拽分隔条的双栏面板
+ * @genui.contract first / second（节点）；size（首栏占比）；minSize；direction
+ * @genui.use 编辑器 + 预览；列表 + 详情
+ * @genui.notFor 固定比例双栏（用 flex 就够）
+ * @genui.pitfall size 支持句柄，拖拽只改这一份状态
+ * @genui.example {"type":"vSplitPanel","direction":"horizontal","size":"50%"}
+ */
 export const vSplitPanel = createComponentShortcut(VSplitPanel, { props: true });
 
 registerChildFactories(HtmlElementNode, { vSplitPanel });

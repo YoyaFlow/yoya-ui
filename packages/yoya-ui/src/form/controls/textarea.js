@@ -19,6 +19,13 @@ import { createClearButton, syncClearButton } from './shared.js';
  *
  * 元素机制（内层 textarea 的属性 / 样式 / 事件、SSR 回读、权限落位）住在闭包的局部节点上；
  * 参数分派按 `setupFunction / setupString / setupObject`（api 覆盖优先、否则回落视图根）。
+ *
+ * @genui.event change dom
+ * @genui.event input dom
+ * @genui.prop name
+ * @genui.prop placeholder
+ * @genui.prop value to=command:value read=command:value live=true
+ * @genui.expose value command=value
  */
 export function VTextarea() {
   return vNode((api) => {

@@ -16,6 +16,8 @@ import {
  * - 静态样式与 hover 底色全在 `yoya.ui.css`（R5）：JS 里一条行内样式都不留；
  * - 内容位只有一处（R11）：按钮根自己就是内容位，`icon()` 换的就是根的子节点；
  * - props 走调用、嵌套走 `.setup()`：`vSymbolButton({ icon, ariaLabel, title })`。
+ *
+ * @genui.text title
  */
 export function VSymbolButton({ ariaLabel, icon, title, ...rest } = {}) {
   const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
@@ -63,4 +65,12 @@ export function VSymbolButton({ ariaLabel, icon, title, ...rest } = {}) {
   });
 }
 
+/**
+ * @genui 图标按钮（无边框无轮廓）
+ * @genui.contract icon；title；ariaLabel
+ * @genui.use 关闭/展开等纯符号操作
+ * @genui.notFor 带文字的操作（用 vButton）
+ * @genui.pitfall 必须给 ariaLabel 或 title 保证可访问
+ * @genui.example {"type":"vSymbolButton","title":"关闭"}
+ */
 export const vSymbolButton = createComponentShortcut(VSymbolButton, { props: true });

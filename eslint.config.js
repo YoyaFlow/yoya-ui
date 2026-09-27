@@ -6,6 +6,7 @@ export default [
     ignores: [
       '.codebase-memory/**',
       '.scratch/**',
+      'packages/*/test/fixtures/**',
       // 产物目录：根 dist 与**子目录里的产物**（脚手架模板在仓库内构建时会生成
       // `create-yoya-ui/templates/<模板>/dist`，它们是压缩产物、不该进 lint）
       '**/dist/**',
@@ -105,6 +106,24 @@ export default [
         ...globals.node,
         ...globals.browser
       }
+    }
+  },
+  {
+    files: ['packages/*/src/genui/**/*.js', 'packages/*/genui-plugin.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      globals: { ...globals.browser, ...globals.node },
+      sourceType: 'module'
+    },
+    rules: {
+      'no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_'
+        }
+      ]
     }
   }
 ];

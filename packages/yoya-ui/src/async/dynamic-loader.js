@@ -19,6 +19,12 @@ const defaultViews = {
   pending: () => '等待加载'
 };
 
+/**
+ * @genui 动态加载器（按需挂载内容）
+ * @genui.contract 加载器函数 + 占位
+ * @genui.use 重组件延迟加载；代码分包场景
+ * @genui.example {"type":"vDynamicLoader"}
+ */
 export function vDynamicLoader(first = {}, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const options = normalizeOptions(args.first);

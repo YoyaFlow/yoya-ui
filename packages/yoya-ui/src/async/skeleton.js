@@ -189,4 +189,11 @@ export function VSkeleton({
   });
 }
 
+/**
+ * @genui 骨架屏（加载占位）
+ * @genui.contract rows；variant；avatarSize；barHeight；gap；active / motion
+ * @genui.use 数据未到时的结构占位
+ * @genui.notFor 空状态（用 center + 文案）
+ * @genui.example {"type":"vSkeleton","rows":3}
+ */
 export const vSkeleton = createComponentShortcut(VSkeleton, { props: true });

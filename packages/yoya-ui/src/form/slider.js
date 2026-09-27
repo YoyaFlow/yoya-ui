@@ -11,6 +11,14 @@ import { createComponentShortcut, isPlainObject, themeValue } from '../component
  * - 状态与命令收进 `vNode` 闭包；`change` 回调的第二参交给使用方的是**组件句柄**（`self.node()`，
  *   与旧外壳的 `_componentHandle` 同一口径）；
  * - props 分派：本组件的键走命令，其余按引擎的元素分派落根元素（与旧 `_setupSlider` 同口径）。
+ *
+ * @genui.event change dom
+ * @genui.event input dom
+ * @genui.prop max
+ * @genui.prop min
+ * @genui.prop step
+ * @genui.prop value to=command:value read=command:value live=false
+ * @genui.expose value command=value
  */
 export function VSlider() {
   return vNode((api, self) => {

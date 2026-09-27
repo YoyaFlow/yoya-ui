@@ -267,6 +267,13 @@ export function VTagsInput() {
   });
 }
 
+/**
+ * @genui 标签输入（回车添加标签）
+ * @genui.contract value（标签数组）；change
+ * @genui.use 关键词/标签录入
+ * @genui.notFor 单值文本（用 vInput）
+ * @genui.example {"type":"vTagsInput","value":["前端","UI"]}
+ */
 export const vTagsInput = createComponentShortcut(VTagsInput);
 
 registerChildFactories(HtmlElementNode, { vTagsInput });

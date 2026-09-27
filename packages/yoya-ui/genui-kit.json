@@ -2,12 +2,80 @@
   "$schema": "genui-kit/1",
   "namespace": "yoyaflow/yoya-ui",
   "version": "0.7.6",
-  "runtime": {
-    "genui": ">=0.1 <0.2"
-  },
+  "runtime": { "genui": ">=0.1 <0.2" },
   "generated": {
     "from": "source-scan + JSDoc @genui tags",
-    "notice": "工厂清单勿手改——重跑 scripts/generate-genui-kit.mjs；文档写在组件源码 JSDoc（@genui* 标签）"
+    "notice": {
+      "0": "工",
+      "1": "厂",
+      "2": "清",
+      "3": "单",
+      "4": "勿",
+      "5": "手",
+      "6": "改",
+      "7": "—",
+      "8": "—",
+      "9": "重",
+      "10": "跑",
+      "11": " ",
+      "12": "s",
+      "13": "c",
+      "14": "r",
+      "15": "i",
+      "16": "p",
+      "17": "t",
+      "18": "s",
+      "19": "/",
+      "20": "g",
+      "21": "e",
+      "22": "n",
+      "23": "e",
+      "24": "r",
+      "25": "a",
+      "26": "t",
+      "27": "e",
+      "28": "-",
+      "29": "g",
+      "30": "e",
+      "31": "n",
+      "32": "u",
+      "33": "i",
+      "34": "-",
+      "35": "k",
+      "36": "i",
+      "37": "t",
+      "38": ".",
+      "39": "m",
+      "40": "j",
+      "41": "s",
+      "42": "；",
+      "43": "文",
+      "44": "档",
+      "45": "写",
+      "46": "在",
+      "47": "组",
+      "48": "件",
+      "49": "源",
+      "50": "码",
+      "51": " ",
+      "52": "J",
+      "53": "S",
+      "54": "D",
+      "55": "o",
+      "56": "c",
+      "57": "（",
+      "58": "@",
+      "59": "g",
+      "60": "e",
+      "61": "n",
+      "62": "u",
+      "63": "i",
+      "64": "*",
+      "65": " ",
+      "66": "标",
+      "67": "签",
+      "68": "）"
+    }
   },
   "components": [
     {
@@ -15,16 +83,26 @@
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "居中容器（水平 + 垂直）",
+      "dataContract": "children: 节点数组",
+      "whenToUse": ["空态/加载态居中", "单卡片居中展示"],
+      "notFor": ["大段文档排版（用 vBody）", "普通流式内容（用 container）"],
+      "pitfalls": ["只居中直接子节点，深层内容要自己再居中"],
+      "example": { "type": "center", "children": [{ "type": "p", "text": "居中" }] },
+      "needsDocs": false
     },
     {
       "name": "container",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "定宽居中容器（maxWidth 1120px）",
+      "dataContract": "children: 节点数组；style.maxWidth / padding",
+      "whenToUse": ["页面内容宽度约束", "文档/表单居中"],
+      "notFor": ["全幅布局（用 vContainer / flex）"],
+      "pitfalls": ["左右自带 16px padding"],
+      "example": { "type": "container", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "divider",
@@ -33,15 +111,9 @@
       "scenes": [],
       "summary": "分隔线",
       "dataContract": "无 props",
-      "whenToUse": [
-        "卡片内分组之间"
-      ],
-      "notFor": [
-        "布局间距（用 style.gap）"
-      ],
-      "example": {
-        "type": "divider"
-      },
+      "whenToUse": ["卡片内分组之间"],
+      "notFor": ["布局间距（用 style.gap）"],
+      "example": { "type": "divider" },
       "needsDocs": false
     },
     {
@@ -49,8 +121,88 @@
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "弹性布局容器（方向自定）",
+      "dataContract": {
+        "0": "c",
+        "1": "h",
+        "2": "i",
+        "3": "l",
+        "4": "d",
+        "5": "r",
+        "6": "e",
+        "7": "n",
+        "8": ":",
+        "9": " ",
+        "10": "节",
+        "11": "点",
+        "12": "数",
+        "13": "组",
+        "14": "；",
+        "15": "s",
+        "16": "t",
+        "17": "y",
+        "18": "l",
+        "19": "e",
+        "20": ".",
+        "21": "f",
+        "22": "l",
+        "23": "e",
+        "24": "x",
+        "25": "D",
+        "26": "i",
+        "27": "r",
+        "28": "e",
+        "29": "c",
+        "30": "t",
+        "31": "i",
+        "32": "o",
+        "33": "n",
+        "34": " ",
+        "35": "/",
+        "36": " ",
+        "37": "g",
+        "38": "a",
+        "39": "p",
+        "40": " ",
+        "41": "/",
+        "42": " ",
+        "43": "a",
+        "44": "l",
+        "45": "i",
+        "46": "g",
+        "47": "n",
+        "48": "I",
+        "49": "t",
+        "50": "e",
+        "51": "m",
+        "52": "s",
+        "53": " ",
+        "54": "/",
+        "55": " ",
+        "56": "j",
+        "57": "u",
+        "58": "s",
+        "59": "t",
+        "60": "i",
+        "61": "f",
+        "62": "y",
+        "63": "C",
+        "64": "o",
+        "65": "n",
+        "66": "t",
+        "67": "e",
+        "68": "n",
+        "69": "t"
+      },
+      "whenToUse": ["需要自定义主轴与换行组合", "hstack / vstack 覆盖不了的弹性结构"],
+      "notFor": ["单纯横排（用 hstack）", "单纯竖排（用 vstack / stack）"],
+      "pitfalls": ["默认 flexDirection 为 row，竖排要显式写 column"],
+      "example": {
+        "type": "flex",
+        "style": { "flexDirection": "column", "gap": "10px" },
+        "children": []
+      },
+      "needsDocs": false
     },
     {
       "name": "grid",
@@ -59,21 +211,12 @@
       "scenes": [],
       "summary": "二维网格布局",
       "dataContract": "children: 节点数组；style.gridTemplateColumns",
-      "whenToUse": [
-        "卡片墙",
-        "指标面板 2×2"
-      ],
-      "notFor": [
-        "单行/单列（用 hstack/vstack 更直白）"
-      ],
-      "pitfalls": [
-        "不写 gridTemplateColumns 会退化成单列"
-      ],
+      "whenToUse": ["卡片墙", "指标面板 2×2"],
+      "notFor": ["单行/单列（用 hstack/vstack 更直白）"],
+      "pitfalls": ["不写 gridTemplateColumns 会退化成单列"],
       "example": {
         "type": "grid",
-        "style": {
-          "gridTemplateColumns": "repeat(2, 1fr)"
-        },
+        "style": { "gridTemplateColumns": "repeat(2, 1fr)" },
         "children": []
       },
       "needsDocs": false
@@ -85,22 +228,12 @@
       "scenes": [],
       "summary": "水平布局容器（行）",
       "dataContract": "children: 节点数组；style.alignItems / justifyContent",
-      "whenToUse": [
-        "图标+标题",
-        "操作按钮排（配 justifyContent: flex-end）"
-      ],
-      "notFor": [
-        "换行流式文本（用 p / span）"
-      ],
-      "pitfalls": [
-        "默认不居中，垂直居中要显式 alignItems: center"
-      ],
+      "whenToUse": ["图标+标题", "操作按钮排（配 justifyContent: flex-end）"],
+      "notFor": ["换行流式文本（用 p / span）"],
+      "pitfalls": ["默认不居中，垂直居中要显式 alignItems: center"],
       "example": {
         "type": "hstack",
-        "style": {
-          "alignItems": "center",
-          "gap": "8px"
-        },
+        "style": { "alignItems": "center", "gap": "8px" },
         "children": []
       },
       "needsDocs": false
@@ -110,39 +243,170 @@
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "桌面/移动自适应布局壳（窄屏侧栏转抽屉）",
+      "dataContract": {
+        "0": "b",
+        "1": "r",
+        "2": "e",
+        "3": "a",
+        "4": "k",
+        "5": "p",
+        "6": "o",
+        "7": "i",
+        "8": "n",
+        "9": "t",
+        "10": " ",
+        "11": "/",
+        "12": " ",
+        "13": "d",
+        "14": "i",
+        "15": "r",
+        "16": "e",
+        "17": "c",
+        "18": "t",
+        "19": "i",
+        "20": "o",
+        "21": "n",
+        "22": " ",
+        "23": "/",
+        "24": " ",
+        "25": "g",
+        "26": "a",
+        "27": "p",
+        "28": " ",
+        "29": "/",
+        "30": " ",
+        "31": "a",
+        "32": "s",
+        "33": "i",
+        "34": "d",
+        "35": "e",
+        "36": "W",
+        "37": "i",
+        "38": "d",
+        "39": "t",
+        "40": "h",
+        "41": " ",
+        "42": "/",
+        "43": " ",
+        "44": "v",
+        "45": "i",
+        "46": "e",
+        "47": "w",
+        "48": "p",
+        "49": "o",
+        "50": "r",
+        "51": "t",
+        "52": " ",
+        "53": "/",
+        "54": " ",
+        "55": "s",
+        "56": "a",
+        "57": "f",
+        "58": "e",
+        "59": "A",
+        "60": "r",
+        "61": "e",
+        "62": "a",
+        "63": " ",
+        "64": "/",
+        "65": " ",
+        "66": "d",
+        "67": "r",
+        "68": "a",
+        "69": "w",
+        "70": "e",
+        "71": "r",
+        "72": "；",
+        "73": "c",
+        "74": "h",
+        "75": "i",
+        "76": "l",
+        "77": "d",
+        "78": "r",
+        "79": "e",
+        "80": "n",
+        "81": ":",
+        "82": " ",
+        "83": "侧",
+        "84": "栏",
+        "85": " ",
+        "86": "+",
+        "87": " ",
+        "88": "主",
+        "89": "区"
+      },
+      "whenToUse": ["移动可用的后台壳", "侧栏在窄屏抽屉化"],
+      "notFor": ["纯桌面布局（用 vContainer 更轻）"],
+      "pitfalls": ["需配 vAside / vMain 子结构才有侧栏抽屉效果"],
+      "example": { "type": "mobileLayout", "viewport": true, "children": [] },
+      "needsDocs": false
     },
     {
       "name": "responsiveGrid",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "响应式网格（按断点切列数）",
+      "dataContract": "breakpoints: [{minWidth, columns}]；minColumnWidth；children: 节点数组",
+      "whenToUse": ["卡片墙自适应列数", "不同屏宽下 1/2/3 列切换"],
+      "notFor": ["固定列数网格（用 grid）"],
+      "pitfalls": ["不配 breakpoints 时按 minColumnWidth auto-fit 兜底"],
+      "example": {
+        "type": "responsiveGrid",
+        "breakpoints": [
+          { "minWidth": 0, "columns": 1 },
+          { "minWidth": 768, "columns": 2 },
+          { "minWidth": 1200, "columns": 3 }
+        ],
+        "children": []
+      },
+      "needsDocs": false
     },
     {
       "name": "spacer",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "弹性占位（撑开剩余空间）",
+      "dataContract": "无 props；style 控制宽高下限",
+      "whenToUse": ["两端贴边（图标在左、操作在右）"],
+      "notFor": ["固定间距（用 style.gap）"],
+      "pitfalls": ["aria-hidden，不承载内容"],
+      "example": {
+        "type": "hstack",
+        "children": [
+          { "type": "p", "text": "左" },
+          { "type": "spacer" },
+          { "type": "p", "text": "右" }
+        ]
+      },
+      "needsDocs": false
     },
     {
       "name": "stack",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "垂直布局容器（列，vstack 的保留名）",
+      "dataContract": "children: 节点数组；style.gap 控制间距",
+      "whenToUse": ["表单/卡片内纵向排列"],
+      "notFor": ["横向并排（用 hstack）", "新代码优先写 vstack"],
+      "pitfalls": ["与 vstack 同实现，仅为兼容保留"],
+      "example": { "type": "stack", "style": { "gap": "10px" }, "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vAnchor",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "锚点导航（滚动定位，支持嵌套）",
+      "dataContract": "items: 项数组；activeHref；offset；ariaLabel",
+      "whenToUse": ["长文档侧栏目录", "设置页分区导航"],
+      "notFor": ["页面跳转（用 vLink）"],
+      "pitfalls": ["offset 默认 80，配粘性页头要自己调"],
+      "example": { "type": "vAnchor", "items": [{ "href": "#a", "label": "概览" }] },
       "props": {
         "active": "",
         "activeHref": "",
@@ -152,14 +416,19 @@
         "offset": "",
         "target": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vAnchorItem",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "锚点导航项（可嵌套子项）",
+      "dataContract": "href；label / text；items / nested（子项）",
+      "whenToUse": ["配 vAnchor 逐项声明"],
+      "notFor": ["独立链接（用 vLink）"],
+      "pitfalls": ["当前态由容器 activeHref 统一推导"],
+      "example": { "type": "vAnchorItem", "href": "#a", "label": "概览" },
       "props": {
         "active": "",
         "children": "",
@@ -171,23 +440,32 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vAside",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "侧栏区（宽 300px，可滚动）",
+      "dataContract": "children: 节点数组；width / scrollable 命令",
+      "whenToUse": ["应用壳侧栏", "配 mobileLayout 用"],
+      "notFor": ["普通卡片（用 vCard）"],
+      "pitfalls": ["默认宽 300px，可滚动的滚动条样式交给 CSS"],
+      "example": { "type": "vAside", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vAutocomplete",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "自动完成输入（输入过滤建议列表）",
+      "dataContract": "options；value；placeholder；limit；change",
+      "whenToUse": ["搜索框带建议", "表单内联想输入"],
+      "notFor": ["固定选项（用 vSelect）"],
+      "example": { "type": "vAutocomplete", "placeholder": "输入以搜索" },
+      "needsDocs": false
     },
     {
       "name": "vAvatar",
@@ -196,21 +474,12 @@
       "scenes": [],
       "summary": "头像（A2UI Image usageHint=avatar 映射）",
       "dataContract": "props.src / props.alt",
-      "whenToUse": [
-        "用户/条目头像"
-      ],
-      "notFor": [
-        "普通配图（用 img）"
-      ],
-      "pitfalls": [
-        "src 只允许 https"
-      ],
+      "whenToUse": ["用户/条目头像"],
+      "notFor": ["普通配图（用 img）"],
+      "pitfalls": ["src 只允许 https"],
       "example": {
         "type": "vAvatar",
-        "props": {
-          "src": "https://example.com/a.png",
-          "alt": "头像"
-        }
+        "props": { "src": "https://example.com/a.png", "alt": "头像" }
       },
       "props": {
         "alt": "",
@@ -231,15 +500,91 @@
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "头像上传（预览 + 移除）",
+      "dataContract": "value（图片地址）；change",
+      "whenToUse": ["个人资料头像编辑"],
+      "notFor": ["通用文件上传（用 vUpload）"],
+      "example": { "type": "vAvatarUpload" },
+      "needsDocs": false
     },
     {
       "name": "vBadge",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "徽标（计数 / 状态点 / 文本）",
+      "dataContract": {
+        "0": "c",
+        "1": "o",
+        "2": "u",
+        "3": "n",
+        "4": "t",
+        "5": "；",
+        "6": "s",
+        "7": "t",
+        "8": "a",
+        "9": "t",
+        "10": "u",
+        "11": "s",
+        "12": "；",
+        "13": "d",
+        "14": "o",
+        "15": "t",
+        "16": "；",
+        "17": "t",
+        "18": "e",
+        "19": "x",
+        "20": "t",
+        "21": "；",
+        "22": "o",
+        "23": "v",
+        "24": "e",
+        "25": "r",
+        "26": "f",
+        "27": "l",
+        "28": "o",
+        "29": "w",
+        "30": "C",
+        "31": "o",
+        "32": "u",
+        "33": "n",
+        "34": "t",
+        "35": "；",
+        "36": "s",
+        "37": "h",
+        "38": "o",
+        "39": "w",
+        "40": "Z",
+        "41": "e",
+        "42": "r",
+        "43": "o",
+        "44": "；",
+        "45": "c",
+        "46": "o",
+        "47": "l",
+        "48": "o",
+        "49": "r",
+        "50": "；",
+        "51": "o",
+        "52": "f",
+        "53": "f",
+        "54": "s",
+        "55": "e",
+        "56": "t",
+        "57": "；",
+        "58": "c",
+        "59": "h",
+        "60": "i",
+        "61": "l",
+        "62": "d",
+        "63": "r",
+        "64": "e",
+        "65": "n"
+      },
+      "whenToUse": ["消息数角标", "状态标记"],
+      "notFor": ["标签分类（用 vTag 类组件）"],
+      "pitfalls": ["count 为 0 默认隐藏，要显示配 showZero"],
+      "example": { "type": "vBadge", "count": 5, "children": [{ "type": "p", "text": "消息" }] },
       "props": {
         "children": "",
         "color": "",
@@ -254,36 +599,46 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vBody",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "页面主体壳（默认排版 + 内容列居中）",
+      "dataContract": "children: 节点数组；maxWidth / padding / gap / background 命令",
+      "whenToUse": ["页面根容器", "demo / 后台页主体"],
+      "notFor": ["组件内局部布局（用 vstack / hstack）"],
+      "pitfalls": ["内容落进内部内容列，maxWidth 默认 1120px"],
+      "example": { "type": "vBody", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vBreadcrumb",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "ariaLabel": "",
-        "children": "",
-        "items": "",
-        "separator": ""
-      },
-      "needsDocs": true
+      "summary": "面包屑导航（层级路径）",
+      "dataContract": "items: 项数组；separator；ariaLabel",
+      "whenToUse": ["详情页返回路径", "层级位置提示"],
+      "notFor": ["步骤流（用 vSteps）"],
+      "pitfalls": ["最后一项自动标记 current"],
+      "example": { "type": "vBreadcrumb", "items": [{ "label": "首页" }, { "label": "详情" }] },
+      "props": { "ariaLabel": "", "children": "", "items": "", "separator": "" },
+      "needsDocs": false
     },
     {
       "name": "vBreadcrumbItem",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "面包屑项",
+      "dataContract": "href；label / text；active / current",
+      "whenToUse": ["配 vBreadcrumb 逐项声明"],
+      "notFor": ["独立链接（用 vLink）"],
+      "pitfalls": ["有 href 才渲染成可点击链接"],
+      "example": { "type": "vBreadcrumbItem", "label": "首页" },
       "props": {
         "active": "",
         "children": "",
@@ -294,7 +649,7 @@
         "text": "",
         "to": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vButton",
@@ -303,15 +658,8 @@
       "scenes": [],
       "summary": "按钮（触发宿主动作或内建动作）",
       "dataContract": "props.label: string|值表达式；on.click: { $action, params }",
-      "whenToUse": [
-        "提交表单",
-        "触发 $action（宿主动作 / agent 回传）",
-        "内建 set/toggle/push 等"
-      ],
-      "notFor": [
-        "纯链接跳转（用 a）",
-        "表单输入（用 vInput）"
-      ],
+      "whenToUse": ["提交表单", "触发 $action（宿主动作 / agent 回传）", "内建 set/toggle/push 等"],
+      "notFor": ["纯链接跳转（用 a）", "表单输入（用 vInput）"],
       "pitfalls": [
         "props.label 而不是 text",
         "动作名必须是宿主已注册的动作",
@@ -319,19 +667,8 @@
       ],
       "example": {
         "type": "vButton",
-        "props": {
-          "label": "提交"
-        },
-        "on": {
-          "click": {
-            "$action": "submit",
-            "params": {
-              "id": {
-                "$bind": "/id"
-              }
-            }
-          }
-        }
+        "props": { "label": "提交" },
+        "on": { "click": { "$action": "submit", "params": { "id": { "$bind": "/id" } } } }
       },
       "props": {
         "children": "",
@@ -352,7 +689,12 @@
       "factory": true,
       "category": "actions",
       "scenes": [],
-      "summary": "",
+      "summary": "按钮组（成组展示，可切换选中）",
+      "dataContract": "options；value；selectable；joined；size；variant；change",
+      "whenToUse": ["成组操作按钮", "分段选择器"],
+      "notFor": ["单个按钮（用 vButton）"],
+      "pitfalls": ["selectable 关闭时只是排版分组"],
+      "example": { "type": "vButtons", "options": ["列表", "卡片"], "value": "列表" },
       "props": {
         "change": "",
         "children": "",
@@ -364,7 +706,7 @@
         "value": "",
         "variant": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vCard",
@@ -373,37 +715,14 @@
       "scenes": [],
       "summary": "卡片容器（含 Header/Body/Footer 三个结构子组件）",
       "dataContract": "children: vCardHeader / vCardBody / vCardFooter",
-      "whenToUse": [
-        "信息分组呈现",
-        "详情页/面板骨架"
-      ],
-      "notFor": [
-        "纯排版（直接用 vstack 更轻）"
-      ],
-      "pitfalls": [
-        "内容不要直接塞 vCard——先包一层 vCardBody"
-      ],
+      "whenToUse": ["信息分组呈现", "详情页/面板骨架"],
+      "notFor": ["纯排版（直接用 vstack 更轻）"],
+      "pitfalls": ["内容不要直接塞 vCard——先包一层 vCardBody"],
       "example": {
         "type": "vCard",
         "children": [
-          {
-            "type": "vCardHeader",
-            "children": [
-              {
-                "type": "h3",
-                "text": "标题"
-              }
-            ]
-          },
-          {
-            "type": "vCardBody",
-            "children": [
-              {
-                "type": "p",
-                "text": "内容"
-              }
-            ]
-          }
+          { "type": "vCardHeader", "children": [{ "type": "h3", "text": "标题" }] },
+          { "type": "vCardBody", "children": [{ "type": "p", "text": "内容" }] }
         ]
       },
       "needsDocs": false
@@ -415,21 +734,9 @@
       "scenes": [],
       "summary": "卡片正文区",
       "dataContract": "children: 节点数组",
-      "whenToUse": [
-        "卡片主体内容"
-      ],
-      "notFor": [
-        "标题/操作栏（用 Header/Footer）"
-      ],
-      "example": {
-        "type": "vCardBody",
-        "children": [
-          {
-            "type": "p",
-            "text": "内容"
-          }
-        ]
-      },
+      "whenToUse": ["卡片主体内容"],
+      "notFor": ["标题/操作栏（用 Header/Footer）"],
+      "example": { "type": "vCardBody", "children": [{ "type": "p", "text": "内容" }] },
       "needsDocs": false
     },
     {
@@ -439,16 +746,9 @@
       "scenes": [],
       "summary": "卡片底部区（常放操作）",
       "dataContract": "children: 节点数组",
-      "whenToUse": [
-        "提交/次要按钮排"
-      ],
-      "notFor": [
-        "正文内容"
-      ],
-      "example": {
-        "type": "vCardFooter",
-        "children": []
-      },
+      "whenToUse": ["提交/次要按钮排"],
+      "notFor": ["正文内容"],
+      "example": { "type": "vCardFooter", "children": [] },
       "needsDocs": false
     },
     {
@@ -458,21 +758,9 @@
       "scenes": [],
       "summary": "卡片头部区",
       "dataContract": "children: 节点数组",
-      "whenToUse": [
-        "卡片标题行"
-      ],
-      "notFor": [
-        "正文内容（放 vCardBody）"
-      ],
-      "example": {
-        "type": "vCardHeader",
-        "children": [
-          {
-            "type": "h3",
-            "text": "标题"
-          }
-        ]
-      },
+      "whenToUse": ["卡片标题行"],
+      "notFor": ["正文内容（放 vCardBody）"],
+      "example": { "type": "vCardHeader", "children": [{ "type": "h3", "text": "标题" }] },
       "needsDocs": false
     },
     {
@@ -480,30 +768,38 @@
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "走马灯（轮播图）",
+      "dataContract": "children: 轮播页；自动播放 / 指示器命令",
+      "whenToUse": ["首页 banner 轮播", "图片展示"],
+      "notFor": ["静态图片（用 vLazyImage / img）"],
+      "example": { "type": "vCarousel", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vCascader",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "级联选择（多级路径选取）",
+      "dataContract": "options（树形）；value（路径数组）；placeholder；change",
+      "whenToUse": ["省市区选择", "多级分类选取"],
+      "notFor": ["单层选项（用 vSelect）"],
+      "example": { "type": "vCascader" },
+      "needsDocs": false
     },
     {
       "name": "vChart",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "adapter": "",
-        "data": "",
-        "height": "",
-        "options": ""
-      },
-      "needsDocs": true
+      "summary": "图表宿主（与图表库无关，适配器负责实现）",
+      "dataContract": "adapter；options；data；height",
+      "whenToUse": ["接自研/第三方图表适配器"],
+      "notFor": ["ECharts 直连（用 vEchart）"],
+      "pitfalls": ["不传 adapter 只当容器，不出图"],
+      "example": { "type": "vChart", "options": {} },
+      "props": { "adapter": "", "data": "", "height": "", "options": "" },
+      "needsDocs": false
     },
     {
       "name": "vCheckbox",
@@ -512,32 +808,15 @@
       "scenes": [],
       "summary": "勾选框（checked 经 $bind 绑定）",
       "dataContract": "props.checked: { $bind: path }；props.label",
-      "whenToUse": [
-        "布尔开关",
-        "任务完成态"
-      ],
-      "notFor": [
-        "多选一（用单选/页签）"
-      ],
+      "whenToUse": ["布尔开关", "任务完成态"],
+      "notFor": ["多选一（用单选/页签）"],
       "example": {
         "type": "vCheckbox",
-        "props": {
-          "checked": {
-            "$bind": "done"
-          },
-          "label": {
-            "$bind": "title"
-          }
-        },
+        "props": { "checked": { "$bind": "done" }, "label": { "$bind": "title" } },
         "on": {
           "change": {
             "$action": "set",
-            "params": {
-              "path": "done",
-              "value": {
-                "$event": "target.checked"
-              }
-            }
+            "params": { "path": "done", "value": { "$event": "target.checked" } }
           }
         }
       },
@@ -563,25 +842,11 @@
       "scenes": [],
       "summary": "复选组（A2UI MultipleChoice 多选映射）",
       "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中数组",
-      "whenToUse": [
-        "多选"
-      ],
-      "notFor": [
-        "单选（用 vRadios）"
-      ],
+      "whenToUse": ["多选"],
+      "notFor": ["单选（用 vRadios）"],
       "example": {
         "type": "vCheckboxes",
-        "props": {
-          "options": [
-            {
-              "label": "X",
-              "value": "x"
-            }
-          ],
-          "value": {
-            "$bind": "/tags"
-          }
-        }
+        "props": { "options": [{ "label": "X", "value": "x" }], "value": { "$bind": "/tags" } }
       },
       "props": {
         "children": "",
@@ -600,7 +865,11 @@
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "代码块（语法角色 + 可复制）",
+      "dataContract": "language；copyable / copyLabel；text / children",
+      "whenToUse": ["文档内嵌代码示例"],
+      "notFor": ["普通段落文本（用 p）"],
+      "example": { "type": "vCode", "language": "js", "text": "const a = 1" },
       "props": {
         "children": "",
         "content": "",
@@ -609,46 +878,72 @@
         "language": "",
         "text": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vCol",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "栅格列（span / offset / 响应式断点）",
+      "dataContract": "span（1-24）；offset；xs / sm / md / lg / xl 断点对象",
+      "whenToUse": ["配 vRow 做列宽分配"],
+      "notFor": ["脱离 vRow 单独使用（没有栅格上下文）"],
+      "pitfalls": ["不写 span 时平分剩余宽度"],
+      "example": {
+        "type": "vRow",
+        "children": [{ "type": "vCol", "span": 12, "children": [] }]
+      },
+      "needsDocs": false
     },
     {
       "name": "vColorPicker",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "颜色选择器（色板 + 弹窗）",
+      "dataContract": "value（色值）；change",
+      "whenToUse": ["主题色配置", "样式微调"],
+      "notFor": ["文本输入色值（用 vInput）"],
+      "example": { "type": "vColorPicker" },
+      "needsDocs": false
     },
     {
       "name": "vConfirm",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "确认对话框（是/否二选一）",
+      "dataContract": "标题 / 内容 / 确认与取消回调",
+      "whenToUse": ["删除等危险操作前确认"],
+      "notFor": ["普通表单弹窗（用 vDialog）"],
+      "example": { "type": "vConfirm" },
+      "needsDocs": false
     },
     {
       "name": "vContainer",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "通用布局容器（viewport / fill / scrollable，方向自适应）",
+      "dataContract": "viewport / fill / scrollable / direction；children: 节点数组",
+      "whenToUse": ["应用壳中间的填充区", "需要内部滚动的区域"],
+      "notFor": ["定宽内容容器（用 container）"],
+      "pitfalls": ["子项里有 header / footer 时自动切 column 方向"],
+      "example": { "type": "vContainer", "viewport": true, "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vContextMenu",
       "factory": true,
       "category": "actions",
       "scenes": [],
-      "summary": "",
+      "summary": "右键菜单（绑定目标节点）",
+      "dataContract": "target；menu / menuContent；open；x / y；closeOnSelect",
+      "whenToUse": ["列表项右键操作", "画布右键菜单"],
+      "notFor": ["点击触发（用 vDropdownMenu）"],
+      "pitfalls": ["按坐标定位，目标须已挂载"],
+      "example": { "type": "vContextMenu" },
       "props": {
         "children": "",
         "closeOnSelect": "",
@@ -660,61 +955,147 @@
         "x": "",
         "y": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vDetail",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "详情列表（dl 语义）",
+      "dataContract": "children: vDetailItem",
+      "whenToUse": ["对象字段平铺展示"],
+      "notFor": ["键值对编辑（用 vForm）"],
+      "example": { "type": "vDetail", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vDetailItem",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "详情条目（term + 内容）",
+      "dataContract": "label / title（字段名）；text / content（值）",
+      "whenToUse": ["配 vDetail 的单条字段"],
+      "example": { "type": "vDetailItem", "label": "状态", "text": "运行中" },
+      "needsDocs": false
     },
     {
       "name": "vDialog",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "children": "",
-        "closable": "",
-        "content": "",
-        "onClose": "",
-        "open": ""
-      },
-      "needsDocs": true
+      "summary": "对话框（模态浮层）",
+      "dataContract": "open；closable；onClose；children",
+      "whenToUse": ["表单弹窗", "确认操作"],
+      "notFor": ["轻提示（用 vMessage）"],
+      "example": { "type": "vDialog", "open": true, "children": [] },
+      "props": { "children": "", "closable": "", "content": "", "onClose": "", "open": "" },
+      "needsDocs": false
     },
     {
       "name": "vDigitalBoard",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "数字看板（响应式指标卡片网格）",
+      "dataContract": "children: vDigitalBoardItem",
+      "whenToUse": ["仪表盘首页指标组"],
+      "notFor": ["普通卡片墙（用 vCard + grid）"],
+      "example": { "type": "vDigitalBoard", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vDigitalBoardItem",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "数字看板项（指标卡）",
+      "dataContract": "label；value；趋势 / 单位等配置",
+      "whenToUse": ["配 vDigitalBoard 的单项指标"],
+      "notFor": ["独立统计卡（用 vTrendCard）"],
+      "example": { "type": "vDigitalBoardItem", "label": "日活", "value": "1204" },
+      "needsDocs": false
     },
     {
       "name": "vDropdownMenu",
       "factory": true,
       "category": "actions",
       "scenes": [],
-      "summary": "",
+      "summary": "下拉菜单（点击 / 悬停触发）",
+      "dataContract": {
+        "0": "l",
+        "1": "a",
+        "2": "b",
+        "3": "e",
+        "4": "l",
+        "5": " ",
+        "6": "/",
+        "7": " ",
+        "8": "t",
+        "9": "e",
+        "10": "x",
+        "11": "t",
+        "12": "；",
+        "13": "m",
+        "14": "e",
+        "15": "n",
+        "16": "u",
+        "17": " ",
+        "18": "/",
+        "19": " ",
+        "20": "m",
+        "21": "e",
+        "22": "n",
+        "23": "u",
+        "24": "C",
+        "25": "o",
+        "26": "n",
+        "27": "t",
+        "28": "e",
+        "29": "n",
+        "30": "t",
+        "31": "；",
+        "32": "t",
+        "33": "r",
+        "34": "i",
+        "35": "g",
+        "36": "g",
+        "37": "e",
+        "38": "r",
+        "39": "；",
+        "40": "p",
+        "41": "l",
+        "42": "a",
+        "43": "c",
+        "44": "e",
+        "45": "m",
+        "46": "e",
+        "47": "n",
+        "48": "t",
+        "49": "；",
+        "50": "o",
+        "51": "p",
+        "52": "e",
+        "53": "n",
+        "54": "；",
+        "55": "c",
+        "56": "l",
+        "57": "o",
+        "58": "s",
+        "59": "e",
+        "60": "O",
+        "61": "n",
+        "62": "S",
+        "63": "e",
+        "64": "l",
+        "65": "e",
+        "66": "c",
+        "67": "t"
+      },
+      "whenToUse": ["行内操作收纳", "更多操作"],
+      "notFor": ["右键触发（用 vContextMenu）"],
+      "example": { "type": "vDropdownMenu", "label": "操作" },
       "props": {
         "children": "",
         "closeOnSelect": "",
@@ -727,38 +1108,54 @@
         "text": "",
         "trigger": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vDynamicLoader",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "动态加载器（按需挂载内容）",
+      "dataContract": "加载器函数 + 占位",
+      "whenToUse": ["重组件延迟加载", "代码分包场景"],
+      "example": { "type": "vDynamicLoader" },
+      "needsDocs": false
     },
     {
       "name": "vEchart",
       "factory": true,
       "category": "media",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "ECharts 宿主（options 直连）",
+      "dataContract": "options；height；主题相关配置",
+      "whenToUse": ["标准统计图表"],
+      "notFor": ["其它图表库（用 vChart + 适配器）"],
+      "pitfalls": ["ECharts 本体由使用方提供"],
+      "example": { "type": "vEchart" },
+      "needsDocs": false
     },
     {
       "name": "vField",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "字段（查看态 / 编辑态切换）",
+      "dataContract": "label；value；编辑面配置",
+      "whenToUse": ["详情页就地编辑"],
+      "notFor": ["纯展示字段（用 vDetailItem）"],
+      "example": { "type": "vField", "label": "名称" },
+      "needsDocs": false
     },
     {
       "name": "vFloatButton",
       "factory": true,
       "category": "actions",
       "scenes": [],
-      "summary": "",
+      "summary": "悬浮操作按钮（固定定位的圆形入口）",
+      "dataContract": "icon；label / text；position；fixed；size；variant；disabled",
+      "whenToUse": ["页面级新增/快捷操作"],
+      "notFor": ["行内按钮（用 vButton）"],
+      "example": { "type": "vFloatButton", "label": "新增" },
       "props": {
         "children": "",
         "disabled": "",
@@ -770,52 +1167,68 @@
         "text": "",
         "variant": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vFooter",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "页脚区（高 60px，可 sticky）",
+      "dataContract": "children: 节点数组；sticky / height 命令",
+      "whenToUse": ["应用底栏容器"],
+      "notFor": ["普通横向内容（用 hstack）"],
+      "pitfalls": ["与 vHeader 同构，默认高 60px"],
+      "example": { "type": "vFooter", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vForm",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表单容器（值收集 / 回填 / 校验）",
+      "dataContract": "children: vFormItem；提交与校验由容器统一收口",
+      "whenToUse": ["数据录入表单"],
+      "notFor": ["零散输入控件排列（用 vstack）"],
+      "example": { "type": "vForm", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vFormItem",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表单项（标签 + 编辑面 + 提示）",
+      "dataContract": "label；required；错误 / 提示文本",
+      "whenToUse": ["配 vForm 的字段行"],
+      "notFor": ["独立控件（直接用输入组件）"],
+      "example": { "type": "vFormItem", "label": "名称", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vGauge",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "max": "",
-        "tone": "",
-        "unit": "",
-        "value": ""
-      },
-      "needsDocs": true
+      "summary": "仪表盘（半圆刻度 + 指针）",
+      "dataContract": "value；max；unit；tone",
+      "whenToUse": ["负载、使用率等区间指标"],
+      "notFor": ["占比环（用 vRingStat）"],
+      "example": { "type": "vGauge", "value": 72, "unit": "%" },
+      "props": { "max": "", "tone": "", "unit": "", "value": "" },
+      "needsDocs": false
     },
     {
       "name": "vGlowButton",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
+      "summary": "流光按钮（动效强调操作）",
+      "dataContract": "text / label；play；glow；motion；speed；strength；direction；ripple",
+      "whenToUse": ["营销/演示页主操作"],
+      "notFor": ["常规表单操作（用 vButton）"],
+      "example": { "type": "vGlowButton", "text": "开始" },
       "props": {
         "direction": "",
         "glow": "",
@@ -825,23 +1238,32 @@
         "speed": "",
         "strength": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vHeader",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "页头区（高 60px，可 sticky）",
+      "dataContract": "children: 节点数组；sticky / height 命令",
+      "whenToUse": ["应用顶栏容器", "配 vContainer 组壳"],
+      "notFor": ["普通横向内容（用 hstack）"],
+      "pitfalls": ["高度固定 60px，改高度用 height 命令"],
+      "example": { "type": "vHeader", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vImagePreview",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "图片预览（缩略图点击放大）",
+      "dataContract": "src；thumb；alt；缩放/拖拽命令",
+      "whenToUse": ["图库缩略图", "详情页大图"],
+      "notFor": ["纯展示图（用 img / vLazyImage）"],
+      "example": { "type": "vImagePreview" },
+      "needsDocs": false
     },
     {
       "name": "vInput",
@@ -850,35 +1272,16 @@
       "scenes": [],
       "summary": "单行输入框（值经 $bind 双向绑定）",
       "dataContract": "props.value: { $bind: \"/path\" }；on.change 内建 set 回写",
-      "whenToUse": [
-        "表单字段",
-        "草稿输入"
-      ],
-      "notFor": [
-        "长文本（A2UI 的 TextField longText 会映射过来）",
-        "勾选（用 vCheckbox）"
-      ],
-      "pitfalls": [
-        "忘记 on.change 的话输入不会写回数据模型"
-      ],
+      "whenToUse": ["表单字段", "草稿输入"],
+      "notFor": ["长文本（A2UI 的 TextField longText 会映射过来）", "勾选（用 vCheckbox）"],
+      "pitfalls": ["忘记 on.change 的话输入不会写回数据模型"],
       "example": {
         "type": "vInput",
-        "props": {
-          "name": "draft",
-          "placeholder": "输入…",
-          "value": {
-            "$bind": "/draft"
-          }
-        },
+        "props": { "name": "draft", "placeholder": "输入…", "value": { "$bind": "/draft" } },
         "on": {
           "change": {
             "$action": "set",
-            "params": {
-              "path": "/draft",
-              "value": {
-                "$event": "target.value"
-              }
-            }
+            "params": { "path": "/draft", "value": { "$event": "target.value" } }
           }
         }
       },
@@ -889,7 +1292,10 @@
       "factory": true,
       "category": "basic",
       "scenes": [],
-      "summary": "",
+      "summary": "语言切换",
+      "dataContract": "locale；languages；onChange；size；variant；ariaLabel",
+      "whenToUse": ["多语言应用顶栏切换"],
+      "example": { "type": "vLanguageSwitch", "locale": "zh-CN" },
       "props": {
         "ariaLabel": "",
         "languages": "",
@@ -898,104 +1304,142 @@
         "size": "",
         "variant": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vLazyImage",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "alt": "",
-        "defer": "",
-        "src": ""
-      },
-      "needsDocs": true
+      "summary": "懒加载图片（进入视口才加载）",
+      "dataContract": "src；alt；defer",
+      "whenToUse": ["长页图片", "图库缩略图"],
+      "notFor": ["首屏关键图（直接用 img）"],
+      "example": { "type": "vLazyImage", "src": "a.png", "alt": "示例图" },
+      "props": { "alt": "", "defer": "", "src": "" },
+      "needsDocs": false
     },
     {
       "name": "vLink",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "SPA 链接（拦截地址变化）",
+      "dataContract": "to（目标地址）；标签内容",
+      "whenToUse": ["应用内跳转"],
+      "notFor": ["外部地址（浏览器原生 a）"],
+      "example": { "type": "vLink", "to": "/home", "text": "首页" },
+      "needsDocs": false
     },
     {
       "name": "vLinkLabel",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "链接标签占位",
+      "dataContract": "文本 / 节点",
+      "whenToUse": ["自定义 vLink 的标签位"],
+      "example": { "type": "vLinkLabel", "text": "首页" },
+      "needsDocs": false
     },
     {
       "name": "vMain",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "主内容区（flex:1，自动滚动）",
+      "dataContract": "children: 节点数组；height / width 命令",
+      "whenToUse": ["应用壳中承接滚动的主区"],
+      "notFor": ["页面根排版（用 vBody）"],
+      "pitfalls": ["overflow 默认 auto，内容超高自己滚"],
+      "example": { "type": "vMain", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vMasonry",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "columns": "",
-        "gap": "",
-        "minColumnWidth": ""
-      },
-      "needsDocs": true
+      "summary": "瀑布流布局（列优先排布）",
+      "dataContract": "columns / gap / minColumnWidth；children: 节点数组",
+      "whenToUse": ["图片墙", "高度不齐的卡片流"],
+      "notFor": ["等高网格（用 grid / responsiveGrid）"],
+      "pitfalls": ["列数固定时窄屏会挤，配 minColumnWidth 自适应"],
+      "example": { "type": "vMasonry", "columns": 3, "gap": 12, "children": [] },
+      "props": { "columns": "", "gap": "", "minColumnWidth": "" },
+      "needsDocs": false
     },
     {
       "name": "vMenu",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "菜单容器（支持键盘漫游）",
+      "dataContract": "children: vMenuItem / vMenuGroup / vSubMenu",
+      "whenToUse": ["侧栏导航", "功能分组菜单"],
+      "notFor": ["下拉浮层菜单（用 vDropdownMenu）"],
+      "pitfalls": ["折叠态需配 vSidebar / vMenuWrapper"],
+      "example": { "type": "vMenu", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vMenuDivider",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "菜单分隔线",
+      "dataContract": "无 props",
+      "whenToUse": ["菜单功能分组之间"],
+      "notFor": ["页面内容分隔（用 divider）"],
+      "example": { "type": "vMenuDivider" },
+      "needsDocs": false
     },
     {
       "name": "vMenuGroup",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "菜单分组（带标题）",
+      "dataContract": "label / title；children: 菜单单元",
+      "whenToUse": ["侧栏按功能分组"],
+      "notFor": ["可展开子级（用 vSubMenu）"],
+      "example": { "type": "vMenuGroup", "label": "分组", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vMenuItem",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "菜单项",
+      "dataContract": "label / text；href；disabled",
+      "whenToUse": ["配 vMenu 逐项声明"],
+      "notFor": ["独立锚点链接（用 vAnchorItem）"],
+      "example": { "type": "vMenuItem", "label": "首页" },
+      "needsDocs": false
     },
     {
       "name": "vMenuWrapper",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "菜单外包装（折叠 / 响应式控制）",
+      "dataContract": "children: vMenu；折叠态由包装推进",
+      "whenToUse": ["需要折叠成图标列的侧栏菜单"],
+      "notFor": ["普通菜单容器（直接用 vMenu）"],
+      "example": { "type": "vMenuWrapper", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vMessage",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
+      "summary": "消息条（全局反馈）",
+      "dataContract": "type；text / content；duration；closable；countdown",
+      "whenToUse": ["操作成功/失败反馈"],
+      "notFor": ["需要用户确认（用 vConfirm / vDialog）"],
+      "example": { "type": "success", "text": "已保存" },
       "props": {
         "children": "",
         "closable": "",
@@ -1005,34 +1449,41 @@
         "text": "",
         "type": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vMessageContainer",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "inline": "",
-        "placement": ""
-      },
-      "needsDocs": true
+      "summary": "消息容器（多条消息排布）",
+      "dataContract": "placement；inline",
+      "whenToUse": ["页面级消息堆叠区"],
+      "example": { "type": "vMessageContainer", "placement": "top" },
+      "props": { "inline": "", "placement": "" },
+      "needsDocs": false
     },
     {
       "name": "vMessageManager",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "全局消息管理器（创建/派发消息）",
+      "dataContract": "命令面管理消息生命周期",
+      "whenToUse": ["任意位置触发全局消息"],
+      "example": { "type": "vMessageManager" },
+      "needsDocs": false
     },
     {
       "name": "vNavbar",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "顶栏导航（品牌 + 菜单 + 操作区）",
+      "dataContract": "title / subtitle；brand；menu；actions；sticky",
+      "whenToUse": ["应用顶栏", "页面级导航壳"],
+      "notFor": ["简单标题行（用 vHeader + hstack）"],
+      "example": { "type": "vNavbar", "title": "应用" },
       "props": {
         "actions": "",
         "ariaLabel": "",
@@ -1045,30 +1496,44 @@
         "subtitle": "",
         "title": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vPagination",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "分页（页码导航）",
+      "dataContract": "current / total / pageSize 命令；change",
+      "whenToUse": ["列表分页跳转"],
+      "notFor": ["滚动加载（用 vScroll）"],
+      "example": { "type": "vPagination" },
+      "needsDocs": false
     },
     {
       "name": "vProgress",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "进度条（确定 / 不确定两种）",
+      "dataContract": "value / percent；max；label；showText；indeterminate",
+      "whenToUse": ["任务进度反馈", "容量占比"],
+      "notFor": ["环形占比（用 vRingStat）"],
+      "pitfalls": ["indeterminate 模式不显示数值"],
+      "example": { "type": "vProgress" },
+      "needsDocs": false
     },
     {
       "name": "vRadio",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
+      "summary": "单选框",
+      "dataContract": "label；name；value / optionValue；checked；disabled；description",
+      "whenToUse": ["表单中二选一/多选一选项"],
+      "notFor": ["开关语义（用 vSwitch）"],
+      "pitfalls": ["同组选项写同一个 name"],
+      "example": { "type": "vRadio", "name": "mode", "label": "启用" },
       "props": {
         "checked": "",
         "children": "",
@@ -1082,7 +1547,7 @@
         "text": "",
         "value": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vRadios",
@@ -1091,25 +1556,13 @@
       "scenes": [],
       "summary": "单选组（A2UI MultipleChoice 单选映射）",
       "dataContract": "props.options: Array<{label,value}>；props.value 绑定选中值",
-      "whenToUse": [
-        "多选一"
-      ],
-      "notFor": [
-        "多选（用 vCheckboxes）",
-        "开关（用 vCheckbox）"
-      ],
+      "whenToUse": ["多选一"],
+      "notFor": ["多选（用 vCheckboxes）", "开关（用 vCheckbox）"],
       "example": {
         "type": "vRadios",
         "props": {
-          "options": [
-            {
-              "label": "A",
-              "value": "a"
-            }
-          ],
-          "value": {
-            "$bind": "/choice"
-          }
+          "options": [{ "label": "A", "value": "a" }],
+          "value": { "$bind": "/choice" }
         }
       },
       "props": {
@@ -1128,7 +1581,11 @@
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
+      "summary": "评分",
+      "dataContract": "value；count；allowHalf；allowClear / clearable；character；readonly",
+      "whenToUse": ["满意度打分", "内容评价"],
+      "notFor": ["进度展示（用 vProgress）"],
+      "example": { "type": "vRate", "value": 3 },
       "props": {
         "allowClear": "",
         "allowHalf": "",
@@ -1144,14 +1601,18 @@
         "size": "",
         "value": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vRingStat",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "环形统计（圆环进度 + 中心数值）",
+      "dataContract": "percent / value；label；size；strokeWidth；tone",
+      "whenToUse": ["完成率、占比类指标"],
+      "notFor": ["区间仪表（用 vGauge）"],
+      "example": { "type": "vRingStat", "percent": 64, "label": "完成率" },
       "props": {
         "label": "",
         "percent": "",
@@ -1160,54 +1621,154 @@
         "tone": "",
         "value": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vRoute",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "路由记录（地址 → 视图）",
+      "dataContract": "path；children: 视图",
+      "whenToUse": ["配 vRouter 声明路由表"],
+      "notFor": ["导航入口（用 vLink）"],
+      "example": { "type": "vRoute", "path": "/home", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vRouter",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "路由器（地址分发到出口）",
+      "dataContract": "children: vRoute",
+      "whenToUse": ["SPA 路由表声明"],
+      "notFor": ["单视图切换（自己写状态）"],
+      "example": { "type": "vRouter", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vRouterView",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "路由出口（渲染当前视图）",
+      "dataContract": "无 props",
+      "whenToUse": ["布局中留路由渲染位"],
+      "example": { "type": "vRouterView" },
+      "needsDocs": false
     },
     {
       "name": "vRouterViews",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "多标签路由视图（keep-alive 标签条）",
+      "dataContract": "children: vRoute；标签条由容器管理",
+      "whenToUse": ["后台多标签页工作区"],
+      "notFor": ["单出口（用 vRouterView）"],
+      "example": { "type": "vRouterViews", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vRow",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "栅格行（24 列体系，支持 gutter）",
+      "dataContract": "children: vCol 数组；gutter 列间距；justify / align / wrap",
+      "whenToUse": ["表单两列布局", "响应式卡片行"],
+      "notFor": ["非栅格的普通横排（用 hstack）"],
+      "pitfalls": ["子项必须是 vCol，其它节点不参与栅格"],
+      "example": { "type": "vRow", "gutter": 16, "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vScroll",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "滚动列表（虚拟滚动 / 无限加载）",
+      "dataContract": {
+        "0": "i",
+        "1": "t",
+        "2": "e",
+        "3": "m",
+        "4": "s",
+        "5": "；",
+        "6": "v",
+        "7": "i",
+        "8": "r",
+        "9": "t",
+        "10": "u",
+        "11": "a",
+        "12": "l",
+        "13": "；",
+        "14": "i",
+        "15": "t",
+        "16": "e",
+        "17": "m",
+        "18": "H",
+        "19": "e",
+        "20": "i",
+        "21": "g",
+        "22": "h",
+        "23": "t",
+        "24": "；",
+        "25": "o",
+        "26": "v",
+        "27": "e",
+        "28": "r",
+        "29": "s",
+        "30": "c",
+        "31": "a",
+        "32": "n",
+        "33": "；",
+        "34": "r",
+        "35": "e",
+        "36": "n",
+        "37": "d",
+        "38": "e",
+        "39": "r",
+        "40": "I",
+        "41": "t",
+        "42": "e",
+        "43": "m",
+        "44": "；",
+        "45": "l",
+        "46": "o",
+        "47": "a",
+        "48": "d",
+        "49": "M",
+        "50": "o",
+        "51": "r",
+        "52": "e",
+        "53": " ",
+        "54": "/",
+        "55": " ",
+        "56": "o",
+        "57": "n",
+        "58": "L",
+        "59": "o",
+        "60": "a",
+        "61": "d",
+        "62": "M",
+        "63": "o",
+        "64": "r",
+        "65": "e",
+        "66": "；",
+        "67": "l",
+        "68": "o",
+        "69": "a",
+        "70": "d",
+        "71": "i",
+        "72": "n",
+        "73": "g"
+      },
+      "whenToUse": ["长列表高性能滚动", "下拉加载更多"],
+      "notFor": ["短列表（直接用 vstack）"],
+      "pitfalls": ["开 virtual 必须给 itemHeight"],
+      "example": { "type": "vScroll" },
       "props": {
         "block": "",
         "blocked": "",
@@ -1228,30 +1789,42 @@
         "threshold": "",
         "virtual": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vSelect",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "下拉选择（数据渲染选项）",
+      "dataContract": "options；value；placeholder；clearable；disabled",
+      "whenToUse": ["表单单选枚举值"],
+      "notFor": ["联想输入（用 vAutocomplete）", "多级（用 vCascader）"],
+      "example": { "type": "vSelect", "placeholder": "请选择" },
+      "needsDocs": false
     },
     {
       "name": "vSidebar",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "侧栏壳（开合状态，通知内部菜单）",
+      "dataContract": "children: vMenu / 自定义内容；collapsed 命令",
+      "whenToUse": ["后台侧栏", "可折叠导航壳"],
+      "notFor": ["静态侧区（用 vAside）"],
+      "example": { "type": "vSidebar", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vSkeleton",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
+      "summary": "骨架屏（加载占位）",
+      "dataContract": "rows；variant；avatarSize；barHeight；gap；active / motion",
+      "whenToUse": ["数据未到时的结构占位"],
+      "notFor": ["空状态（用 center + 文案）"],
+      "example": { "type": "vSkeleton", "rows": 3 },
       "props": {
         "active": "",
         "avatarSize": "",
@@ -1261,7 +1834,7 @@
         "rows": "",
         "variant": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vSlider",
@@ -1270,20 +1843,9 @@
       "scenes": [],
       "summary": "滑杆（A2UI Slider 映射）",
       "dataContract": "props.min/max/step/value",
-      "whenToUse": [
-        "数值区间选择"
-      ],
-      "notFor": [
-        "精确文本输入（用 vInput）"
-      ],
-      "example": {
-        "type": "vSlider",
-        "props": {
-          "value": {
-            "$bind": "/progress"
-          }
-        }
-      },
+      "whenToUse": ["数值区间选择"],
+      "notFor": ["精确文本输入（用 vInput）"],
+      "example": { "type": "vSlider", "props": { "value": { "$bind": "/progress" } } },
       "needsDocs": false
     },
     {
@@ -1291,37 +1853,40 @@
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "组件部件落点（零布局占位）",
+      "dataContract": "字符串 = 落点名；缺省 = 匿名落点",
+      "whenToUse": ["组件模板里声明可投递位置"],
+      "notFor": ["页面内容占位（那是普通 children）"],
+      "pitfalls": ["属 part 通道（vn_slot / to_slot），与公开 slot 不同名空间"],
+      "example": { "type": "vSlot", "text": "body" },
+      "needsDocs": false
     },
     {
       "name": "vSparkline",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "data": "",
-        "fill": "",
-        "strokeWidth": "",
-        "tone": ""
-      },
-      "needsDocs": true
+      "summary": "迷你走势（无坐标轴的折线/面积）",
+      "dataContract": "data（数值数组）；fill；tone；strokeWidth",
+      "whenToUse": ["卡片内嵌趋势线"],
+      "notFor": ["完整图表（用 vChart / vEchart）"],
+      "example": { "type": "vSparkline", "data": [1, 3, 2, 5] },
+      "props": { "data": "", "fill": "", "strokeWidth": "", "tone": "" },
+      "needsDocs": false
     },
     {
       "name": "vSplitPanel",
       "factory": true,
       "category": "layout",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "direction": "",
-        "first": "",
-        "minSize": "",
-        "second": "",
-        "size": ""
-      },
-      "needsDocs": true
+      "summary": "可拖拽分隔条的双栏面板",
+      "dataContract": "first / second（节点）；size（首栏占比）；minSize；direction",
+      "whenToUse": ["编辑器 + 预览", "列表 + 详情"],
+      "notFor": ["固定比例双栏（用 flex 就够）"],
+      "pitfalls": ["size 支持句柄，拖拽只改这一份状态"],
+      "example": { "type": "vSplitPanel", "direction": "horizontal", "size": "50%" },
+      "props": { "direction": "", "first": "", "minSize": "", "second": "", "size": "" },
+      "needsDocs": false
     },
     {
       "name": "vstack",
@@ -1330,28 +1895,13 @@
       "scenes": [],
       "summary": "垂直布局容器（列）",
       "dataContract": "children: 节点数组；style.gap 控制间距",
-      "whenToUse": [
-        "表单/卡片内纵向排列",
-        "需要统一列间距"
-      ],
-      "notFor": [
-        "横向并排（用 hstack）",
-        "二维网格（用 grid）"
-      ],
-      "pitfalls": [
-        "children 里放字符串要用 { type: \"p\", text } 节点"
-      ],
+      "whenToUse": ["表单/卡片内纵向排列", "需要统一列间距"],
+      "notFor": ["横向并排（用 hstack）", "二维网格（用 grid）"],
+      "pitfalls": ["children 里放字符串要用 { type: \"p\", text } 节点"],
       "example": {
         "type": "vstack",
-        "style": {
-          "gap": "10px"
-        },
-        "children": [
-          {
-            "type": "p",
-            "text": "第一行"
-          }
-        ]
+        "style": { "gap": "10px" },
+        "children": [{ "type": "p", "text": "第一行" }]
       },
       "needsDocs": false
     },
@@ -1360,7 +1910,11 @@
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "步骤条项",
+      "dataContract": "title；desc / description；icon；status",
+      "whenToUse": ["配 vSteps 逐步声明"],
+      "notFor": ["独立状态标记（用 vBadge）"],
+      "example": { "type": "vStep", "title": "填写", "description": "基本信息" },
       "props": {
         "children": "",
         "desc": "",
@@ -1370,14 +1924,19 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vSteps",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
+      "summary": "步骤条（流程进度）",
+      "dataContract": "current；items / children: vStep；direction；status；size",
+      "whenToUse": ["向导式表单", "多阶段流程提示"],
+      "notFor": ["层级路径（用 vBreadcrumb）"],
+      "pitfalls": ["current 从 0 计"],
+      "example": { "type": "vSteps", "current": 1, "children": [] },
       "props": {
         "children": "",
         "current": "",
@@ -1386,30 +1945,42 @@
         "size": "",
         "status": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vSubMenu",
       "factory": true,
       "category": "navigation",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "可展开子菜单",
+      "dataContract": "label / title；items / children（子项）",
+      "whenToUse": ["多级导航层级"],
+      "notFor": ["平级分组（用 vMenuGroup）"],
+      "example": { "type": "vSubMenu", "label": "系统", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vSvgIconPicker",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "SVG 图标选择器（弹窗挑选）",
+      "dataContract": "value（图标名）；change",
+      "whenToUse": ["菜单/入口图标配置"],
+      "notFor": ["普通枚举选择（用 vSelect）"],
+      "example": { "type": "vSvgIconPicker" },
+      "needsDocs": false
     },
     {
       "name": "vSwitch",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
+      "summary": "开关",
+      "dataContract": "label；name；checked / value；disabled；description",
+      "whenToUse": ["启用/禁用类即时切换"],
+      "notFor": ["表单里多选一（用 vRadio）"],
+      "example": { "type": "vSwitch", "label": "启用" },
       "props": {
         "checked": "",
         "children": "",
@@ -1423,20 +1994,21 @@
         "text": "",
         "value": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vSymbolButton",
       "factory": true,
       "category": "actions",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "ariaLabel": "",
-        "icon": "",
-        "title": ""
-      },
-      "needsDocs": true
+      "summary": "图标按钮（无边框无轮廓）",
+      "dataContract": "icon；title；ariaLabel",
+      "whenToUse": ["关闭/展开等纯符号操作"],
+      "notFor": ["带文字的操作（用 vButton）"],
+      "pitfalls": ["必须给 ariaLabel 或 title 保证可访问"],
+      "example": { "type": "vSymbolButton", "title": "关闭" },
+      "props": { "ariaLabel": "", "icon": "", "title": "" },
+      "needsDocs": false
     },
     {
       "name": "vTab",
@@ -1445,21 +2017,10 @@
       "scenes": [],
       "summary": "单个页签内容区（vTabs 的子项）",
       "dataContract": "由 vTabs 的页签定义引用，不单独使用",
-      "whenToUse": [
-        "vTabs 内某一页的内容容器"
-      ],
-      "notFor": [
-        "独立使用（必须挂在 vTabs 下）"
-      ],
-      "pitfalls": [
-        "单独放一个 vTab 不会显示"
-      ],
-      "example": {
-        "type": "vTabs",
-        "props": {
-          "tabs": []
-        }
-      },
+      "whenToUse": ["vTabs 内某一页的内容容器"],
+      "notFor": ["独立使用（必须挂在 vTabs 下）"],
+      "pitfalls": ["单独放一个 vTab 不会显示"],
+      "example": { "type": "vTabs", "props": { "tabs": [] } },
       "props": {
         "active": "",
         "children": "",
@@ -1479,43 +2040,58 @@
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "caption": ""
-      },
-      "needsDocs": true
+      "summary": "表格（壳 + 用户侧受控 API）",
+      "dataContract": "caption；children: 表格族部件；数据由调用侧组织",
+      "whenToUse": ["数据列表展示"],
+      "notFor": ["树形数据（用 vTreeTable）"],
+      "pitfalls": ["结构由 vTableGrid / vThead 等部件组合"],
+      "example": { "type": "vTable", "caption": "用户", "children": [] },
+      "props": { "caption": "" },
+      "needsDocs": false
     },
     {
       "name": "vTableCaption",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表格标题部件",
+      "dataContract": "text / children",
+      "whenToUse": ["配 vTableWrapper 的标题位"],
+      "example": { "type": "vTableCaption", "text": "用户" },
+      "needsDocs": false
     },
     {
       "name": "vTableGrid",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表格本体（thead / tbody / tfoot 组合）",
+      "dataContract": "children: 表格段部件",
+      "whenToUse": ["配 vTableWrapper 组完整表格"],
+      "example": { "type": "vTableGrid", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTableScroll",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表格滚动外壳",
+      "dataContract": "children: 表格主体",
+      "whenToUse": ["宽表横向滚动"],
+      "example": { "type": "vTableScroll", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTableWrapper",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表格包装（caption + 滚动 + 本体）",
+      "dataContract": "children: 表格部件；caption 命令",
+      "whenToUse": ["组合完整表格结构"],
+      "example": { "type": "vTableWrapper", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTabs",
@@ -1524,21 +2100,10 @@
       "scenes": [],
       "summary": "页签（页面内导航）",
       "dataContract": "props: 页签数组，每个页签指到子容器/子节点",
-      "whenToUse": [
-        "一块区域内的视图切换"
-      ],
-      "notFor": [
-        "应用级导航（归固定骨架/手写外壳，红线）"
-      ],
-      "pitfalls": [
-        "不要把整站导航塞进 vTabs"
-      ],
-      "example": {
-        "type": "vTabs",
-        "props": {
-          "tabs": []
-        }
-      },
+      "whenToUse": ["一块区域内的视图切换"],
+      "notFor": ["应用级导航（归固定骨架/手写外壳，红线）"],
+      "pitfalls": ["不要把整站导航塞进 vTabs"],
+      "example": { "type": "vTabs", "props": { "tabs": [] } },
       "props": {
         "active": "",
         "ariaLabel": "",
@@ -1558,24 +2123,34 @@
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "标签输入（回车添加标签）",
+      "dataContract": "value（标签数组）；change",
+      "whenToUse": ["关键词/标签录入"],
+      "notFor": ["单值文本（用 vInput）"],
+      "example": { "type": "vTagsInput", "value": ["前端", "UI"] },
+      "needsDocs": false
     },
     {
       "name": "vTbody",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表体段",
+      "dataContract": "children: vTr（内放 vTd）",
+      "whenToUse": ["配表格族的数据行"],
+      "example": { "type": "vTbody", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTd",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "正文单元格",
+      "dataContract": "text / children",
+      "whenToUse": ["配 vTbody 的数据格"],
+      "example": { "type": "vTd", "text": "api-gateway" },
+      "needsDocs": false
     },
     {
       "name": "vTextarea",
@@ -1584,23 +2159,12 @@
       "scenes": [],
       "summary": "多行文本输入（A2UI TextField longText 映射到它）",
       "dataContract": "props.value: { $bind: path }",
-      "whenToUse": [
-        "备注、描述等长文本"
-      ],
-      "notFor": [
-        "单行输入（用 vInput）"
-      ],
-      "pitfalls": [
-        "值经 $bind 绑定数据模型"
-      ],
+      "whenToUse": ["备注、描述等长文本"],
+      "notFor": ["单行输入（用 vInput）"],
+      "pitfalls": ["值经 $bind 绑定数据模型"],
       "example": {
         "type": "vTextarea",
-        "props": {
-          "name": "note",
-          "value": {
-            "$bind": "/note"
-          }
-        }
+        "props": { "name": "note", "value": { "$bind": "/note" } }
       },
       "needsDocs": false
     },
@@ -1609,43 +2173,143 @@
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表尾段",
+      "dataContract": "children: vTr",
+      "whenToUse": ["合计行 / 汇总行"],
+      "example": { "type": "vTfoot", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTh",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "列头单元格",
+      "dataContract": "text / children；列配置属性",
+      "whenToUse": ["配 vThead 的列头"],
+      "example": { "type": "vTh", "text": "名称" },
+      "needsDocs": false
     },
     {
       "name": "vThead",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表头段",
+      "dataContract": "children: vTr（内放 vTh）",
+      "whenToUse": ["配表格族的表头行"],
+      "example": { "type": "vThead", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vThemeModeSwitch",
       "factory": true,
       "category": "basic",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "modes": "",
-        "persist": ""
-      },
-      "needsDocs": true
+      "summary": "主题模式切换（亮 / 暗等）",
+      "dataContract": "modes；persist",
+      "whenToUse": ["应用顶栏的主题切换"],
+      "example": { "type": "vThemeModeSwitch" },
+      "props": { "modes": "", "persist": "" },
+      "needsDocs": false
     },
     {
       "name": "vThree",
       "factory": true,
       "category": "media",
       "scenes": [],
-      "summary": "",
+      "summary": "Three.js 宿主（3D 场景容器）",
+      "dataContract": {
+        "0": "t",
+        "1": "h",
+        "2": "r",
+        "3": "e",
+        "4": "e",
+        "5": "L",
+        "6": "i",
+        "7": "b",
+        "8": "；",
+        "9": "s",
+        "10": "c",
+        "11": "e",
+        "12": "n",
+        "13": "e",
+        "14": "；",
+        "15": "c",
+        "16": "a",
+        "17": "m",
+        "18": "e",
+        "19": "r",
+        "20": "a",
+        "21": "；",
+        "22": "w",
+        "23": "i",
+        "24": "d",
+        "25": "t",
+        "26": "h",
+        "27": "；",
+        "28": "h",
+        "29": "e",
+        "30": "i",
+        "31": "g",
+        "32": "h",
+        "33": "t",
+        "34": "；",
+        "35": "a",
+        "36": "u",
+        "37": "t",
+        "38": "o",
+        "39": "R",
+        "40": "e",
+        "41": "n",
+        "42": "d",
+        "43": "e",
+        "44": "r",
+        "45": "；",
+        "46": "a",
+        "47": "u",
+        "48": "t",
+        "49": "o",
+        "50": "R",
+        "51": "e",
+        "52": "s",
+        "53": "i",
+        "54": "z",
+        "55": "e",
+        "56": "；",
+        "57": "o",
+        "58": "n",
+        "59": "F",
+        "60": "r",
+        "61": "a",
+        "62": "m",
+        "63": "e",
+        "64": " ",
+        "65": "/",
+        "66": " ",
+        "67": "o",
+        "68": "n",
+        "69": "R",
+        "70": "e",
+        "71": "a",
+        "72": "d",
+        "73": "y",
+        "74": " ",
+        "75": "/",
+        "76": " ",
+        "77": "o",
+        "78": "n",
+        "79": "R",
+        "80": "e",
+        "81": "s",
+        "82": "i",
+        "83": "z",
+        "84": "e"
+      },
+      "whenToUse": ["3D 展示与交互场景"],
+      "notFor": ["2D 图表（用 vChart / vEchart）"],
+      "pitfalls": ["threeLib 必须由使用方注入"],
+      "example": { "type": "vThree" },
       "props": {
         "autoRender": "",
         "autoResize": "",
@@ -1660,55 +2324,67 @@
         "threeLib": "",
         "width": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vTimeline",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "children": ""
-      },
-      "needsDocs": true
+      "summary": "时间线（竖向事件流）",
+      "dataContract": "children: vTimelineItem",
+      "whenToUse": ["操作历史", "流程记录"],
+      "notFor": ["步骤指引（用 vSteps）"],
+      "example": { "type": "vTimeline", "children": [] },
+      "props": { "children": "" },
+      "needsDocs": false
     },
     {
       "name": "vTimelineItem",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "props": {
-        "content": "",
-        "status": "",
-        "time": "",
-        "title": ""
-      },
-      "needsDocs": true
+      "summary": "时间线条目（状态点 + 标题 + 时间）",
+      "dataContract": "title；time；status；content / text",
+      "whenToUse": ["配 vTimeline 的单条事件"],
+      "example": { "type": "vTimelineItem", "title": "创建", "time": "09:00" },
+      "props": { "content": "", "status": "", "time": "", "title": "" },
+      "needsDocs": false
     },
     {
       "name": "vTimer",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "时间输入",
+      "dataContract": "value（时间文本）；模式相关命令",
+      "whenToUse": ["日程起止时刻", "时间筛选"],
+      "notFor": ["日期范围（用 vTimerRange）"],
+      "example": { "type": "vTimer" },
+      "needsDocs": false
     },
     {
       "name": "vTimerRange",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "时间范围输入（起止两个时间）",
+      "dataContract": "value（起止对）；错误提示内置",
+      "whenToUse": ["时间段筛选", "预约区间"],
+      "notFor": ["单个时刻（用 vTimer）"],
+      "example": { "type": "vTimerRange" },
+      "needsDocs": false
     },
     {
       "name": "vTooltip",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
+      "summary": "文字提示（悬浮解释）",
+      "dataContract": "content / text；placement；trigger；open；target",
+      "whenToUse": ["图标/缩写的悬浮解释"],
+      "notFor": ["重要信息展示（用 vMessage）"],
+      "example": { "type": "vTooltip", "content": "说明" },
       "props": {
         "children": "",
         "content": "",
@@ -1717,62 +2393,87 @@
         "target": "",
         "trigger": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vTr",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "表格行",
+      "dataContract": "children: vTh / vTd",
+      "whenToUse": ["表头/表体/表尾的行容器"],
+      "example": { "type": "vTr", "children": [] },
+      "needsDocs": false
     },
     {
       "name": "vTransition",
       "factory": true,
       "category": "feedback",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "过渡包装（进出场动画）",
+      "dataContract": "children；过渡模式配置",
+      "whenToUse": ["条件内容的显隐动画"],
+      "example": { "type": "vTransition" },
+      "needsDocs": false
     },
     {
       "name": "vTree",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "树（勾选 / 展开层级数据）",
+      "dataContract": "nodes；勾选与展开命令",
+      "whenToUse": ["目录树", "权限树"],
+      "notFor": ["树形表格（用 vTreeTable）"],
+      "example": { "type": "vTree" },
+      "needsDocs": false
     },
     {
       "name": "vTreeNode",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "树节点（可嵌套）",
+      "dataContract": "label / title；children / items",
+      "whenToUse": ["配 vTree 逐节点声明"],
+      "example": { "type": "vTreeNode", "label": "分组" },
+      "needsDocs": false
     },
     {
       "name": "vTreeRanger",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "ranger 式多列浏览器（固定三窗口）",
+      "dataContract": "columns（列定义）；visibleColumns；itemHeight；导航只换绑定的层级数据",
+      "whenToUse": ["文件浏览器式多级浏览"],
+      "notFor": ["单列树（用 vTree）"],
+      "pitfalls": ["窗口与分隔面板只建一次，切换不重建"],
+      "example": { "type": "vTreeRanger" },
+      "needsDocs": false
     },
     {
       "name": "vTreeRangerColumn",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "多列浏览器的单列",
+      "dataContract": "层级数据；itemHeight / overscan 虚拟滚动",
+      "whenToUse": ["配 vTreeRanger 的列"],
+      "example": { "type": "vTreeRangerColumn" },
+      "needsDocs": false
     },
     {
       "name": "vTreeTable",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "树形数据表格（行缩进 / 展开 / 父子选择联动）",
+      "dataContract": "nodes；columns；rowKey；expandedKeys；rowSelection；lazyLoad",
+      "whenToUse": ["带层级的表格数据", "懒加载子树"],
+      "notFor": ["平铺表格（用 vTable）"],
+      "example": { "type": "vTreeTable" },
       "props": {
         "columns": "",
         "expandedKeys": "",
@@ -1781,14 +2482,18 @@
         "rowKey": "",
         "rowSelection": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vTrendCard",
       "factory": true,
       "category": "data-display",
       "scenes": [],
-      "summary": "",
+      "summary": "趋势卡片（数值 + 变化 + 走势）",
+      "dataContract": "title；value；delta；unit；tone；up；data",
+      "whenToUse": ["指标卡带同比/环比"],
+      "notFor": ["纯指标（用 vDigitalBoardItem）"],
+      "example": { "type": "vTrendCard", "title": "日活", "value": "1204" },
       "props": {
         "data": "",
         "delta": "",
@@ -1798,15 +2503,19 @@
         "up": "",
         "value": ""
       },
-      "needsDocs": true
+      "needsDocs": false
     },
     {
       "name": "vUpload",
       "factory": true,
       "category": "form",
       "scenes": [],
-      "summary": "",
-      "needsDocs": true
+      "summary": "上传控件（选择 + 拖拽 + 文件列表）",
+      "dataContract": "value（文件列表）；accept；多选配置",
+      "whenToUse": ["表单附件上传"],
+      "notFor": ["头像场景（用 vAvatarUpload 更专）"],
+      "example": { "type": "vUpload" },
+      "needsDocs": false
     }
   ],
   "htmlElements": [

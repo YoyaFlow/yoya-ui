@@ -52,6 +52,14 @@ const layoutOptionNames = new Set([
 
 const layoutRegionOptionNames = new Set(['height', 'width']);
 
+/**
+ * @genui 弹性布局容器（方向自定）
+ * @genui.contract children: 节点数组；style.flexDirection / gap / alignItems / justifyContent
+ * @genui.use 需要自定义主轴与换行组合；hstack / vstack 覆盖不了的弹性结构
+ * @genui.notFor 单纯横排（用 hstack）；单纯竖排（用 vstack / stack）
+ * @genui.pitfall 默认 flexDirection 为 row，竖排要显式写 column
+ * @genui.example {"type":"flex","style":{"flexDirection":"column","gap":"10px"},"children":[]}
+ */
 export function flex(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VFlex' },
@@ -63,6 +71,14 @@ export function flex(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 垂直布局容器（列，vstack 的保留名）
+ * @genui.contract children: 节点数组；style.gap 控制间距
+ * @genui.use 表单/卡片内纵向排列
+ * @genui.notFor 横向并排（用 hstack）；新代码优先写 vstack
+ * @genui.pitfall 与 vstack 同实现，仅为兼容保留
+ * @genui.example {"type":"stack","style":{"gap":"10px"},"children":[]}
+ */
 export function stack(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VStack' },
@@ -112,6 +128,14 @@ export function hstack(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 居中容器（水平 + 垂直）
+ * @genui.contract children: 节点数组
+ * @genui.use 空态/加载态居中；单卡片居中展示
+ * @genui.notFor 大段文档排版（用 vBody）；普通流式内容（用 container）
+ * @genui.pitfall 只居中直接子节点，深层内容要自己再居中
+ * @genui.example {"type":"center","children":[{"type":"p","text":"居中"}]}
+ */
 export function center(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VCenter' },
@@ -123,6 +147,14 @@ export function center(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 栅格行（24 列体系，支持 gutter）
+ * @genui.contract children: vCol 数组；gutter 列间距；justify / align / wrap
+ * @genui.use 表单两列布局；响应式卡片行
+ * @genui.notFor 非栅格的普通横排（用 hstack）
+ * @genui.pitfall 子项必须是 vCol，其它节点不参与栅格
+ * @genui.example {"type":"vRow","gutter":16,"children":[]}
+ */
 export function vRow(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div', { vn: 'VRow' });
@@ -165,6 +197,14 @@ export function vRow(first = null, second = null, third = null) {
   return applyComponentArguments(node, args.options, args.callback);
 }
 
+/**
+ * @genui 栅格列（span / offset / 响应式断点）
+ * @genui.contract span（1-24）；offset；xs / sm / md / lg / xl 断点对象
+ * @genui.use 配 vRow 做列宽分配
+ * @genui.notFor 脱离 vRow 单独使用（没有栅格上下文）
+ * @genui.pitfall 不写 span 时平分剩余宽度
+ * @genui.example {"type":"vRow","children":[{"type":"vCol","span":12,"children":[]}]}
+ */
 export function vCol(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div', { vn: 'VCol' });
@@ -261,6 +301,14 @@ export function grid(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 响应式网格（按断点切列数）
+ * @genui.contract breakpoints: [{minWidth, columns}]；minColumnWidth；children: 节点数组
+ * @genui.use 卡片墙自适应列数；不同屏宽下 1/2/3 列切换
+ * @genui.notFor 固定列数网格（用 grid）
+ * @genui.pitfall 不配 breakpoints 时按 minColumnWidth auto-fit 兜底
+ * @genui.example {"type":"responsiveGrid","breakpoints":[{"minWidth":0,"columns":1},{"minWidth":768,"columns":2},{"minWidth":1200,"columns":3}],"children":[]}
+ */
 export function responsiveGrid(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = createLayoutNode(
@@ -324,6 +372,14 @@ export function responsiveGrid(first = null, second = null, third = null) {
   return node;
 }
 
+/**
+ * @genui 页面主体壳（默认排版 + 内容列居中）
+ * @genui.contract children: 节点数组；maxWidth / padding / gap / background 命令
+ * @genui.use 页面根容器；demo / 后台页主体
+ * @genui.notFor 组件内局部布局（用 vstack / hstack）
+ * @genui.pitfall 内容落进内部内容列，maxWidth 默认 1120px
+ * @genui.example {"type":"vBody","children":[]}
+ */
 export function vBody(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div', { vn: 'VBody' });
@@ -414,6 +470,14 @@ function wrapResponsiveGridDestroy(node) {
   };
 }
 
+/**
+ * @genui 定宽居中容器（maxWidth 1120px）
+ * @genui.contract children: 节点数组；style.maxWidth / padding
+ * @genui.use 页面内容宽度约束；文档/表单居中
+ * @genui.notFor 全幅布局（用 vContainer / flex）
+ * @genui.pitfall 左右自带 16px padding
+ * @genui.example {"type":"container","children":[]}
+ */
 export function container(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VContainer' },
@@ -432,6 +496,14 @@ export function container(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 通用布局容器（viewport / fill / scrollable，方向自适应）
+ * @genui.contract viewport / fill / scrollable / direction；children: 节点数组
+ * @genui.use 应用壳中间的填充区；需要内部滚动的区域
+ * @genui.notFor 定宽内容容器（用 container）
+ * @genui.pitfall 子项里有 header / footer 时自动切 column 方向
+ * @genui.example {"type":"vContainer","viewport":true,"children":[]}
+ */
 export function vContainer(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div', { vn: 'VLayoutContainer' });
@@ -504,6 +576,14 @@ export function vContainer(first = null, second = null, third = null) {
   return applyComponentArguments(node, args.options, args.callback);
 }
 
+/**
+ * @genui 桌面/移动自适应布局壳（窄屏侧栏转抽屉）
+ * @genui.contract breakpoint / direction / gap / asideWidth / viewport / safeArea / drawer；children: 侧栏 + 主区
+ * @genui.use 移动可用的后台壳；侧栏在窄屏抽屉化
+ * @genui.notFor 纯桌面布局（用 vContainer 更轻）
+ * @genui.pitfall 需配 vAside / vMain 子结构才有侧栏抽屉效果
+ * @genui.example {"type":"mobileLayout","viewport":true,"children":[]}
+ */
 export function mobileLayout(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
   const node = new HtmlElementNode('div', { vn: 'VMobileLayout' });
@@ -678,6 +758,14 @@ export function mobileLayout(first = null, second = null, third = null) {
 
 export const vMobileLayout = mobileLayout;
 
+/**
+ * @genui 页头区（高 60px，可 sticky）
+ * @genui.contract children: 节点数组；sticky / height 命令
+ * @genui.use 应用顶栏容器；配 vContainer 组壳
+ * @genui.notFor 普通横向内容（用 hstack）
+ * @genui.pitfall 高度固定 60px，改高度用 height 命令
+ * @genui.example {"type":"vHeader","children":[]}
+ */
 export function vHeader(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VHeader' },
@@ -692,6 +780,14 @@ export function vHeader(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 侧栏区（宽 300px，可滚动）
+ * @genui.contract children: 节点数组；width / scrollable 命令
+ * @genui.use 应用壳侧栏；配 mobileLayout 用
+ * @genui.notFor 普通卡片（用 vCard）
+ * @genui.pitfall 默认宽 300px，可滚动的滚动条样式交给 CSS
+ * @genui.example {"type":"vAside","children":[]}
+ */
 export function vAside(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VAside' },
@@ -706,6 +802,14 @@ export function vAside(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 主内容区（flex:1，自动滚动）
+ * @genui.contract children: 节点数组；height / width 命令
+ * @genui.use 应用壳中承接滚动的主区
+ * @genui.notFor 页面根排版（用 vBody）
+ * @genui.pitfall overflow 默认 auto，内容超高自己滚
+ * @genui.example {"type":"vMain","children":[]}
+ */
 export function vMain(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VMain' },
@@ -726,6 +830,14 @@ export function vMain(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 页脚区（高 60px，可 sticky）
+ * @genui.contract children: 节点数组；sticky / height 命令
+ * @genui.use 应用底栏容器
+ * @genui.notFor 普通横向内容（用 hstack）
+ * @genui.pitfall 与 vHeader 同构，默认高 60px
+ * @genui.example {"type":"vFooter","children":[]}
+ */
 export function vFooter(first = null, second = null, third = null) {
   return createLayoutNode(
     { vn: 'VFooter' },
@@ -740,6 +852,14 @@ export function vFooter(first = null, second = null, third = null) {
   );
 }
 
+/**
+ * @genui 弹性占位（撑开剩余空间）
+ * @genui.contract 无 props；style 控制宽高下限
+ * @genui.use 两端贴边（图标在左、操作在右）
+ * @genui.notFor 固定间距（用 style.gap）
+ * @genui.pitfall aria-hidden，不承载内容
+ * @genui.example {"type":"hstack","children":[{"type":"p","text":"左"},{"type":"spacer"},{"type":"p","text":"右"}]}
+ */
 export function spacer(first = null, second = null, third = null) {
   const node = createLayoutNode(
     { vn: 'VSpacer' },

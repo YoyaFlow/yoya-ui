@@ -28,6 +28,13 @@ import { createClearButton, syncClearButton } from './shared.js';
  * - SSR 回读 `hydrateSnapshot` 挂内层 select（渲染路径按节点调用）；
  * - props 分派与 `VInput` 同口径：本组件命令优先，元素分派（`class` / `attrs` / `style` / `onXxx` / `vn` /
  *   其它节点方法如 `access`）交回引擎，剩下的按属性写内层 select（见 16 号清单第 29 条）。
+ *
+ * @genui.event change dom
+ * @genui.prop name
+ * @genui.prop options
+ * @genui.prop placeholder
+ * @genui.prop value to=command:value read=command:value live=true
+ * @genui.expose value command=value
  */
 export function VSelect() {
   return vNode((api) => {
@@ -330,6 +337,13 @@ export function VSelect() {
   });
 }
 
+/**
+ * @genui 下拉选择（数据渲染选项）
+ * @genui.contract options；value；placeholder；clearable；disabled
+ * @genui.use 表单单选枚举值
+ * @genui.notFor 联想输入（用 vAutocomplete）；多级（用 vCascader）
+ * @genui.example {"type":"vSelect","placeholder":"请选择"}
+ */
 export const vSelect = createComponentShortcut(VSelect);
 
 function createSelectOptionNode(option, selectedValue, index) {

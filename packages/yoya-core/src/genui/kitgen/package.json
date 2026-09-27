@@ -1,0 +1,34 @@
+{
+  "name": "@yoyaflow/yoya-kitgen",
+  "version": "0.1.0",
+  "description": "yoya GenUI 组件库 manifest 生成器——从源码 JSDoc @genui* 标签派生 genui-kit.json",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "yoya-kitgen": "./cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "cli.js",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "yoya",
+    "genui",
+    "manifest",
+    "codegen",
+    "cli"
+  ]
+}

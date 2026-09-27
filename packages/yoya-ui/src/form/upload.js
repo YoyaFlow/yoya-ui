@@ -404,6 +404,13 @@ export function VUpload() {
   });
 }
 
+/**
+ * @genui 上传控件（选择 + 拖拽 + 文件列表）
+ * @genui.contract value（文件列表）；accept；多选配置
+ * @genui.use 表单附件上传
+ * @genui.notFor 头像场景（用 vAvatarUpload 更专）
+ * @genui.example {"type":"vUpload"}
+ */
 export const vUpload = createComponentShortcut(VUpload);
 
 registerChildFactories(HtmlElementNode, { vUpload });

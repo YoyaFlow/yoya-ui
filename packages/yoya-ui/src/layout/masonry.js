@@ -91,4 +91,12 @@ export function VMasonry({
   });
 }
 
+/**
+ * @genui 瀑布流布局（列优先排布）
+ * @genui.contract columns / gap / minColumnWidth；children: 节点数组
+ * @genui.use 图片墙；高度不齐的卡片流
+ * @genui.notFor 等高网格（用 grid / responsiveGrid）
+ * @genui.pitfall 列数固定时窄屏会挤，配 minColumnWidth 自适应
+ * @genui.example {"type":"vMasonry","columns":3,"gap":12,"children":[]}
+ */
 export const vMasonry = createComponentShortcut(VMasonry, { props: true });

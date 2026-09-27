@@ -19,6 +19,12 @@ const AVATAR_SIZES = ['small', 'medium', 'large', 'xlarge'];
  *   要换节点就重建组件 —— 这三个命令收到节点直接报错。
  * - **内容位只有一处**（R11）：位置由组件自己写死，不给部件 API、不留匿名投递通道；
  *   匿名 `child(...)` 是普通元素语义（进组件根），与迁移前一致。
+ *
+ * @genui.content children
+ * @genui.prop alt
+ * @genui.prop shape
+ * @genui.prop size
+ * @genui.prop src
  */
 export function VAvatar({
   alt,

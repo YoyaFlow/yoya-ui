@@ -8,6 +8,13 @@ import { createFocusTrap } from '@yoyaflow/yoya-core/internal/core/a11y.js';
  * 命令式确认弹窗：vConfirm(options) -> Promise<boolean>。
  * SSR 下安全返回 resolved false，不渲染任何 DOM。
  */
+/**
+ * @genui 确认对话框（是/否二选一）
+ * @genui.contract 标题 / 内容 / 确认与取消回调
+ * @genui.use 删除等危险操作前确认
+ * @genui.notFor 普通表单弹窗（用 vDialog）
+ * @genui.example {"type":"vConfirm"}
+ */
 export function vConfirm(options = {}) {
   const {
     title,

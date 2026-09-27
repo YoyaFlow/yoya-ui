@@ -1,0 +1,37 @@
+{
+  "$schema": "genui-kit/1",
+  "namespace": "fixture/kitgen-lib",
+  "version": "1.2.3",
+  "runtime": { "genui": ">=0.1 <0.2" },
+  "generated": {
+    "from": "source-scan + JSDoc @genui tags",
+    "notice": "工厂清单勿手改——重跑 kitgen；文档写在组件源码 JSDoc（@genui* 标签）"
+  },
+  "components": [
+    {
+      "name": "vGreeter",
+      "factory": true,
+      "category": "basic",
+      "scenes": [],
+      "summary": "问候卡片",
+      "dataContract": "greeting: 文本；name: 文本",
+      "whenToUse": ["早间问候", "新人引导"],
+      "notFor": ["深夜模式"],
+      "pitfalls": ["名字为空时只显示问候"],
+      "example": { "type": "vGreeter", "props": { "name": "小明" } },
+      "props": { "change": "", "children": "", "greeting": "", "name": "", "score": "" },
+      "needsDocs": false
+    },
+    {
+      "name": "vPlain",
+      "factory": true,
+      "category": "basic",
+      "scenes": [],
+      "summary": "",
+      "props": { "value": "", "disabled": "" },
+      "needsDocs": true
+    }
+  ],
+  "htmlElements": ["div", "span"],
+  "svgFactories": []
+}

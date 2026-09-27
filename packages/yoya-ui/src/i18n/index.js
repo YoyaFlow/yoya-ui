@@ -201,6 +201,12 @@ export function VLanguageSwitch({
   return node;
 }
 
+/**
+ * @genui 语言切换
+ * @genui.contract locale；languages；onChange；size；variant；ariaLabel
+ * @genui.use 多语言应用顶栏切换
+ * @genui.example {"type":"vLanguageSwitch","locale":"zh-CN"}
+ */
 export const vLanguageSwitch = createComponentShortcut(VLanguageSwitch, { props: true });
 
 /** 旧别名（无 `v` 前缀的写法）：与快捷方法同一个函数。 */

@@ -52,6 +52,10 @@ function stepIndicatorText(status, index) {
 /**
  * 步骤项：结构（指示器 / 内容 / 连线）+ 命令（标题 / 描述 / 图标 / 状态）。
  * 字符串 = 标题；props 见 `StepItemOptions`；容器态由 `track(context)` 进来。
+ *
+ * @genui.prop description
+ * @genui.prop title
+ * @genui.text title
  */
 export function VStep({
   children: descriptionOption,
@@ -248,6 +252,13 @@ export function VStep({
 const stepShortcut = createComponentShortcut(VStep, { props: true });
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+/**
+ * @genui 步骤条项
+ * @genui.contract title；desc / description；icon；status
+ * @genui.use 配 vSteps 逐步声明
+ * @genui.notFor 独立状态标记（用 vBadge）
+ * @genui.example {"type":"vStep","title":"填写","description":"基本信息"}
+ */
 export function vStep(...args) {
   const node = stepShortcut(...args);
   // 标在节点上而不是查组件名：本容器自己认自己的项
@@ -258,6 +269,8 @@ export function vStep(...args) {
 /**
  * 步骤条容器：`ol[VSteps]`；`current / status / direction / size` 是容器态，
  * 每项的状态与连线由项 `track(…)` 后自己算。
+ *
+ * @genui.content bridge=vStep content=description
  */
 export function VSteps({
   children: stepOptions,
@@ -409,6 +422,14 @@ export function VSteps({
   });
 }
 
+/**
+ * @genui 步骤条（流程进度）
+ * @genui.contract current；items / children: vStep；direction；status；size
+ * @genui.use 向导式表单；多阶段流程提示
+ * @genui.notFor 层级路径（用 vBreadcrumb）
+ * @genui.pitfall current 从 0 计
+ * @genui.example {"type":"vSteps","current":1,"children":[]}
+ */
 export const vSteps = createComponentShortcut(VSteps, { props: true });
 
 /** 步骤归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */

@@ -351,6 +351,13 @@ export function VCascader() {
   });
 }
 
+/**
+ * @genui 级联选择（多级路径选取）
+ * @genui.contract options（树形）；value（路径数组）；placeholder；change
+ * @genui.use 省市区选择；多级分类选取
+ * @genui.notFor 单层选项（用 vSelect）
+ * @genui.example {"type":"vCascader"}
+ */
 export const vCascader = createComponentShortcut(VCascader);
 
 registerChildFactories(HtmlElementNode, { vCascader });

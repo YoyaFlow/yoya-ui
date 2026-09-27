@@ -40,6 +40,8 @@ const asList = (value) =>
 /**
  * 面包屑层级（形态 B）：结构 = `li > a[VBreadcrumbLink] + span[VBreadcrumbCurrent] + span[VBreadcrumbSeparator]`。
  * 字符串 = 文案；props 见 `BreadcrumbItemOptions`；容器态（分隔符）由 `track(context)` 进来。
+ *
+ * @genui.text label
  */
 export function VBreadcrumbItem({
   active,
@@ -174,6 +176,14 @@ export function VBreadcrumbItem({
 const breadcrumbItemShortcut = createComponentShortcut(VBreadcrumbItem, { props: true });
 
 /** 快捷方法：建组件 + 按标准分派落调用方参数；同类实例复用由 `createComponentShortcut` 判定。 */
+/**
+ * @genui 面包屑项
+ * @genui.contract href；label / text；active / current
+ * @genui.use 配 vBreadcrumb 逐项声明
+ * @genui.notFor 独立链接（用 vLink）
+ * @genui.pitfall 有 href 才渲染成可点击链接
+ * @genui.example {"type":"vBreadcrumbItem","label":"首页"}
+ */
 export function vBreadcrumbItem(...args) {
   const node = breadcrumbItemShortcut(...args);
   // 标在节点上而不是查组件名：本容器自己认自己的层级
@@ -184,6 +194,8 @@ export function vBreadcrumbItem(...args) {
 /**
  * 面包屑容器：`nav > ol[VBreadcrumbList]`；层级只从 `items` / `vBreadcrumbItem` 来——
  * 匿名 `child()` 的内容照旧渲染（落进那张 `<ol>`），但不计入层级数（见 16 号清单第 7 / 84 条）。
+ *
+ * @genui.content bridge=vBreadcrumbItem
  */
 export function VBreadcrumb({
   ariaLabel,
@@ -287,6 +299,14 @@ export function VBreadcrumb({
   });
 }
 
+/**
+ * @genui 面包屑导航（层级路径）
+ * @genui.contract items: 项数组；separator；ariaLabel
+ * @genui.use 详情页返回路径；层级位置提示
+ * @genui.notFor 步骤流（用 vSteps）
+ * @genui.pitfall 最后一项自动标记 current
+ * @genui.example {"type":"vBreadcrumb","items":[{"label":"首页"},{"label":"详情"}]}
+ */
 export const vBreadcrumb = createComponentShortcut(VBreadcrumb, { props: true });
 
 /** 层级归一：已经是本模块造的项就原样用，其余按项的标准分派建一份。 */

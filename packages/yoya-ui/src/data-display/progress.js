@@ -26,6 +26,11 @@ const progressStatusColors = {
  *   （`yoya-progress-indeterminate`，JS 与 CSS 同刀）；
  * - props 分派：本组件的键走命令，其余按元素 options 写；数字 / 数字字符串 = value，
  *   其它字符串 = label（与旧 `_setupProgress` 同口径）。
+ *
+ * @genui.prop label
+ * @genui.prop max
+ * @genui.prop value to=command:value live=false
+ * @genui.expose value command=value
  */
 export function VProgress() {
   return vNode((api) => {
@@ -358,4 +363,12 @@ export function VProgress() {
   });
 }
 
+/**
+ * @genui 进度条（确定 / 不确定两种）
+ * @genui.contract value / percent；max；label；showText；indeterminate
+ * @genui.use 任务进度反馈；容量占比
+ * @genui.notFor 环形占比（用 vRingStat）
+ * @genui.pitfall indeterminate 模式不显示数值
+ * @genui.example {"type":"vProgress"}
+ */
 export const vProgress = createComponentShortcut(VProgress);

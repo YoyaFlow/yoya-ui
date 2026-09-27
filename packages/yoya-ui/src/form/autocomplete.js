@@ -443,6 +443,13 @@ export function VAutocomplete() {
   });
 }
 
+/**
+ * @genui 自动完成输入（输入过滤建议列表）
+ * @genui.contract options；value；placeholder；limit；change
+ * @genui.use 搜索框带建议；表单内联想输入
+ * @genui.notFor 固定选项（用 vSelect）
+ * @genui.example {"type":"vAutocomplete","placeholder":"输入以搜索"}
+ */
 export const vAutocomplete = createComponentShortcut(VAutocomplete);
 
 registerChildFactories(HtmlElementNode, { vAutocomplete });

@@ -250,6 +250,14 @@ export function VButtons({
   });
 }
 
+/**
+ * @genui 按钮组（成组展示，可切换选中）
+ * @genui.contract options；value；selectable；joined；size；variant；change
+ * @genui.use 成组操作按钮；分段选择器
+ * @genui.notFor 单个按钮（用 vButton）
+ * @genui.pitfall selectable 关闭时只是排版分组
+ * @genui.example {"type":"vButtons","options":["列表","卡片"],"value":"列表"}
+ */
 export const vButtons = createComponentShortcut(VButtons, { props: true });
 
 /** 按钮判定走身份事实（多值身份也算：`VGlowButton VButton`）。 */

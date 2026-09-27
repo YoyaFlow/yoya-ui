@@ -16,6 +16,8 @@ const DEFAULT_COPY_LABEL = '复制';
  * - **数据驱动**（R6 / R9）：`content` / `text` / `language` / `copyable` / `copyLabel` 给句柄就是活值；
  *   命令只写状态，视图走读值绑定。
  * - **节点内容只在构建期落位**：`content()` / `text()` 只收文本，节点内容走 props。
+ *
+ * @genui.content children
  */
 export function VCode({
   children,
@@ -160,4 +162,11 @@ export function VCode({
   });
 }
 
+/**
+ * @genui 代码块（语法角色 + 可复制）
+ * @genui.contract language；copyable / copyLabel；text / children
+ * @genui.use 文档内嵌代码示例
+ * @genui.notFor 普通段落文本（用 p）
+ * @genui.example {"type":"vCode","language":"js","text":"const a = 1"}
+ */
 export const vCode = createComponentShortcut(VCode, { props: true });

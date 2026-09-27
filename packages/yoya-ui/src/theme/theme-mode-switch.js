@@ -130,6 +130,12 @@ export function VThemeModeSwitch({ modes = DEFAULT_MODES, persist = true, ...res
   });
 }
 
+/**
+ * @genui 主题模式切换（亮 / 暗等）
+ * @genui.contract modes；persist
+ * @genui.use 应用顶栏的主题切换
+ * @genui.example {"type":"vThemeModeSwitch"}
+ */
 export const vThemeModeSwitch = createComponentShortcut(VThemeModeSwitch, { props: true });
 
 registerChildFactories(ElementNode, { vThemeModeSwitch });

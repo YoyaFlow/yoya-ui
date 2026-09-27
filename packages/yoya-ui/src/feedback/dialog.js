@@ -18,6 +18,11 @@ import { createComponentShortcut, setupContentSlot } from '../components/shared.
  *   见 16 号第 103 条）——与 `VAnchorItem` 的子列表同口径：要装多个子节点时才留取用器；
  * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 内容位
  *   （迁移前 `_setupDialog` 的兜底分支同口径）。
+ *
+ * @genui.content children
+ * @genui.event close callback=onClose
+ * @genui.prop closable
+ * @genui.prop open to=command:open read=command:isOpen live=false
  */
 export function VDialog({ children, closable, content, onClose, open, ...rest } = {}) {
   // 状态是句柄原样 / 普通值包 ref，归一放在读时的派生上（R9）
@@ -224,4 +229,11 @@ export function VDialog({ children, closable, content, onClose, open, ...rest } 
   });
 }
 
+/**
+ * @genui 对话框（模态浮层）
+ * @genui.contract open；closable；onClose；children
+ * @genui.use 表单弹窗；确认操作
+ * @genui.notFor 轻提示（用 vMessage）
+ * @genui.example {"type":"vDialog","open":true,"children":[]}
+ */
 export const vDialog = createComponentShortcut(VDialog, { props: true });

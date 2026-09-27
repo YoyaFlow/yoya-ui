@@ -169,6 +169,14 @@ export function VChart({ adapter = null, data, height, options = {}, width, ...r
   });
 }
 
+/**
+ * @genui 图表宿主（与图表库无关，适配器负责实现）
+ * @genui.contract adapter；options；data；height
+ * @genui.use 接自研/第三方图表适配器
+ * @genui.notFor ECharts 直连（用 vEchart）
+ * @genui.pitfall 不传 adapter 只当容器，不出图
+ * @genui.example {"type":"vChart","options":{}}
+ */
 export const vChart = createComponentShortcut(VChart, { props: true });
 
 function toCssSize(value) {

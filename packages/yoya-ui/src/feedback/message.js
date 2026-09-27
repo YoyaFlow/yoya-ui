@@ -30,6 +30,8 @@ const countdownTickMs = 100;
  * - **内容位保留一个取用器**（`content(setup)` 是运行期可替换的口径，见 16 号第 103 条）；
  * - props 进参数表、`...rest` 摊进根元素工厂；位置参数的字符串 / 数字 = 内容位
  *   （迁移前 `_setupMessage` 的兜底分支同口径）。
+ *
+ * @genui.content children
  */
 export function VMessage({
   children,
@@ -225,6 +227,13 @@ export function VMessage({
   });
 }
 
+/**
+ * @genui 消息条（全局反馈）
+ * @genui.contract type；text / content；duration；closable；countdown
+ * @genui.use 操作成功/失败反馈
+ * @genui.notFor 需要用户确认（用 vConfirm / vDialog）
+ * @genui.example {"type":"vMessage","type":"success","text":"已保存"}
+ */
 export const vMessage = createComponentShortcut(VMessage, { props: true });
 
 /**
@@ -364,6 +373,12 @@ export function VMessageContainer({ inline, placement, ...rest } = {}) {
   });
 }
 
+/**
+ * @genui 消息容器（多条消息排布）
+ * @genui.contract placement；inline
+ * @genui.use 页面级消息堆叠区
+ * @genui.example {"type":"vMessageContainer","placement":"top"}
+ */
 export const vMessageContainer = createComponentShortcut(VMessageContainer, { props: true });
 
 export const toast = {

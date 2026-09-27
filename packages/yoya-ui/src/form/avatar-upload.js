@@ -343,6 +343,13 @@ export function VAvatarUpload() {
   });
 }
 
+/**
+ * @genui 头像上传（预览 + 移除）
+ * @genui.contract value（图片地址）；change
+ * @genui.use 个人资料头像编辑
+ * @genui.notFor 通用文件上传（用 vUpload）
+ * @genui.example {"type":"vAvatarUpload"}
+ */
 export const vAvatarUpload = createComponentShortcut(VAvatarUpload);
 
 registerChildFactories(HtmlElementNode, { vAvatarUpload });

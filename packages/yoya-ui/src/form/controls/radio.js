@@ -14,6 +14,14 @@ import { applyBooleanControlProps, createBooleanControl } from './shared.js';
  * 结构与命令收在同族的 `createBooleanControl`（见 `./shared.js`）；这里写自己的三件事 + **同名互斥**：
  * 同名（`name()`）的独立单选框分在一组，勾选其中一个时把同组其余的清掉——原来靠"包一层 `this.checked`"
  * 实现，闭包化后包的是 `api.checked`（`hydrateSnapshot` 走同一个 `api.checked`，所以 SSR 回读也走互斥）。
+ *
+ * @genui.event change dom
+ * @genui.prop checked to=command:checked read=command:checked live=false
+ * @genui.prop disabled
+ * @genui.prop label
+ * @genui.prop name
+ * @genui.prop optionValue
+ * @genui.text label
  */
 export function VRadio({
   checked,
@@ -168,6 +176,14 @@ function createRadioDot() {
   });
 }
 
+/**
+ * @genui 单选框
+ * @genui.contract label；name；value / optionValue；checked；disabled；description
+ * @genui.use 表单中二选一/多选一选项
+ * @genui.notFor 开关语义（用 vSwitch）
+ * @genui.pitfall 同组选项写同一个 name
+ * @genui.example {"type":"vRadio","name":"mode","label":"启用"}
+ */
 export const vRadio = createComponentShortcut(VRadio, { props: true });
 
 export { registerRadio, unregisterRadio, createRadioDot };

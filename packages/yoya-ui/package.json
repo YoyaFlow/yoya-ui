@@ -95,7 +95,8 @@
     "./ui.css": "./dist/yoya.ui.css",
     "./internal/*": "./dist/*",
     "./package.json": "./package.json",
-    "./genui-kit.json": "./genui-kit.json"
+    "./genui-kit.json": "./genui-kit.json",
+    "./genui-plugin": "./genui-plugin.js"
   },
   "bin": {
     "yoya-compiler": "./dist/yoya.compiler.js"

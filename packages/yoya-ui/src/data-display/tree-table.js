@@ -434,4 +434,11 @@ export function VTreeTable({
   });
 }
 
+/**
+ * @genui 树形数据表格（行缩进 / 展开 / 父子选择联动）
+ * @genui.contract nodes；columns；rowKey；expandedKeys；rowSelection；lazyLoad
+ * @genui.use 带层级的表格数据；懒加载子树
+ * @genui.notFor 平铺表格（用 vTable）
+ * @genui.example {"type":"vTreeTable"}
+ */
 export const vTreeTable = createComponentShortcut(VTreeTable, { props: true });

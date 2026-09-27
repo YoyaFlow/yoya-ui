@@ -14,6 +14,10 @@ import { createComponentShortcut } from '../components/shared.js';
  * - **`defer`**：`src` 先不落 `<img>`，落地后由 `IntersectionObserver` 在进场时把 `revealed` 翻真
  *   （绑定随即把 `src` 写进 DOM）；没有观察器的环境直接加载；`whenDestroy` 断开（幂等）；
  * - props 进参数表（`src` / `alt` / `defer`），位置参数只认对象（与迁移前 `_setupLazyImage` 同口径）。
+ *
+ * @genui.prop alt
+ * @genui.prop defer
+ * @genui.prop src
  */
 
 export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}) {
@@ -190,4 +194,11 @@ export function VLazyImage({ alt = '', defer = false, src = null, ...rest } = {}
   });
 }
 
+/**
+ * @genui 懒加载图片（进入视口才加载）
+ * @genui.contract src；alt；defer
+ * @genui.use 长页图片；图库缩略图
+ * @genui.notFor 首屏关键图（直接用 img）
+ * @genui.example {"type":"vLazyImage","src":"a.png","alt":"示例图"}
+ */
 export const vLazyImage = createComponentShortcut(VLazyImage, { props: true });

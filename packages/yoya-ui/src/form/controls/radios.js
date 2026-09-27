@@ -24,6 +24,13 @@ import { VRadio, vRadio } from './radio.js';
  * - **禁用组的观感归 CSS**（`[vn~='VRadios'][aria-disabled='true']`），JS 不写行内 `opacity`；
  * - 元素配置键（`attrs` / `style` / `on…`）走 `...rest` 摊进根元素工厂，"建好再 setup" 落视图根
  *   （组件节点 `setupObject` 的默认回落就是视图根，不另写一层）。
+ *
+ * @genui.event change callback payload=0
+ * @genui.prop disabled
+ * @genui.prop name
+ * @genui.prop options
+ * @genui.prop value to=command:value read=command:value live=false
+ * @genui.expose value command=value
  */
 export function VRadios({
   change,

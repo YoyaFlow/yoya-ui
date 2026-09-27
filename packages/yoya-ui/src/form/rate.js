@@ -23,6 +23,11 @@ import { createComponentShortcut, resolveTextValue } from '../components/shared.
 /** 文本归一（读时归一：`null` / 数字 / 节点都成一段文本）。 */
 const textOf = (value) => resolveTextValue(value);
 
+/**
+ * @genui.prop max
+ * @genui.prop value to=command:value read=command:value live=true
+ * @genui.expose value command=value
+ */
 export function VRate({
   allowClear = true,
   allowHalf = false,
@@ -435,6 +440,13 @@ export function VRate({
   });
 }
 
+/**
+ * @genui 评分
+ * @genui.contract value；count；allowHalf；allowClear / clearable；character；readonly
+ * @genui.use 满意度打分；内容评价
+ * @genui.notFor 进度展示（用 vProgress）
+ * @genui.example {"type":"vRate","value":3}
+ */
 export const vRate = createComponentShortcut(VRate, { props: true });
 
 registerChildFactories(HtmlElementNode, { vRate });

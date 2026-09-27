@@ -83,4 +83,11 @@ export function VForm() {
   });
 }
 
+/**
+ * @genui 表单容器（值收集 / 回填 / 校验）
+ * @genui.contract children: vFormItem；提交与校验由容器统一收口
+ * @genui.use 数据录入表单
+ * @genui.notFor 零散输入控件排列（用 vstack）
+ * @genui.example {"type":"vForm","children":[]}
+ */
 export const vForm = createComponentShortcut(VForm);

@@ -126,4 +126,11 @@ export function VTrendCard({ data, delta, title, tone, unit, up = true, value, .
   });
 }
 
+/**
+ * @genui 趋势卡片（数值 + 变化 + 走势）
+ * @genui.contract title；value；delta；unit；tone；up；data
+ * @genui.use 指标卡带同比/环比
+ * @genui.notFor 纯指标（用 vDigitalBoardItem）
+ * @genui.example {"type":"vTrendCard","title":"日活","value":"1204"}
+ */
 export const vTrendCard = createComponentShortcut(VTrendCard, { props: true });

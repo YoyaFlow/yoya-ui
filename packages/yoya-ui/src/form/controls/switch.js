@@ -9,6 +9,10 @@ import { applyBooleanControlProps, createBooleanControl } from './shared.js';
  * 结构与命令收在同族的 `createBooleanControl`（见 `./shared.js`）；这里写自己的三件事：
  * 身份（根 + 六块部件的 `vn` 字面量）、内层 `<input type="checkbox">`（开关在语义上就是一个复选框）、
  * 勾选态视觉（轨道配色 + 滑块位移）。滑块是**视觉盒里的常驻件**（`decorateVisual` 建一次、`syncVisual` 只改它的 `transform`）。
+ *
+ * @genui.event change dom
+ * @genui.prop checked to=command:checked read=command:checked live=false
+ * @genui.prop name
  */
 export function VSwitch({
   checked,
@@ -105,4 +109,11 @@ export function VSwitch({
   });
 }
 
+/**
+ * @genui 开关
+ * @genui.contract label；name；checked / value；disabled；description
+ * @genui.use 启用/禁用类即时切换
+ * @genui.notFor 表单里多选一（用 vRadio）
+ * @genui.example {"type":"vSwitch","label":"启用"}
+ */
 export const vSwitch = createComponentShortcut(VSwitch, { props: true });

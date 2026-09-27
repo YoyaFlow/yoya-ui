@@ -24,6 +24,11 @@ const GAUGE_NEEDLE = '96,108 104,108 100,42';
  * - 静态几何（尺寸 / 描边 / 字号 / 文本锚点 / 颜色）在 `yoya.ui.css`（R5）；
  *   随状态变的只有三样：弧线路径、指针角度、数值文本（R6：读句柄 → `computed` → 属性绑定）。
  * - 命令只写状态（R9），归一化（`Number(…) || 默认值`）放在读时；给句柄就是活值。
+ *
+ * @genui.prop max
+ * @genui.prop unit
+ * @genui.prop value to=command:value read=command:value live=true
+ * @genui.expose value command=value
  */
 export function VGauge({ max = 100, tone = 'primary', unit = '', value = 0, ...rest } = {}) {
   const { attrs: restAttrs, style: restStyle, ...elementConfig } = rest;
@@ -124,4 +129,11 @@ export function VGauge({ max = 100, tone = 'primary', unit = '', value = 0, ...r
   });
 }
 
+/**
+ * @genui 仪表盘（半圆刻度 + 指针）
+ * @genui.contract value；max；unit；tone
+ * @genui.use 负载、使用率等区间指标
+ * @genui.notFor 占比环（用 vRingStat）
+ * @genui.example {"type":"vGauge","value":72,"unit":"%"}
+ */
 export const vGauge = createComponentShortcut(VGauge, { props: true });

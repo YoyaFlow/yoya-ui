@@ -27,6 +27,13 @@ const asText = (value) => computed(() => value.value ?? '');
  * - **节点内容只在构建期落位**：运行期换节点请重建组件（要换的是文本就传句柄或走 `text()`）。
  * - **非必要不用 `rebuild`**（R7）：点模式"没有文本"用 `mountable()`。
  * - **构建之后落位的写入要收口**（R8）：由命令那一层统一 `flush()` 一次（幂等）。
+ *
+ * @genui.content children
+ * @genui.prop count
+ * @genui.prop dot
+ * @genui.prop label
+ * @genui.prop status
+ * @genui.prop text
  */
 export function VBadge({
   children,
@@ -305,4 +312,12 @@ export function VBadge({
   });
 }
 
+/**
+ * @genui 徽标（计数 / 状态点 / 文本）
+ * @genui.contract count；status；dot；text；overflowCount；showZero；color；offset；children
+ * @genui.use 消息数角标；状态标记
+ * @genui.notFor 标签分类（用 vTag 类组件）
+ * @genui.pitfall count 为 0 默认隐藏，要显示配 showZero
+ * @genui.example {"type":"vBadge","count":5,"children":[{"type":"p","text":"消息"}]}
+ */
 export const vBadge = createComponentShortcut(VBadge, { props: true });

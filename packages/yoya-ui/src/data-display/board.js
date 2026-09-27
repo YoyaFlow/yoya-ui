@@ -82,6 +82,13 @@ export function VDigitalBoard() {
   });
 }
 
+/**
+ * @genui 数字看板（响应式指标卡片网格）
+ * @genui.contract children: vDigitalBoardItem
+ * @genui.use 仪表盘首页指标组
+ * @genui.notFor 普通卡片墙（用 vCard + grid）
+ * @genui.example {"type":"vDigitalBoard","children":[]}
+ */
 export const vDigitalBoard = createComponentShortcut(VDigitalBoard);
 
 /**
@@ -306,4 +313,11 @@ export function VDigitalBoardItem() {
   });
 }
 
+/**
+ * @genui 数字看板项（指标卡）
+ * @genui.contract label；value；趋势 / 单位等配置
+ * @genui.use 配 vDigitalBoard 的单项指标
+ * @genui.notFor 独立统计卡（用 vTrendCard）
+ * @genui.example {"type":"vDigitalBoardItem","label":"日活","value":"1204"}
+ */
 export const vDigitalBoardItem = createComponentShortcut(VDigitalBoardItem);

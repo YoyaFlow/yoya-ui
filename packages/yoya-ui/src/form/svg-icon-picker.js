@@ -447,6 +447,13 @@ export function VSvgIconPicker() {
   });
 }
 
+/**
+ * @genui SVG 图标选择器（弹窗挑选）
+ * @genui.contract value（图标名）；change
+ * @genui.use 菜单/入口图标配置
+ * @genui.notFor 普通枚举选择（用 vSelect）
+ * @genui.example {"type":"vSvgIconPicker"}
+ */
 export const vSvgIconPicker = createComponentShortcut(VSvgIconPicker);
 
 registerChildFactories(HtmlElementNode, { vSvgIconPicker });

@@ -289,4 +289,11 @@ export function VFormItem() {
   });
 }
 
+/**
+ * @genui 表单项（标签 + 编辑面 + 提示）
+ * @genui.contract label；required；错误 / 提示文本
+ * @genui.use 配 vForm 的字段行
+ * @genui.notFor 独立控件（直接用输入组件）
+ * @genui.example {"type":"vFormItem","label":"名称","children":[]}
+ */
 export const vFormItem = createComponentShortcut(VFormItem);

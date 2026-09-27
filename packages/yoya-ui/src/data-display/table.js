@@ -252,8 +252,26 @@ export function VTfoot() {
   });
 }
 
+/**
+ * @genui 表头段
+ * @genui.contract children: vTr（内放 vTh）
+ * @genui.use 配表格族的表头行
+ * @genui.example {"type":"vThead","children":[]}
+ */
 export const vThead = createComponentShortcut(VThead);
+/**
+ * @genui 表体段
+ * @genui.contract children: vTr（内放 vTd）
+ * @genui.use 配表格族的数据行
+ * @genui.example {"type":"vTbody","children":[]}
+ */
 export const vTbody = createComponentShortcut(VTbody);
+/**
+ * @genui 表尾段
+ * @genui.contract children: vTr
+ * @genui.use 合计行 / 汇总行
+ * @genui.example {"type":"vTfoot","children":[]}
+ */
 export const vTfoot = createComponentShortcut(VTfoot);
 
 /** 行：结构 + 身份，单元格由 `vTh` / `vTd` 投递。 */
@@ -271,6 +289,12 @@ export function VTr() {
   });
 }
 
+/**
+ * @genui 表格行
+ * @genui.contract children: vTh / vTd
+ * @genui.use 表头/表体/表尾的行容器
+ * @genui.example {"type":"vTr","children":[]}
+ */
 export const vTr = createComponentShortcut(VTr);
 
 /** 列头单元格（形态 A 薄工厂）。 */
@@ -280,6 +304,12 @@ export function VTh() {
   return element;
 }
 
+/**
+ * @genui 列头单元格
+ * @genui.contract text / children；列配置属性
+ * @genui.use 配 vThead 的列头
+ * @genui.example {"type":"vTh","text":"名称"}
+ */
 export const vTh = createComponentShortcut(VTh);
 
 /** 正文单元格（形态 A 薄工厂）。 */
@@ -287,6 +317,12 @@ export function VTd() {
   return td({ vn: 'VTd' });
 }
 
+/**
+ * @genui 正文单元格
+ * @genui.contract text / children
+ * @genui.use 配 vTbody 的数据格
+ * @genui.example {"type":"vTd","text":"api-gateway"}
+ */
 export const vTd = createComponentShortcut(VTd);
 
 /**
@@ -297,6 +333,12 @@ export function VTableScroll() {
   return div({ vn: 'VTableScroll' });
 }
 
+/**
+ * @genui 表格滚动外壳
+ * @genui.contract children: 表格主体
+ * @genui.use 宽表横向滚动
+ * @genui.example {"type":"vTableScroll","children":[]}
+ */
 export const vTableScroll = createComponentShortcut(VTableScroll);
 
 /**
@@ -307,6 +349,12 @@ export function VTableGrid() {
   return table({ vn: 'VTableGrid' });
 }
 
+/**
+ * @genui 表格本体（thead / tbody / tfoot 组合）
+ * @genui.contract children: 表格段部件
+ * @genui.use 配 vTableWrapper 组完整表格
+ * @genui.example {"type":"vTableGrid","children":[]}
+ */
 export const vTableGrid = createComponentShortcut(VTableGrid);
 
 /** 标题内容是否算「有」（空字符串 / null 都算没有 → 整条标题隐藏）。 */
@@ -343,6 +391,12 @@ export function VTableCaption() {
   });
 }
 
+/**
+ * @genui 表格标题部件
+ * @genui.contract text / children
+ * @genui.use 配 vTableWrapper 的标题位
+ * @genui.example {"type":"vTableCaption","text":"用户"}
+ */
 export const vTableCaption = createComponentShortcut(VTableCaption);
 
 /**
@@ -432,6 +486,14 @@ export function VTable({ caption, ...rest } = {}) {
   });
 }
 
+/**
+ * @genui 表格（壳 + 用户侧受控 API）
+ * @genui.contract caption；children: 表格族部件；数据由调用侧组织
+ * @genui.use 数据列表展示
+ * @genui.notFor 树形数据（用 vTreeTable）
+ * @genui.pitfall 结构由 vTableGrid / vThead 等部件组合
+ * @genui.example {"type":"vTable","caption":"用户","children":[]}
+ */
 export const vTable = createComponentShortcut(VTable, { props: true });
 
 /**
@@ -669,4 +731,10 @@ export function VTableWrapper() {
   });
 }
 
+/**
+ * @genui 表格包装（caption + 滚动 + 本体）
+ * @genui.contract children: 表格部件；caption 命令
+ * @genui.use 组合完整表格结构
+ * @genui.example {"type":"vTableWrapper","children":[]}
+ */
 export const vTableWrapper = createComponentShortcut(VTableWrapper);

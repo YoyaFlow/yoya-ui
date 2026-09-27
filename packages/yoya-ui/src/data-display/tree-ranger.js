@@ -19,6 +19,14 @@ const LOAD_MORE_THRESHOLD = 200;
  * 三个窗口与分隔面板只创建一次，导航（点击父级 / 前进后退）只移动各窗口
  * 绑定的层级数据，宽度不会随切换变化；每列独立虚拟滚动。
  */
+/**
+ * @genui ranger 式多列浏览器（固定三窗口）
+ * @genui.contract columns（列定义）；visibleColumns；itemHeight；导航只换绑定的层级数据
+ * @genui.use 文件浏览器式多级浏览
+ * @genui.notFor 单列树（用 vTree）
+ * @genui.pitfall 窗口与分隔面板只建一次，切换不重建
+ * @genui.example {"type":"vTreeRanger"}
+ */
 export function vTreeRanger(first = null, second = null, third = null) {
   const args = normalizeComponentArguments(first, second, third);
 
@@ -628,6 +636,12 @@ export function vTreeRanger(first = null, second = null, third = null) {
 
 export const treeRanger = vTreeRanger;
 
+/**
+ * @genui 多列浏览器的单列
+ * @genui.contract 层级数据；itemHeight / overscan 虚拟滚动
+ * @genui.use 配 vTreeRanger 的列
+ * @genui.example {"type":"vTreeRangerColumn"}
+ */
 export function vTreeRangerColumn(setup = null) {
   return setup;
 }

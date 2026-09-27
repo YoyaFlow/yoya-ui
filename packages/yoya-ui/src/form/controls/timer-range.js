@@ -203,4 +203,11 @@ export function VTimerRange() {
   });
 }
 
+/**
+ * @genui 时间范围输入（起止两个时间）
+ * @genui.contract value（起止对）；错误提示内置
+ * @genui.use 时间段筛选；预约区间
+ * @genui.notFor 单个时刻（用 vTimer）
+ * @genui.example {"type":"vTimerRange"}
+ */
 export const vTimerRange = createComponentShortcut(VTimerRange);

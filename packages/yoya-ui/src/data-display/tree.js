@@ -1346,6 +1346,13 @@ export function VTree() {
   });
 }
 
+/**
+ * @genui 树（勾选 / 展开层级数据）
+ * @genui.contract nodes；勾选与展开命令
+ * @genui.use 目录树；权限树
+ * @genui.notFor 树形表格（用 vTreeTable）
+ * @genui.example {"type":"vTree"}
+ */
 export const vTree = createComponentShortcut(VTree);
 
 /** 树的对外命令面：内部 `render` / `destroy` 不对外——视图就是根节点，销毁交给框架。 */
@@ -1382,6 +1389,12 @@ const TREE_COMMANDS = [
   'update'
 ];
 
+/**
+ * @genui 树节点（可嵌套）
+ * @genui.contract label / title；children / items
+ * @genui.use 配 vTree 逐节点声明
+ * @genui.example {"type":"vTreeNode","label":"分组"}
+ */
 export function vTreeNode(setup = null) {
   return setup instanceof VTreeNode ? setup : new VTreeNode(setup);
 }

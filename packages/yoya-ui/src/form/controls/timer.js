@@ -84,4 +84,11 @@ export function VTimer() {
   });
 }
 
+/**
+ * @genui 时间输入
+ * @genui.contract value（时间文本）；模式相关命令
+ * @genui.use 日程起止时刻；时间筛选
+ * @genui.notFor 日期范围（用 vTimerRange）
+ * @genui.example {"type":"vTimer"}
+ */
 export const vTimer = createComponentShortcut(VTimer);
