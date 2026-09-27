@@ -104,7 +104,7 @@ export class ActionBus {
  * | `remove`        | `{ path, key }`         | 删除数组项 / 对象键      |
  * | `noop`          | —                       | 只发事件（监听者处理）   |
  */
-export function installProtocolActions(bus, data) {
+export function installProtocolActions(bus, data, channels = null) {
   return bus.handleAll({
     assign: ({ params }) => {
       const assignments = params?.assignments;
@@ -125,6 +125,7 @@ export function installProtocolActions(bus, data) {
     remove: ({ params }) => data.remove(requirePath(params, 'remove'), params?.key),
     set: ({ params }) => data.write(requirePath(params, 'set'), params?.value),
     setData: ({ params }) => data.write(requirePath(params, 'setData'), params?.value),
+    send: (event) => channels?.send(event),
     toggle: ({ params }) => data.toggle(requirePath(params, 'toggle'))
   });
 }

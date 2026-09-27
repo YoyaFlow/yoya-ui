@@ -24,6 +24,7 @@ export function createGenUI(options = {}) {
   const defaultActions = { ...(options.actions ?? {}) };
   const functions = createFunctionTable(options.functions ?? null);
   const custodians = createCustodianRegistry(options.custodians);
+  const defaultFetch = options.fetch;
   const installedPlugins = new Map();
 
   const resolveDialect = (name) => {
@@ -42,6 +43,7 @@ export function createGenUI(options = {}) {
   const surfaceOptions = (given = {}) => ({
     ...given,
     custodians: given.custodians ?? custodians,
+    fetch: given.fetch ?? defaultFetch,
     actions: { ...defaultActions, ...(given.actions ?? {}) },
     // 库带来的函数（全名 + 唯一短名）+ 宿主当场给的（当场给的优先，可覆盖）
     functions: {

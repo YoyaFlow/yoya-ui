@@ -44,6 +44,7 @@ export const SCHEMA_KEYS = Object.freeze([
   'data',
   'computed',
   'validate',
+  'sources',
   'theme',
   'root',
   COMPONENTS_KEY,

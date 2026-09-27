@@ -32,6 +32,7 @@ export {
   writePath
 } from './values.js';
 export { assertSchema, isYoyaGenUISchema, validateSchema } from './validate.js';
+export { validateChannels } from './channels.js';
 
 export {
   isReferenceString,

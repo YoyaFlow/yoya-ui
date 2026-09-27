@@ -7,6 +7,7 @@ import { ActionBus, installProtocolActions } from './actions.js';
 import { DataModel } from './data-model.js';
 import { createCustodianRegistry } from './custodians.js';
 import { installComputed } from './computed.js';
+import { createChannelRuntime } from './channels.js';
 import { installValidation } from './validation.js';
 import { normalizeSugarDeep } from '../protocol/references.js';
 import { createRenderContext, renderNode, resolveForDelivery } from './render.js';
@@ -29,7 +30,10 @@ export class GenUISurface {
       typeof options.custodians?.read === 'function'
         ? options.custodians
         : createCustodianRegistry(options.custodians);
-    this._schema = normalizeSchema(normalizeSugarDeep(schema), { onUnknown: options.onUnknown });
+    this._schema = normalizeSchema(normalizeSugarDeep(schema), {
+      custodians: this._custodians,
+      onUnknown: options.onUnknown
+    });
     this._data =
       options.data instanceof DataModel ? options.data : new DataModel(this._schema.data ?? {});
     this._disposeComputed = installComputed(
@@ -43,6 +47,14 @@ export class GenUISurface {
       options.functions ?? {},
       this._custodians
     );
+    this._channels = createChannelRuntime({
+      data: this._data,
+      custodians: this._custodians,
+      functions: options.functions ?? {},
+      fetchImpl: options.fetch,
+      applyOps: (op) => this._applyOp(op)
+    });
+    this._disposeSources = this._channels.installSources(this._schema.sources);
     this._actions = new ActionBus();
     this._listeners = new Map();
     this._warnings = Array.isArray(this._schema.meta?.warnings)
@@ -61,7 +73,7 @@ export class GenUISurface {
     this._target = null;
     this._destroyed = false;
 
-    this._disposeActions = installProtocolActions(this._actions, this._data);
+    this._disposeActions = installProtocolActions(this._actions, this._data, this._channels);
     this._disposeHandlers = this._actions.handleAll(options.actions);
     this._unsubscribeAction = this._actions.subscribe((event) => this._emit('action', event));
     this._unsubscribeData = this._data.subscribe((change) => this._emit('change', change));
@@ -153,7 +165,10 @@ export class GenUISurface {
   /** 换一棵树：数据模型保留（schema 明确给了 data 才整体替换）。 */
   update(nextSchema) {
     this._assertLive();
-    const schema = normalizeSchema(normalizeSugarDeep(nextSchema), this.options);
+    const schema = normalizeSchema(normalizeSugarDeep(nextSchema), {
+      ...this.options,
+      custodians: this._custodians
+    });
     const previous = this._host;
 
     this._schema = schema;
@@ -172,6 +187,8 @@ export class GenUISurface {
       this.options.functions ?? {},
       this._custodians
     );
+    this._disposeSources();
+    this._disposeSources = this._channels.installSources(schema.sources);
 
     if (schema.data !== undefined) {
       this._data.replace(schema.data);
@@ -297,6 +314,8 @@ export class GenUISurface {
     this._disposeActions();
     this._disposeComputed();
     this._disposeValidation();
+    this._disposeSources();
+    this._channels.dispose();
     this._actions.destroy();
     this._data.destroy();
     this._listeners.clear();
@@ -808,7 +827,10 @@ export function normalizeSchema(schema, options = {}) {
   normalized.protocol = normalized.protocol ?? PROTOCOL_ID;
   normalized.version = normalized.version ?? PROTOCOL_VERSION;
 
-  assertSchema(normalized, { strict: options.strict === true });
+  assertSchema(normalized, {
+    custodians: options.custodians,
+    strict: options.strict === true
+  });
   return normalized;
 }
 

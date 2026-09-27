@@ -8,6 +8,7 @@ import {
   TEXT_NODE_TYPE
 } from './constants.js';
 import { ERROR_CODES, GenUIError } from './errors.js';
+import { validateChannels } from './channels.js';
 import { validateComputed } from './computed.js';
 import { validateDeclarations } from './validation.js';
 import { isActionExpr, isBindExpr, isPlainObject, isValueExpr, normalizeRepeat } from './values.js';
@@ -109,6 +110,12 @@ export function validateSchema(schema, options = {}) {
   }
 
   collectSchemaErrors(schema).forEach((error) => report(errors, error.path, error.message));
+
+  try {
+    validateChannels(schema, options.custodians);
+  } catch (error) {
+    report(errors, 'channels', error instanceof Error ? error.message : String(error));
+  }
 
   const unknownSchemaKeys = Object.keys(schema).filter((key) => !SCHEMA_KEYS.includes(key));
   unknownSchemaKeys.forEach((key) =>

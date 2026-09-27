@@ -1204,7 +1204,10 @@ function walkParams(raw, ctx, wiring, key = '') {
     }
 
     if (from !== undefined && !isScopeFrom(from, ctx) && from !== '#nearest') {
-      return ctx.custodians?.read(from, raw[BIND_KEY]);
+      const descriptor = ctx.custodians?.read(from, raw[BIND_KEY]);
+      return from === 'actions' && isPlainObject(descriptor)
+        ? { ...descriptor, path: raw[BIND_KEY] }
+        : descriptor;
     }
 
     return ctx.data.read(resolveReferencePath(raw, ctx));
