@@ -108,7 +108,7 @@ describe('keyed segment event delegation', () => {
     expect(documentHandler).not.toHaveBeenCalled();
   });
 
-  it('keeps only the latest handler per event and removes it with off()', () => {
+  it('keeps every handler per event and removes them with off()', () => {
     const calls = [];
     const rows = ref([{ id: 1 }]);
     const list = ul((node) => {
@@ -126,11 +126,11 @@ describe('keyed segment event delegation', () => {
     const rowNode = list.children()[0];
 
     click(element.firstChild);
-    expect(calls).toEqual(['second']);
+    expect(calls).toEqual(['first', 'second']);
 
     rowNode.off('click');
     click(element.firstChild);
-    expect(calls).toEqual(['second']);
+    expect(calls).toEqual(['first', 'second']);
   });
 
   it('falls back to per-element binding for once / capture / non-bubbling events', () => {

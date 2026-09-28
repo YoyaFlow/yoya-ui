@@ -79,21 +79,19 @@ const b = computed(() => a.value * 2); // 只读、惰性、带缓存，依赖�
 - **文本位置三种等价写法**：`child(vText(handle))`、`child(handle)`、元素工厂 setup 位置的 `div(handle)`（等价 `div((el) => el.child(handle))`）都建立同一个绑定（HTML 元素与 SVG 文本宿主都支持）。节点级 `text()` 已移除：追加文本用 `child(content)`，反复追加会堆叠；要反复替换同一处文本，就留一个 `vText()` 句柄用 `textContent(next)`。
 - **机械替换后要自查**：把旧写法（`state()` / `sync()` 之类）换成信号时，每个新加的 `computed` / `String` 都问一句「去掉它行为是否一样」——迁移最容易把旧代码的包装原样搬过来。
 
-## 写回：不做双向绑定
+## 写回：值位传句柄即双向绑定
 
-没有 `model`。写回用显式事件处理器，与 `vForm` 的收集路径互不影响：
+`vInput` / `vTextarea` / `vSelect` / `vSlider`（日期/时间的 `vTimer` 走 `vInput`，起止区间 `vTimerRange` 写回 `{ start, end }` 对象）的值位传**可写句柄**时自动双向：句柄 → 视图走值绑定，视图 → 句柄走组件内置的回写
+handler（`input` / `change`）。两侧都比较"值是否已经相同"，所以不会回声、也不会在打字时顶光标：
 
 ```js
-vInput({
-  value: name, // 视图 ← 信号
-  oninput: (event) => {
-    name.value = event.target.value; // 信号 ← 视图
-  }
-});
+vInput({ value: name }); // 输入即写 name，name 变即刷输入框
 ```
 
-- 同一节点同一事件是**单槽**：重复 `.on('input', fn)` 只保留最后一个，别把写回拆到多个 handler。
-- 绑定提交时会跳过"值已相同"的写入，所以打字过程中不会把光标顶到末尾；中间若插入转换（`Number()` / trim），值不再相等，此时需要自行判断。
+- **只想单向**就传字面值（`vInput({ value: 'fixed' })`）或只读派生（`computed(...)` 没有回写目标，自动只保留单向）。
+- 需要中间转换（`Number()` / trim）时**加自己的 handler**，不要替掉内置的：同一节点同一事件名可以登记**多个** handler，`oninput` / `onInput` 与内置回写共存，按登记顺序派发（内置的回写先登记、先写回，所以用户的 handler 读到的是已更新的值）。
+- **程序化写控件也会回写句柄**：`input.value(next)`、`vForm` 回填、`clear()` 都走同一条收口，句柄是唯一真源（不会出现"控件显示新值、信号还是旧值"）。同值一律跳过，所以信号驱动那条路不会回声。
+- `off('input')` 摘掉该事件名下的全部 handler，`off('input', fn)` 只摘一条；同一个 `(事件名, fn)` 重复登记按"更新选项"处理，不会重复触发。
 - 表单收集仍用 `vForm` + 控件的 `name()`。
 
 ## 大列表：选中态别用共享句柄逐行派生

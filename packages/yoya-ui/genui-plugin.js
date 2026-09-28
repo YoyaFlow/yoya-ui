@@ -534,7 +534,7 @@ export const components = {
       max: 'max',
       min: 'min',
       step: 'step',
-      value: { to: 'command:value', read: 'command:value', live: false }
+      value: { to: 'command:value', read: 'command:value', live: true }
     },
     events: {
       change: { channel: 'dom', event: 'change' },
@@ -678,11 +678,22 @@ export const components = {
   },
   Timer: {
     factory: vTimer,
-    aliases: ['vTimer', 'VTimer']
+    aliases: ['vTimer', 'VTimer'],
+    props: {
+      mode: 'mode',
+      type: 'type',
+      value: { to: 'command:value', read: 'command:value', live: true }
+    }
   },
   TimerRange: {
     factory: vTimerRange,
-    aliases: ['vTimerRange', 'VTimerRange']
+    aliases: ['vTimerRange', 'VTimerRange'],
+    props: {
+      mode: 'mode',
+      end: 'end',
+      start: 'start',
+      value: { to: 'command:value', read: 'command:value', live: true }
+    }
   },
   Tooltip: {
     factory: vTooltip,

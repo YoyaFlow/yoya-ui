@@ -126,6 +126,14 @@ export function isSignal(value) {
   return Boolean(value && value[SIGNAL_BRAND] === true);
 }
 
+/**
+ * 判断句柄是否**可写**（`computed` 派生只读）。
+ * 控件拿它决定"值位传了句柄要不要接双向回写"：只读派生没有回写目标。
+ */
+export function isWritableSignal(value) {
+  return isSignal(value) && value._writable !== false;
+}
+
 /** 创建一个可写信号。 */
 export function ref(initial) {
   const adapter = currentSignals();

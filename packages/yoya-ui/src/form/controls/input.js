@@ -9,7 +9,7 @@ import {
   themeBorder,
   themeValue
 } from '../../components/shared.js';
-import { createClearButton, syncClearButton } from './shared.js';
+import { bindControlValue, createClearButton, syncClearButton } from './shared.js';
 
 /**
  * 文本输入（形态 B）：视图根是外壳 `div` + 内层 `input` + 清空按钮。
@@ -173,6 +173,9 @@ export function VInput() {
       return api;
     };
 
+    // 值位传可写句柄时的双向绑定（由 setupObject 装配）：命令面写值也要回写句柄
+    let bound = null;
+
     api.value = (value) => {
       if (value === undefined) {
         return field.prop('value') ?? state.value ?? field.attr('value') ?? '';
@@ -180,11 +183,23 @@ export function VInput() {
 
       const next = resolveTextValue(value);
 
-      if (next === '' && state.value !== '') {
-        console.log('[eng-value] 清空', JSON.stringify(state.value), 'landed=', field.isLanded());
+      const landed = field.isLanded();
+      const domValue = landed ? field.prop('value') : null;
+
+      // 双向绑定的回声在**值**上收口：状态与落地值都已经一致就什么都不做
+      if (state.value === next && (!landed || domValue === next)) {
+        bound?.setHandle(next);
+        return api;
       }
+
       state.value = next;
-      field.attr('value', next);
+      // 落地值已经是目标值就不再写回 DOM（打字过程中不顶光标、不重写刚输入的值）
+      if (!landed || domValue !== next) {
+        field.attr('value', next);
+      }
+
+      // 程序化写控件（vForm 回填 / 命令面）也回写句柄：句柄是唯一真源
+      bound?.setHandle(next);
       syncClear();
       return api;
     };
@@ -261,6 +276,21 @@ export function VInput() {
         value,
         ...elementConfig
       } = options;
+
+      // 值位传可写句柄 = 自动双向绑定：回写 handler 先登记，调用方的 onXxx 后登记
+      //（先写回、再通知，用户的 handler 读到的是已更新的值）
+      const boundValue =
+        value !== undefined
+          ? value
+          : text !== undefined
+            ? text
+            : content !== undefined
+              ? content
+              : children;
+      bound =
+        boundValue !== undefined
+          ? bindControlValue({ host: node, field, handle: boundValue })
+          : null;
 
       const engineConfig = {};
 
@@ -343,7 +373,6 @@ export function VInput() {
     // 元素机制挂到局部节点：SSR 回读走内层 input，权限落位走视图根（渲染路径按节点调用）
     field.hydrateSnapshot = () => {
       if (field.isLanded()) {
-        console.log('[eng-hydrate] 回读', JSON.stringify(field.prop('value')));
         api.value(field.prop('value'));
       }
       return field;
@@ -375,11 +404,11 @@ export function VInput() {
 }
 
 /**
- * @genui 单行输入框（值经 $bind 双向绑定）
- * @genui.contract props.value: { $bind: "/path" }；on.change 内建 set 回写
+ * @genui 单行输入框（值位传句柄即双向绑定）
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 输入即写回数据；传普通值 = 只读快照
  * @genui.use 表单字段；草稿输入
  * @genui.notFor 长文本（A2UI 的 TextField longText 会映射过来）；勾选（用 vCheckbox）
- * @genui.pitfall 忘记 on.change 的话输入不会写回数据模型
- * @genui.example {"type":"vInput","props":{"name":"draft","placeholder":"输入…","value":{"$bind":"/draft"}},"on":{"change":{"$action":"set","params":{"path":"/draft","value":{"$event":"target.value"}}}}}
+ * @genui.pitfall 传普通值（非句柄）不会写回；type=number 按数字回写（解析不出保留原串）
+ * @genui.example {"type":"vInput","props":{"type":"number","name":"qty","value":{"$bind":"/order/qty"}}}
  */
 export const vInput = createComponentShortcut(VInput);

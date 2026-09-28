@@ -86,7 +86,10 @@ export function VTimer() {
 
 /**
  * @genui 时间输入
- * @genui.contract value（时间文本）；模式相关命令
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 输入即写回数据；传普通值 = 只读快照
+ * @genui.prop mode
+ * @genui.prop type
+ * @genui.prop value to=command:value read=command:value live=true
  * @genui.use 日程起止时刻；时间筛选
  * @genui.notFor 日期范围（用 vTimerRange）
  * @genui.example {"type":"vTimer"}

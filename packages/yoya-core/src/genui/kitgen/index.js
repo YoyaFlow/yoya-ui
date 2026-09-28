@@ -574,6 +574,13 @@ function compactJson(value) {
 function serializeJson(value, indent, column = indent) {
   const compact = compactJson(value);
 
+  // 字符串没有"展开成多行"这回事：超宽也只保持单行。
+  // （以前长字符串会落到下面的 Object.entries 分支，被逐字符拆成 { "0": "p", … }——
+  //   agent 读到的 dataContract / summary 直接变垃圾。）
+  if (typeof value === 'string') {
+    return compact;
+  }
+
   const limit = Array.isArray(value) ? 100 : 96;
 
   if (compact === '[]' || compact === '{}' || column + textWidth(compact) <= limit) {

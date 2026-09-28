@@ -1,4 +1,4 @@
-import { ref } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
+import { isWritableSignal, ref } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
 import { HtmlElementNode, input as inputFactory, label, span } from '@yoyaflow/yoya-core/html';
 import {
   delegateNodeCommands,
@@ -7,6 +7,77 @@ import {
   resolveTextValue,
   themeValue
 } from '../../components/shared.js';
+
+/**
+ * 控件值位传**句柄**时的自动双向绑定（`vInput({ value: name })`）：
+ *
+ * - 句柄 → 视图：仍走既有的值绑定（`applyPropValue`），提交时跳过「值已相同」的写入；
+ * - 视图 → 句柄：内置回写 handler 挂在**组件根**上，作为普通 handler 进多 handler 登记表 ——
+ *   所以调用方的 `onInput` / `onChange` 与它共存，不再互相顶掉；
+ * - 控件 → 句柄：控件被**程序化**写（`input.value(next)` / `vForm` 回填 / `clear()`）时，
+ *   句柄是唯一真源，必须跟着走——调用方拿到的 `setHandle(next)` 挂在值命令的收口处；
+ * - 归一：按控件 `type` 自动 parse（`number` → 数字，解析不出则保留原串；其余 → 字符串，
+ *   与 Vue 的 `.number` 同口径）。类型在**事件发生时**读——绑定建立时 props 里的 type 还没落位。
+ * - 防回声：两侧都比较「值是否已经相同」（读句柄一律 `peek()`，不建依赖）。
+ *   写回句柄后再提交时值已经一样，不会再写一次 DOM，打字过程中也不会把光标顶到末尾。
+ *
+ * 只读派生（`computed`）没有回写目标：返回 null，只保留单向绑定。
+ */
+function bindControlValue({ host, field, handle, events = ['input', 'change'], parse = null }) {
+  if (!isWritableSignal(handle)) {
+    return null;
+  }
+
+  const normalize = parse ?? ((raw) => parseControlValue(field, raw));
+  const sameValue = (current, next) =>
+    Object.is(current, next) || String(current ?? '') === String(next ?? '');
+
+  const writeBack = () => {
+    if (!field.isLanded()) {
+      return;
+    }
+
+    const dom = field.prop('value');
+    const raw = dom === undefined || dom === null ? '' : String(dom);
+    const next = normalize(raw);
+
+    if (sameValue(handle.peek(), next)) {
+      return;
+    }
+
+    handle.value = next;
+  };
+
+  events.forEach((type) => host.on(type, writeBack));
+
+  return {
+    writeBack,
+    /** 值命令的收口：控件写进去的值同步到句柄（同值跳过，所以信号驱动的那条路不会回声）。 */
+    setHandle(next) {
+      if (sameValue(handle.peek(), next)) {
+        return;
+      }
+
+      handle.value = next;
+    }
+  };
+}
+
+/**
+ * 按控件类型归一（Vue `vModelText` 的 `.number` 同口径）：
+ * `type=number` 解析成数字（`"3.5"` → 3.5；解析不出就保留原串，空串保持空串），
+ * 其余类型一律字符串——文本控件的 DOM 值本来就是字符串，不做隐式转换。
+ */
+function parseControlValue(field, raw) {
+  const type = String(field.prop('type') ?? field.attr('type') ?? '').toLowerCase();
+
+  if (type !== 'number') {
+    return raw;
+  }
+
+  const parsed = Number.parseFloat(raw);
+  return Number.isNaN(parsed) ? raw : parsed;
+}
 
 /** 清空按钮：身份走 `vn`（各控件一份），能力类 `yoya-control-clear` 保留（跨组件能力类不退场）。 */
 function createClearButton(identity, position = {}) {
@@ -431,6 +502,7 @@ function assignFormValue(result, name, value) {
 }
 
 export {
+  bindControlValue,
   createClearButton,
   syncClearButton,
   formatDisplayValue,

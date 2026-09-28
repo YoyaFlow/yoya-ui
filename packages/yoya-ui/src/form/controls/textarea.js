@@ -11,7 +11,7 @@ import { applyPropValue } from '@yoyaflow/yoya-core/internal/core/node.js';
 import { optionKindOf } from '@yoyaflow/yoya-core/internal/core/setup-keys.js';
 import { vNode } from '@yoyaflow/yoya-core/internal/core/v-node.js';
 import { div, textarea as textareaTag } from '@yoyaflow/yoya-core/html';
-import { createClearButton, syncClearButton } from './shared.js';
+import { bindControlValue, createClearButton, syncClearButton } from './shared.js';
 
 /**
  * VTextarea —— 有行为（值 / 行数 / 开关 / 清空）→ **形态 B**：定义函数只描述组件
@@ -66,16 +66,34 @@ export function VTextarea() {
       field.style('paddingRight', state.clearable ? '34px' : '12px');
     };
 
+    // 值位传可写句柄时的双向绑定（由 setupObject 装配）：命令面写值也要回写句柄
+    let bound = null;
+
     api.value = (value) => {
       if (value === undefined) {
         return field.prop('value') ?? state.value ?? field.textContent();
       }
 
       const next = resolveTextValue(value);
-      state.value = next;
-      replaceChildren(field, next ? normalizeChildren(next) : []);
-      field.prop('value', next);
 
+      const landed = field.isLanded();
+      const domValue = landed ? field.prop('value') : null;
+
+      // 双向绑定的回声在**值**上收口：状态与落地值都已经一致就什么都不做
+      if (state.value === next && (!landed || domValue === next)) {
+        bound?.setHandle(next);
+        return api;
+      }
+
+      state.value = next;
+      // 落地值已经是目标值就不再写回 DOM（打字过程中不顶光标、不重写刚输入的值）
+      if (!landed || domValue !== next) {
+        replaceChildren(field, next ? normalizeChildren(next) : []);
+        field.prop('value', next);
+      }
+
+      // 程序化写控件（vForm 回填 / 命令面）也回写句柄：句柄是唯一真源
+      bound?.setHandle(next);
       syncClear();
       return api;
     };
@@ -251,6 +269,21 @@ export function VTextarea() {
         ...elementConfig
       } = options;
 
+      // 值位传可写句柄 = 自动双向绑定：回写 handler 先登记，调用方的 onXxx 后登记
+      //（先写回、再通知，用户的 handler 读到的是已更新的值）
+      const boundValue =
+        value !== undefined
+          ? value
+          : text !== undefined
+            ? text
+            : content !== undefined
+              ? content
+              : children;
+      bound =
+        boundValue !== undefined
+          ? bindControlValue({ host: root, field, handle: boundValue })
+          : null;
+
       Object.entries(elementConfig).forEach(([key, optionValue]) => {
         const kind = optionKindOf(key);
         if (kind === 'class') {
@@ -348,10 +381,10 @@ export function VTextarea() {
 
 /**
  * @genui 多行文本输入（A2UI TextField longText 映射到它）
- * @genui.contract props.value: { $bind: path }
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 输入即写回数据；传普通值 = 只读快照
  * @genui.use 备注、描述等长文本
  * @genui.notFor 单行输入（用 vInput）
- * @genui.pitfall 值经 $bind 绑定数据模型
+ * @genui.pitfall 传普通值（非句柄）不会写回数据模型
  * @genui.example {"type":"vTextarea","props":{"name":"note","value":{"$bind":"/note"}}}
  */
 export const vTextarea = createComponentShortcut(VTextarea);

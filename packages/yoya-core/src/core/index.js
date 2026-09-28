@@ -43,7 +43,15 @@ export {
   stripAccessCode,
   withAccess
 } from './access.js';
-export { asSignal, computed, isSignal, ref, batch, SignalHandle } from './signals/handle.js';
+export {
+  asSignal,
+  batch,
+  computed,
+  isSignal,
+  isWritableSignal,
+  ref,
+  SignalHandle
+} from './signals/handle.js';
 export { isKeySet, keySet } from './key-set.js';
 export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {

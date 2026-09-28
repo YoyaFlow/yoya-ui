@@ -724,6 +724,203 @@ function nodeDomAdapters(node) {
   return node._domAdapters ?? (node._domAdapters = new Map());
 }
 
+/**
+ * 事件名可以**带 key**：`price.change` = 来源键 `price` 的 `change` 事件。
+ * 点分名的后一段是 DOM 事件类型，前面是来源键；不带点就是普通 DOM 事件。
+ */
+function domTypeOfEventName(eventName) {
+  const dot = eventName.lastIndexOf('.');
+  return dot === -1 ? eventName : eventName.slice(dot + 1);
+}
+
+function sourceKeyOfEventName(eventName) {
+  const dot = eventName.lastIndexOf('.');
+  return dot === -1 ? null : eventName.slice(0, dot);
+}
+
+/** `once` / `capture` / `passive` 是监听器级选项：这类登记挂自己的监听器，不共用派发函数。 */
+function hasSpecialEventOptions(options) {
+  return (
+    Boolean(options) &&
+    (options.once === true || options.capture === true || options.passive === true)
+  );
+}
+
+/**
+ * 事件来源键：`data-row-key`（引擎的键镜像——`addChild(key, …)` / `keyed()` 的行）
+ * 优先，其次控件名 `name`（`vInput({ name: 'price' })`）。两者都已在 DOM 上，
+ * 所以带 key 的事件不需要新属性、也不需要每个节点预先建容器。
+ */
+function sourceKeyOfElement(element) {
+  return element?.nodeType === 1
+    ? element.getAttribute('data-row-key') || element.getAttribute('name') || null
+    : null;
+}
+
+/** 从事件目标沿 DOM 链向上，取最近（含 root 自己）的来源键。 */
+function sourceKeyWithin(target, root) {
+  let element = target;
+
+  while (element && element !== root) {
+    if (element.nodeType === 1) {
+      const key = sourceKeyOfElement(element);
+      if (key !== null) {
+        return key;
+      }
+    }
+
+    element = element.parentNode;
+  }
+
+  return root ? sourceKeyOfElement(root) : null;
+}
+
+/**
+ * 事件登记条目：同一节点同一事件名可以有多条（组件内置 + 调用方），按登记顺序派发。
+ * `handler` 置 null 表示已摘除——派发进行中也能安全地 off()（不挪数组下标）。
+ */
+function createEventEntry(eventName, handler, options) {
+  return {
+    event: eventName,
+    type: domTypeOfEventName(eventName),
+    sourceKey: sourceKeyOfEventName(eventName),
+    handler,
+    options,
+    special: hasSpecialEventOptions(options),
+    cleanup: null,
+    cleanupElement: null
+  };
+}
+
+/**
+ * 条目是否匹配这次派发。监听名是**点分名**时按名字精确命中（`emit('price.change')` 这条通道），
+ * 否则按 DOM 类型 + 来源键命中。
+ */
+function eventEntryMatches(entry, listenedName, sourceKey, exactName = listenedName.includes('.')) {
+  if (entry.handler === null) {
+    return false;
+  }
+
+  if (exactName) {
+    return entry.event === listenedName;
+  }
+
+  if (entry.type !== listenedName) {
+    return false;
+  }
+
+  return entry.sourceKey === null || entry.sourceKey === sourceKey;
+}
+
+/** 调用一条登记：this 是节点、捕获错误、once 只摘自己这一条。 */
+function fireEventEntry(node, entry, event) {
+  const handler = entry.handler;
+  if (handler === null) {
+    return;
+  }
+
+  try {
+    handler.call(node, event);
+  } catch (error) {
+    captureNodeError(node, error, 'event');
+  }
+
+  if (entry.options?.once) {
+    removeEventEntry(node, entry);
+  }
+}
+
+/** 按登记顺序走一遍同名条目。不建快照：`handler` 置 null 后跳过，数组下标不动。 */
+function fireEventHandlers(node, list, event) {
+  const count = list.length;
+  for (let index = 0; index < count; index += 1) {
+    const entry = list[index];
+    if (entry.handler === null) {
+      continue;
+    }
+
+    fireEventEntry(node, entry, event);
+  }
+}
+
+/** 节点唯一的派发函数（懒建：没有事件登记的节点不会有它）。 */
+function nodeDispatcher(node) {
+  return node._dispatch ?? (node._dispatch = (event) => dispatchNodeEvent(node, event));
+}
+
+/**
+ * 元素上的派发：DOM 事件先到**这一个**函数，再按事件名分发给登记项。
+ * 带 key 的条目要解析来源键（只有存在这类条目时才走 DOM 链）。
+ */
+function dispatchNodeEvent(node, event) {
+  const events = node._events;
+  if (!events || events.size === 0) {
+    return;
+  }
+
+  const listenedName = event.type;
+  const exactName = listenedName.includes('.');
+  let sourceKey;
+  let resolved = false;
+
+  for (const list of events.values()) {
+    // 同名条目共享 event / type / sourceKey：取首条当元数据读
+    const meta = list[0];
+    if (exactName) {
+      if (meta.event !== listenedName) {
+        continue;
+      }
+    } else if (meta.type !== listenedName) {
+      continue;
+    } else if (meta.sourceKey !== null) {
+      if (!resolved) {
+        sourceKey = sourceKeyWithin(event.target, node._el);
+        resolved = true;
+      }
+
+      if (meta.sourceKey !== sourceKey) {
+        continue;
+      }
+    }
+
+    fireEventHandlers(node, list, event);
+  }
+}
+
+/** 摘掉一条登记：释放它自己的监听器（数组里保留位置，派发中用 null 跳过）。 */
+function detachEventEntry(node, entry) {
+  entry.handler = null;
+  entry.options = null;
+  entry.special = false;
+
+  if (entry.cleanup) {
+    entry.cleanup();
+    node._removeCleanup(entry.cleanup);
+    entry.cleanup = null;
+    entry.cleanupElement = null;
+  }
+}
+
+/** once 触发后：摘掉这一条，名字空了就删名，再对齐一次 DOM 绑定。 */
+function removeEventEntry(node, entry) {
+  detachEventEntry(node, entry);
+
+  const list = node._events?.get(entry.event);
+  if (list && list.every((item) => item.handler === null)) {
+    node._events.delete(entry.event);
+    pruneNodeEvents(node);
+  }
+
+  node._syncEventBindings();
+}
+
+/** 最后一个 handler 走了就把容器整个放下：没有事件登记的节点不带事件容器。 */
+function pruneNodeEvents(node) {
+  if (node._events?.size === 0) {
+    node._events = undefined;
+  }
+}
+
 function nodeMountStates(node) {
   return node._childMountStates ?? (node._childMountStates = new Map());
 }
@@ -832,15 +1029,11 @@ function activeKeyedBuild() {
 }
 
 function canDelegateEvent(eventName, options) {
-  if (!delegatedEventTypes.has(eventName)) {
+  if (!delegatedEventTypes.has(domTypeOfEventName(eventName))) {
     return false;
   }
 
-  if (!options) {
-    return true;
-  }
-
-  return options.once !== true && options.capture !== true && options.passive !== true;
+  return !hasSpecialEventOptions(options);
 }
 
 /** 段根的委托状态：元素 → 节点的弱映射 + 已挂监听器的事件名。 */
@@ -857,48 +1050,72 @@ function delegateOwnerFor(parent) {
   return parent._delegates;
 }
 
-function delegatedDescriptorFor(node, eventName) {
+/**
+ * 本行登记的委托条目（同事件名可以有多条，与 `_events` 同一口径）。
+ * 单条时 `_delegate` 就是那个描述符本身，多条才升级成数组（内存口径不变）。
+ */
+function delegatedEntryList(node) {
   const current = node._delegate;
   if (current === undefined) {
     return null;
   }
 
-  if (Array.isArray(current)) {
-    return current.find((item) => item.event === eventName) ?? null;
-  }
-
-  return current.event === eventName ? current : null;
+  return Array.isArray(current) ? current : [current];
 }
 
-/** 注销一个委托事件；返回是否命中（未命中时调用方走原路径）。 */
-function removeDelegatedEvent(node, eventName) {
-  const current = node._delegate;
-  if (current === undefined) {
+function setDelegatedEntryList(node, list) {
+  if (list.length === 0) {
+    if (node._el) {
+      delete node._el[delegateNodeKey];
+    }
+    node._delegate = undefined;
+    return;
+  }
+
+  node._delegate = list.length === 1 ? list[0] : list;
+}
+
+/**
+ * 这次派发要调的条目：DOM 类型一致，且（不带 key 或来源键一致）。
+ * 来源键只在真的登记了带 key 的事件名时才解析（普通 `click` 行不花这份钱）。
+ */
+function delegatedEntriesFor(node, eventType, event) {
+  const list = delegatedEntryList(node);
+  if (!list) {
+    return null;
+  }
+
+  const exactName = eventType.includes('.');
+  const sourceKey =
+    !exactName && list.some((entry) => entry.sourceKey !== null)
+      ? sourceKeyWithin(event.target, node._el)
+      : null;
+  const matched = list.filter((entry) => eventEntryMatches(entry, eventType, sourceKey, exactName));
+  return matched.length > 0 ? matched : null;
+}
+
+/** 注销匹配的委托条目；返回是否命中（未命中时调用方走原路径）。 */
+function removeDelegatedEvent(node, eventName, handler) {
+  const list = delegatedEntryList(node);
+  if (!list) {
     return false;
   }
 
-  if (Array.isArray(current)) {
-    const index = current.findIndex((item) => item.event === eventName);
-    if (index === -1) {
-      return false;
-    }
+  const removed = list.filter(
+    (entry) => entry.event === eventName && (handler === undefined || entry.handler === handler)
+  );
 
-    const [removed] = current.splice(index, 1);
-    if (current.length === 1) {
-      node._delegate = current[0];
-    }
-    void removed;
-    return true;
-  }
-
-  if (current.event !== eventName) {
+  if (removed.length === 0) {
     return false;
   }
 
-  if (node._el) {
-    delete node._el[delegateNodeKey];
-  }
-  node._delegate = undefined;
+  removed.forEach((entry) => {
+    entry.handler = null;
+  });
+  setDelegatedEntryList(
+    node,
+    list.filter((entry) => entry.handler !== null)
+  );
   return true;
 }
 
@@ -907,7 +1124,7 @@ function removeDelegatedEvent(node, eventName) {
  * currentTarget / stopPropagation 逐事件伪造，调用完删掉自有属性，
  * 让事件对象回到原生语义（同一事件对象被重放时不会读到上一次的节点）。
  */
-function dispatchDelegatedEvent(owner, eventName, event) {
+function dispatchDelegatedEvent(owner, eventType, event) {
   const root = owner.parent._el;
   if (!root) {
     return;
@@ -918,9 +1135,11 @@ function dispatchDelegatedEvent(owner, eventName, event) {
   while (element && element !== root) {
     if (element.nodeType === 1) {
       const node = element[delegateNodeKey];
-      const descriptor = node ? delegatedDescriptorFor(node, eventName) : null;
-      if (descriptor) {
-        chain.push({ node, descriptor });
+      if (node) {
+        const entries = delegatedEntriesFor(node, eventType, event);
+        if (entries) {
+          chain.push({ node, entries });
+        }
       }
     }
     element = element.parentNode;
@@ -941,20 +1160,16 @@ function dispatchDelegatedEvent(owner, eventName, event) {
   });
 
   try {
-    for (const { node, descriptor } of chain) {
+    for (const { node, entries } of chain) {
       Object.defineProperty(event, 'currentTarget', {
         configurable: true,
         get: () => node._el
       });
 
       try {
-        descriptor.handler.call(node, event);
+        fireEventHandlers(node, entries, event);
       } catch (error) {
         captureNodeError(node, error, 'event');
-      }
-
-      if (descriptor.options?.once) {
-        node.off(eventName);
       }
 
       if (stopped) {
@@ -994,33 +1209,31 @@ function bindDelegatedEvents(owner) {
   });
 }
 
-/** 行构建期的事件登记：同事件只留最新，元素就绪时登记进段根的弱映射。 */
+/** 行构建期的事件登记：同事件名可以有多条，元素就绪时登记进段根的反查符号。 */
 function registerDelegatedEvent(parent, node, eventName, handler, options) {
   const owner = delegateOwnerFor(parent);
-  const descriptor = { event: eventName, handler, options, owner };
-  const current = node._delegate;
+  const entry = createEventEntry(eventName, handler, options);
+  entry.owner = owner;
 
-  if (current === undefined) {
-    node._delegate = descriptor;
-  } else if (Array.isArray(current)) {
-    const existing = current.find((item) => item.event === eventName);
-    if (existing) {
-      existing.handler = handler;
-      existing.options = options;
-    } else {
-      current.push(descriptor);
-    }
-  } else if (current.event === eventName) {
-    current.handler = handler;
-    current.options = options;
+  const existing = delegatedEntryList(node)?.find(
+    (item) => item.event === eventName && item.handler === handler
+  );
+
+  if (existing) {
+    existing.options = options;
   } else {
-    node._delegate = [current, descriptor];
+    setDelegatedEntryList(node, [...(delegatedEntryList(node) ?? []), entry]);
   }
 
   if (!owner.events) {
     owner.events = new Set();
   }
-  owner.events.add(eventName);
+  // 段根按 **DOM 类型** 挂监听器：`click` 与 `orderItem.click` 共用同一个；
+  // 点分名另外按整名挂一个，`emit('orderItem.click')` 那条通道才收得到
+  owner.events.add(entry.type);
+  if (entry.event !== entry.type) {
+    owner.events.add(entry.event);
+  }
 
   // 元素已经存在（挂载后再注册 / 区域重跑）就直接登记；否则等 renderDom 收口。
   if (node._el) {
@@ -1793,20 +2006,6 @@ export function applyInlineStyle(element, name, value) {
   }
 
   element.style[name] = value || '';
-}
-
-function sameEventListenerOptions(a, b) {
-  if (a === b) {
-    return true;
-  }
-  if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
-    return false;
-  }
-  return (
-    Boolean(a.capture) === Boolean(b.capture) &&
-    Boolean(a.once) === Boolean(b.once) &&
-    Boolean(a.passive) === Boolean(b.passive)
-  );
 }
 
 /**
@@ -2800,8 +2999,15 @@ export class ViewNode {
   }
 
   /**
-   * 注册事件。同一节点同一事件只保留最新 handler；
-   * 真实 DOM 上每个事件最多挂一个转发 adapter。
+   * 注册事件。同一节点同一事件可以登记**多个** handler（组件内置的与调用方的共存），
+   * 按登记顺序派发；同一个 (事件名, handler) 重复登记按「更新选项」处理，不会重复触发。
+   *
+   * 事件名可以是**带 key 的点分名**：`price.change` = 来源键 `price` 的 `change` 事件。
+   * 来源键取事件目标向上（含本节点元素）最近的 `data-row-key`（引擎键镜像）或控件名
+   * `name`；也可以直接 `emit('price.change')` 派发同名自定义事件。
+   *
+   * 真实 DOM 上每个 DOM 类型最多挂一个监听器，且共用**节点唯一的派发函数**（懒建），
+   * 没有事件登记的节点不带任何事件容器。
    *
    * 在 keyed 行构建期注册的、可委托的事件（冒泡标准事件 + 无 once/capture/passive）
    * 不收进节点自己的 _events，而是登记到段根由它统一派发；其余情况走下面的逐元素绑定。
@@ -2824,26 +3030,44 @@ export class ViewNode {
 
     // 同一个事件从委托切回逐元素绑定（例如挂载后又注册了一次）：先把委托描述符摘掉，
     // 否则派发时会拿着旧 handler 再调一次。
-    removeDelegatedEvent(this, eventName);
-    const previous = this._events?.get(eventName);
-    nodeEvents(this).set(eventName, { handler, options });
+    removeDelegatedEvent(this, eventName, handler);
+    const list = nodeEvents(this).get(eventName) ?? [];
+    const existing = list.find((entry) => entry.handler === handler);
 
-    if (this._el) {
-      this._bindDomAdapter(eventName, previous?.options, options);
+    if (existing) {
+      existing.options = options;
+      existing.special = hasSpecialEventOptions(options);
+    } else {
+      list.push(createEventEntry(eventName, handler, options));
+      nodeEvents(this).set(eventName, list);
     }
 
+    this._syncEventBindings();
     return this;
   }
 
-  off(eventName) {
-    removeDelegatedEvent(this, eventName);
-    this._events?.delete(eventName);
-    const entry = this._domAdapters?.get(eventName);
-    if (entry) {
-      entry.cleanup();
-      this._removeCleanup(entry.cleanup);
-      this._domAdapters?.delete(eventName);
+  /**
+   * 注销事件：只给事件名就摘掉该事件名下的全部 handler；带 handler 只摘这一条
+   * （多个 handler 共存时按引用精确摘除）。
+   */
+  off(eventName, handler) {
+    removeDelegatedEvent(this, eventName, handler);
+    const list = this._events?.get(eventName);
+
+    if (list) {
+      list.forEach((entry) => {
+        if (handler === undefined || entry.handler === handler) {
+          detachEventEntry(this, entry);
+        }
+      });
+
+      if (list.every((entry) => entry.handler === null)) {
+        this._events.delete(eventName);
+        pruneNodeEvents(this);
+      }
     }
+
+    this._syncEventBindings();
     return this;
   }
 
@@ -2953,43 +3177,127 @@ export class ViewNode {
     return this;
   }
 
-  _bindDomAdapter(eventName, previousOptions, nextOptions) {
-    const existing = this._domAdapters?.get(eventName);
-    if (existing) {
-      if (sameEventListenerOptions(previousOptions, nextOptions)) {
-        return;
-      }
-      existing.cleanup();
-      this._removeCleanup(existing.cleanup);
-      this._domAdapters?.delete(eventName);
+  /**
+   * 元素级事件收口：所有默认选项的登记共用**一个**派发函数、每个 DOM 类型最多挂一个监听器；
+   * `once` / `capture` / `passive` 是监听器级选项，这类登记各挂自己的监听器。
+   *
+   * 每次登记 / 摘除后对齐一次（没落地、没事件时是空操作）：不再需要的 DOM 类型会退订，
+   * 所以「先 on 后 off」不会在元素上留下空监听器。
+   */
+  _syncEventBindings() {
+    // 已销毁的节点不再重挂：detach 之后又有人 off() 时别在脱开的元素上补监听
+    const element = this._deleted ? null : this._el;
+    const events = this._events;
+    const adapters = this._domAdapters;
+    if (!element || typeof element.addEventListener !== 'function') {
+      return;
     }
 
-    const adapter = (event) => {
-      const current = this._events?.get(eventName);
-      if (!current || typeof current.handler !== 'function') {
+    const sharedTypes = new Set();
+
+    if (events) {
+      for (const list of events.values()) {
+        for (const entry of list) {
+          if (entry.handler === null) {
+            this._releaseEventEntryListener(entry);
+            continue;
+          }
+
+          if (entry.special) {
+            if (entry.cleanupElement !== element) {
+              this._releaseEventEntryListener(entry);
+            }
+            this._bindEventEntryListener(entry);
+            continue;
+          }
+
+          this._releaseEventEntryListener(entry);
+          sharedTypes.add(entry.type);
+          // 点分名还要按整名挂一个：`emit('price.change')` 直接把点分名当事件类型派发
+          if (entry.event !== entry.type) {
+            sharedTypes.add(entry.event);
+          }
+        }
+      }
+    }
+
+    if (adapters) {
+      [...adapters].forEach(([type, adapter]) => {
+        // 元素换了（重挂载）也要重挂：记录里存着当时绑的那个元素
+        if (adapter.element === element && sharedTypes.delete(type)) {
+          return;
+        }
+
+        adapter.cleanup();
+        this._removeCleanup(adapter.cleanup);
+        adapters.delete(type);
+      });
+    }
+
+    if (sharedTypes.size === 0) {
+      return;
+    }
+
+    const dispatcher = nodeDispatcher(this);
+    sharedTypes.forEach((type) => {
+      if (this._domAdapters?.has(type)) {
         return;
       }
-      try {
-        current.handler.call(this, event);
-      } catch (error) {
-        captureNodeError(this, error, 'event');
-      }
-      if (current.options?.once) {
-        this.off(eventName);
-      }
-    };
+
+      const cleanup = () => element.removeEventListener(type, dispatcher);
+      // 标记为「元素级监听」：整棵子树离开文档时，逐条 removeEventListener 没有意义
+      // （元素不再可达），销毁路径据此整段跳过；文档 / window 级 cleanup 不做标记。
+      cleanup._domListener = true;
+      element.addEventListener(type, dispatcher);
+      nodeDomAdapters(this).set(type, { cleanup, element });
+      this._cleanup = appendNodeEntry(this._cleanup, cleanup);
+    });
+  }
+
+  /** 监听器级选项的登记：按自己的选项挂 / 退。 */
+  _bindEventEntryListener(entry) {
+    if (entry.cleanup || !this._el) {
+      return;
+    }
+
+    const element = this._el;
+    // 点分名两条通道都要：整名（`emit('price.change')`）与 DOM 类型 + 来源键
+    const names = entry.event === entry.type ? [entry.type] : [entry.type, entry.event];
+    const listeners = names.map((name) => {
+      const exactName = name !== entry.type;
+      const listener = (event) => {
+        if (!eventEntryMatches(entry, name, sourceKeyWithin(event.target, this._el), exactName)) {
+          return;
+        }
+
+        fireEventEntry(this, entry, event);
+      };
+
+      element.addEventListener(name, listener, entry.options);
+      return { name, listener };
+    });
+
     const cleanup = () => {
-      if (this._el) {
-        this._el.removeEventListener(eventName, adapter, nextOptions);
-      }
+      listeners.forEach(({ name, listener }) =>
+        element.removeEventListener(name, listener, entry.options)
+      );
     };
-    // 标记为「元素级监听」：整棵子树离开文档时，逐条 removeEventListener 没有意义
-    // （元素不再可达），销毁路径据此整段跳过；文档 / window 级 cleanup 不做标记。
     cleanup._domListener = true;
 
-    this._el.addEventListener(eventName, adapter, nextOptions);
-    nodeDomAdapters(this).set(eventName, { cleanup });
+    entry.cleanup = cleanup;
+    entry.cleanupElement = element;
     this._cleanup = appendNodeEntry(this._cleanup, cleanup);
+  }
+
+  _releaseEventEntryListener(entry) {
+    if (!entry.cleanup) {
+      return;
+    }
+
+    entry.cleanup();
+    this._removeCleanup(entry.cleanup);
+    entry.cleanup = null;
+    entry.cleanupElement = null;
   }
 
   _removeCleanup(cleanup) {
@@ -4783,9 +5091,7 @@ export class ElementNode extends ViewNode {
 
     const events = this._events;
     if (events) {
-      for (const [eventName, descriptor] of events) {
-        this._bindDomAdapter(eventName, undefined, descriptor.options);
-      }
+      this._syncEventBindings();
     }
   }
 

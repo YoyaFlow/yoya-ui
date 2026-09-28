@@ -5,6 +5,7 @@
 //   2) 快线把 core 声明成 peerDependency（^0.7.0），且**不**把它列进 dependencies（不许内联/自带副本）；
 //   3) 组件域只在快线里实现（core 目录下不存在 layout/actions/form/… 这类组件域目录）；
 //   4) 只有契约包同时 import 两个包（业务源码不许两边都引）。
+import { parse } from '@babel/parser';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
@@ -41,8 +42,10 @@ const coreFiles = listJs(`${CORE}/src`).filter((file) => !file.includes('.test.'
 // `Symbol.for('@yoyaflow/yoya-ui/element-factory')` 是**全局符号键**，拆包时刻意保持不变
 // （第三方已经用它互操作）；判定前先把它抹掉，只看真正的依赖引用。
 const stripSymbolKeys = (text) => text.replace(/Symbol\.for\(\s*'[^']*'\s*\)/g, 'Symbol.for(...)');
+// 依赖边界看的是 runtime 引用；JSDoc / 注释里的教学示例不算 import。
+const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 const coreRefs = coreFiles.filter((file) =>
-  /@yoyaflow\/yoya-ui/.test(stripSymbolKeys(readFileSync(join(ROOT, file), 'utf8')))
+  /@yoyaflow\/yoya-ui/.test(stripComments(stripSymbolKeys(readFileSync(join(ROOT, file), 'utf8'))))
 );
 if (coreRefs.length === 0) ok(`core 源码 ${coreFiles.length} 个文件里 0 处引用 @yoyaflow/yoya-ui`);
 else bad(`core 源码引用了快线：${coreRefs.join(', ')}`);
@@ -180,14 +183,45 @@ console.log('');
 console.log('\n[6] 发布源码的第三方 import');
 const TEST_LIBS =
   /^(vitest|chai|tinyrainbow|jsdom|playwright-core|@vitest\/|@playwright\/|@testing-library\/)/;
-const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const MODULE_SOURCE_NODES = new Set([
+  'ImportDeclaration',
+  'ExportAllDeclaration',
+  'ExportNamedDeclaration',
+  'ImportExpression'
+]);
+
+/** 只认 AST 里的真实模块说明符：字符串值 / 模板插值 / JSDoc 示例都不算 import。 */
 const thirdPartySpecifiers = (text) => {
+  const ast = parse(text, {
+    allowReturnOutsideFunction: true,
+    allowAwaitOutsideFunction: true,
+    comments: false,
+    sourceType: 'module',
+    tokens: false
+  });
   const out = [];
-  for (const match of stripComments(text).matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)) {
-    const spec = match[1];
-    if (spec.startsWith('.') || spec.startsWith('node:') || spec.startsWith('@yoyaflow/')) continue;
-    out.push(spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
-  }
+
+  const walk = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+
+    if (MODULE_SOURCE_NODES.has(node.type) && typeof node.source?.value === 'string') {
+      const spec = node.source.value;
+      if (!spec.startsWith('.') && !spec.startsWith('node:') && !spec.startsWith('@yoyaflow/')) {
+        out.push(spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
+      }
+    }
+
+    Object.entries(node).forEach(([key, value]) => {
+      if (key === 'loc' || key.endsWith('Comments')) return;
+      walk(value);
+    });
+  };
+
+  walk(ast.program);
   return out;
 };
 for (const dir of [CORE, UI, COMPILER]) {

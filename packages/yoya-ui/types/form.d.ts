@@ -129,6 +129,7 @@ export interface SliderOptions {
   required?: PropValue<boolean>;
   showValue?: PropValue<boolean>;
   step?: PropValue<number>;
+  /** Value slot: a writable handle here turns on two-way binding (see InputOptions.value). */
   value?: PropValue<number>;
   vertical?: PropValue<boolean>;
   [key: string]: unknown;
@@ -280,6 +281,14 @@ export interface InputOptions {
   readonly?: PropValue<boolean>;
   required?: PropValue<boolean>;
   type?: PropValue<string>;
+  /**
+   * Value slot. A **writable handle** here turns on two-way binding (typing writes the handle back,
+   * handle writes refresh the field, and **programmatic writes** — `value(next)`, `vForm` backfill,
+   * `clear()` — reach the handle too, so the handle stays the single source of truth). Both sides skip
+   * equal values, so nothing echoes; a literal or a read-only `computed` handle stays one-way.
+   * `onInput` / `onChange` coexist with the built-in write-back — register your own handler for
+   * `Number()` / trim style conversions.
+   */
   value?: PropValue<string | number | null>;
   [key: string]: unknown;
 }
@@ -329,6 +338,7 @@ export interface TimerRangeOptions {
   readonly?: PropValue<boolean>;
   required?: PropValue<boolean>;
   start?: PropValue<string>;
+  /** Value slot: a writable handle here turns on two-way binding for the whole { start, end } object. */
   value?: PropValue<{ start?: string; end?: string }>;
   [key: string]: unknown;
 }
@@ -360,6 +370,7 @@ export interface TextareaOptions {
   readonly?: PropValue<boolean>;
   required?: PropValue<boolean>;
   rows?: PropValue<number>;
+  /** Value slot: a writable handle here turns on two-way binding (see `InputOptions.value`). */
   value?: PropValue<string | number | null>;
   [key: string]: unknown;
 }
@@ -393,6 +404,7 @@ export interface SelectOptions {
   options?: PropValue<Array<string | number | SelectOption>>;
   placeholder?: PropValue<string>;
   required?: PropValue<boolean>;
+  /** Value slot: a writable handle here turns on two-way binding (see InputOptions.value). */
   value?: PropValue<unknown>;
   [key: string]: unknown;
 }
@@ -551,6 +563,7 @@ export interface RadiosOptions {
   name?: string;
   options?: PropValue<Array<string | number | RadioOption>>;
   required?: PropValue<boolean>;
+  /** Value slot: a writable handle here turns on two-way binding (see InputOptions.value). */
   value?: PropValue<unknown>;
   [key: string]: unknown;
 }

@@ -1,4 +1,4 @@
-import { vText } from '@yoyaflow/yoya-core/internal/core/node.js';
+import { applyPropValue, vText } from '@yoyaflow/yoya-core/internal/core/node.js';
 import { vNode } from '@yoyaflow/yoya-core/internal/core/v-node.js';
 import { allocateId } from '@yoyaflow/yoya-core/internal/core/id.js';
 import { div, span } from '@yoyaflow/yoya-core/html';
@@ -7,6 +7,7 @@ import {
   isPlainObject,
   resolveTextValue
 } from '../../components/shared.js';
+import { isWritableSignal } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
 import { vTimer } from './timer.js';
 
 /**
@@ -25,6 +26,8 @@ export function VTimerRange() {
   return vNode((api) => {
     const errorId = allocateId('yoya-timer-range-error');
     const state = { name: '' };
+    // 值位传可写句柄时的双向绑定：任一端输入变化，写回整个 { start, end } 对象。
+    let bound = null;
 
     const startTimer = vTimer();
 
@@ -59,10 +62,27 @@ export function VTimerRange() {
       return !invalid;
     };
 
+    const writeBound = (next) => {
+      if (!isWritableSignal(bound)) {
+        return;
+      }
+
+      const current = bound.peek();
+      const sameRange =
+        String(current?.start ?? '') === String(next.start) &&
+        String(current?.end ?? '') === String(next.end);
+
+      if (!sameRange) {
+        bound.value = { start: next.start, end: next.end };
+      }
+    };
+
     const handleTimerChange = (event) => {
       event.stopPropagation();
       validate();
-      node.emit('change', api.value());
+      const next = api.value();
+      writeBound(next);
+      node.emit('change', next);
     };
 
     startTimer.on('change', (event) => handleTimerChange(event));
@@ -116,9 +136,14 @@ export function VTimerRange() {
       }
 
       const [start, end] = Array.isArray(value) ? value : [value?.start ?? '', value?.end ?? ''];
+      const next = {
+        start: resolveTextValue(start ?? ''),
+        end: resolveTextValue(end ?? '')
+      };
 
-      api.start(start);
-      api.end(end);
+      api.start(next.start);
+      api.end(next.end);
+      writeBound(next);
       return api;
     };
 
@@ -173,8 +198,9 @@ export function VTimerRange() {
       if (name !== undefined) {
         api.name(name);
       }
+      bound = value;
       if (value !== undefined) {
-        api.value(value);
+        applyPropValue(node, value, (next) => api.value(next));
       } else {
         api.value({ start, end });
       }
@@ -205,7 +231,11 @@ export function VTimerRange() {
 
 /**
  * @genui 时间范围输入（起止两个时间）
- * @genui.contract value（起止对）；错误提示内置
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 任一端输入即写回 { start, end }；传普通值 = 只读快照
+ * @genui.prop mode
+ * @genui.prop end
+ * @genui.prop start
+ * @genui.prop value to=command:value read=command:value live=true
  * @genui.use 时间段筛选；预约区间
  * @genui.notFor 单个时刻（用 vTimer）
  * @genui.example {"type":"vTimerRange"}

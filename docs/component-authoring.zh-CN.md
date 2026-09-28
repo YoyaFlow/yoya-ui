@@ -252,7 +252,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
 - 区域内容由它自己的 setup 产出；重跑会**清空子节点并重新执行 setup**，因此区域内不保留 DOM 身份——焦点、选区、内部滚动位置、挂在元素上的第三方实例都会重建。区域外的兄弟节点与其 DOM 不受影响。
 - 谓词只表达「这次要不要花重建」：为假时只写回绑定值并记为待重建（`rebuildPending()`），结构保持原样。**数据条件请写进 setup**（区域在数据驱动下自会重建），不要当成内容开关。
 - 值绑定只接受两种来源：**signal 句柄**（推荐）与**零参闭包** `() => value`（reader）。两者走同一条绑定管线：闭包在构建期求值一次，**读到的信号即成为它的依赖**，写入就重算；读的是普通变量时，需要重新求值自己调 `flush()`。带参形式 `(s) => value` 已随节点级状态一起移除，登记时会直接抛错，类型上也不接受。区域重跑时旧绑定作废、新绑定立即生效，不会重复写回。
-- **组件 props 只接受字面值与句柄**（`vInput({ value: name })`）：props 是配置位，函数另有语义（`onChange` / `render`），传零参闭包会在组件构造时显式抛错，而不是静默串成源码文本。文本位置用闭包要写 `vText(fn)`——`child(fn)` 是组件渲染槽。
+- **组件 props 只接受字面值与句柄**（`vInput({ value: name })`）：props 是配置位，函数另有语义（`onChange` / `render`），传零参闭包会在组件构造时显式抛错，而不是静默串成源码文本。文本位置用闭包要写 `vText(fn)`——`child(fn)` 是组件渲染槽。输入类控件的值位传**可写句柄**即自动双向：输入写回句柄、句柄变刷新控件，**程序化写**（`value(next)` / `vForm` 回填 / `clear()`）同样回写句柄（唯一真源）；两侧都比较值是否相同，所以不回声。字面值与只读派生（`computed`）保持单向。
 - 声明顺序：先 `rebuildable()`，再写值函数与其它登记。
 - 区域 setup 里**不要放一次性副作用**（第三方实例创建、请求、埋点）。`bindDocumentEvent` / `bindWindowEvent` 由引擎在重跑前重置；定时器请用 `registerRegionCleanup(fn)` 登记，否则会随重跑叠加。显式归属节点时用节点方法：`ele.bindWindowEvent(type, handler)` / `ele.bindDocumentEvent(...)` / `ele.bindAnimationFrame(cb)` / `ele.bindAnimationFrameLoop(cb)`，`destroy()` 自动卸载或停帧（循环另可用 `stopAnimationFrameLoop()` 提前停）；独立函数的原有用法（自行保存 unbind）保持不变。
 - **列表协调**：`node.keyed(rows, keyFn, build, options?)` 用信号驱动子项——同 key 且行引用未变时复用节点，行引用变化原位换新，顺序变化保身份移动（只搬真的换位的行，交换两行不会重排整张表；多根组件的行整组一起搬）；行内字段用信号可在不重建的前提下原地刷值。第四参数声明**行级更新协议**：`equals(prevRow, nextRow)` 为真视为未变（节点复用），否则 `update(node, prevRow, nextRow)` 原地改写该行（节点身份保留），两者都没有才原位换新；`equals` 与 `update` 同时给出时 `equals` 优先。自定义策略用 `insertBefore(key, child, beforeKey)` / `insertAfter(key, child, afterKey)` / `moveBefore(key, beforeKey)` / `moveAfter(key, afterKey)` / `replaceChild(key, child)` 原语。
@@ -266,7 +266,7 @@ body.flush(); // 只求值写回绑定，不重建结构（幂等）
   语义一致，后者同时截断原生冒泡）；以下情况自动回落逐元素绑定：传了 `once` / `capture` / `passive: true`、
   事件不冒泡（`focus` / `mouseenter` 等）、自定义事件、非元素节点，以及挂载之后才补的 `.on()`。
   两条细微差异：`currentTarget` 由引擎逐事件伪造（值一致，但它是事件对象上的自有属性）；第三方直接挂在
-  「行根到段根之间」元素上的监听器，相对顺序可能与逐元素绑定时不同。
+  「行根到段根之间」元素上的监听器，相对顺序可能与逐元素绑定时不同。同一事件名下的多条 handler 全部保留，按登记顺序派发。
 - **错误边界**：`node.whenFailed(handler)` 声明子树边界——handler 返回节点则替换子树降级、返回空仅上报并保持现状；vNode 组件可写 `api.whenFailed = (error, info) => 降级节点`，`ComponentNode` 自动挂载。捕获永不静默：`console.error` 必发，devtools 开启时追加 `error` 事件。错误在出错时**沿父链上溯**找最近的边界，由它独占捕获、捕获后不再向外，因此与声明顺序、嵌套深度、运行时插入、子树搬家都无关；handler 自身抛错则向外抛出。render / build 阶段返回空时，失败子节点会被标记并跳过后续重试（避免反复失败与重复记录），重新挂载或区域重建会清掉标记、允许再试一次。无边界时错误原样传播（fail fast）。区域节点上的降级替换按一次区域构建执行，不会撞区域守卫。
 
 ### 6.2 大列表里的选中态：别用共享句柄逐行派生
@@ -369,7 +369,8 @@ tbody((body) => {
 ## 7. 组合、事件与生命周期
 
 - `child(...)` 接受 `ViewNode`、vNode 组件（自动包装为 `ComponentNode`）或字符串/数字。
-- `on(eventName, handler, options)` 绑定真实 DOM 事件，`destroy()` 时自动清理。
+- `on(eventName, handler, options)` 绑定真实 DOM 事件，`destroy()` 时自动清理。同一节点同一事件名可以登记**多个** handler（组件内置的与调用方的共存），按登记顺序派发；`off(name)` 摘掉该名下的全部，`off(name, handler)` 只摘一条；同一个 `(名字, handler)` 重复登记按"更新选项"处理，不会重复触发。
+- **一个节点只有一个派发函数**（懒建）：默认选项的登记全部共用它，每个 DOM 类型最多挂一个监听器；`once` / `capture` / `passive` 是监听器级选项，这类登记各挂自己的监听器。没有事件登记的节点不带 `_events` / `_domAdapters` / `_dispatch`，最后一个 handler 摘掉后容器整个放下。
 - vNode 组件可直接传给 `child()`；节点类型（视图根）遵循 `renderDom` / `bindTo` / `destroy` 生命周期。
 
 ### 7.1 生命周期

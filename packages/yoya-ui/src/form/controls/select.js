@@ -14,7 +14,7 @@ import {
   replaceChildren,
   resolveTextValue
 } from '../../components/shared.js';
-import { createClearButton, syncClearButton } from './shared.js';
+import { bindControlValue, createClearButton, syncClearButton } from './shared.js';
 
 /**
  * 下拉选择（形态 B）：视图根是外壳 `div` + 内层 `select` + 清空按钮，选项由数据渲染。
@@ -30,6 +30,7 @@ import { createClearButton, syncClearButton } from './shared.js';
  *   其它节点方法如 `access`）交回引擎，剩下的按属性写内层 select（见 16 号清单第 29 条）。
  *
  * @genui.event change dom
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 选择即写回数据；传普通值 = 只读快照
  * @genui.prop name
  * @genui.prop options
  * @genui.prop placeholder
@@ -156,13 +157,26 @@ export function VSelect() {
 
     api.textContent = () => field.textContent();
 
+    // 值位传可写句柄时的双向绑定（由 setupObject 装配）：命令面写值也要回写句柄
+    let bound = null;
+
     api.value = (value) => {
       if (value === undefined) {
         return field.prop('value') ?? state.value ?? '';
       }
 
-      state.value = resolveTextValue(value);
+      const next = resolveTextValue(value);
+      const landed = field.isLanded();
+      const domValue = landed ? field.prop('value') : null;
+
+      if (state.value === next && (!landed || domValue === next)) {
+        bound?.setHandle(next);
+        return api;
+      }
+
+      state.value = next;
       renderOptions();
+      bound?.setHandle(next);
       syncClear();
       return api;
     };
@@ -242,6 +256,19 @@ export function VSelect() {
         value,
         ...elementConfig
       } = options;
+
+      const boundValue =
+        value !== undefined
+          ? value
+          : text !== undefined
+            ? text
+            : content !== undefined
+              ? content
+              : children;
+      bound =
+        boundValue !== undefined
+          ? bindControlValue({ host: node, field, handle: boundValue })
+          : null;
 
       const engineConfig = {};
 

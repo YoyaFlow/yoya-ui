@@ -2,7 +2,8 @@ import { join } from 'node:path';
 import prettier from 'prettier';
 import { describe, expect, it } from 'vitest';
 import { GenUI } from '../../src/genui/index.js';
-import { readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import {
   extractGenuiDoc,
   extractGenuiWiring,
@@ -236,5 +237,51 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
 
     expect(result.outputs).toHaveLength(1);
     expect(result.summary.pluginGenerated).toBe(false);
+  });
+
+  it('长字符串字段保持字符串——不按列宽拆成字符对象（agent 读的是这份目录）', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'kitgen-long-'));
+    const src = join(dir, 'src', 'basic');
+    const contract =
+      'props.value: 传句柄（$bind / @:/path）→ 输入即写回数据；传普通值 = 只读快照；这行足够长，超过单行宽度限制';
+
+    await mkdir(src, { recursive: true });
+    await writeFile(
+      join(src, 'long.js'),
+      `/**
+ * @genui 长文案组件
+ * @genui.contract ${contract}
+ */
+export function VLong() {}
+export const vLong = createComponentShortcut(VLong);\n`
+    );
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'fixture/long', version: '1.0.0' })
+    );
+
+    const out = join(dir, 'genui-kit.json');
+
+    await writeKit(
+      {
+        src: join(dir, 'src'),
+        out,
+        namespace: 'fixture/long',
+        pkg: join(dir, 'package.json'),
+        categories: { basic: 'basic' },
+        elements: { html: false, svg: false }
+      },
+      { resolveFrom: dir }
+    );
+
+    const text = await readFile(out, 'utf8');
+    const manifest = JSON.parse(text);
+
+    expect(manifest.components.find((component) => component.name === 'vLong').dataContract).toBe(
+      contract
+    );
+    expect(text).not.toContain('"0": "');
+
+    await rm(dir, { recursive: true, force: true });
   });
 });

@@ -132,7 +132,7 @@ yoya-ui 的状态模型就两条：**动态值**用内置 Signals（`const a = r
 
 结构变化按代价分三档，都写在 setup 期：列表用 `keyed(rows, keyFn, build)`（同 key 且行引用未变复用节点、排序保身份），条件挂载用 `mountable(cond)`（为假脱离文档、为真按槽位回归，状态保留），整片换新用 `rebuildable()` 区域；子树出错用 `whenFailed(handler)` 兜底（返回节点降级替换、返回 null 仅上报）。
 
-Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountable / whenFailed 用法、引擎契约与替换、多根 fragment、keyed 子节点与事件单槽的完整约定见 [references/state.md](state.md)。
+Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountable / whenFailed 用法、引擎契约与替换、多根 fragment、keyed 子节点、多 handler 事件与句柄双向绑定的完整约定见 [references/state.md](state.md)。
 
 ## 组合、事件与生命周期
 

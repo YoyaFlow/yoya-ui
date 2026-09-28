@@ -39,3 +39,8 @@ const form = vForm((form) => {
 ## 控件通用 API
 
 `value(next)`（读写）、`disabled(next)`、`required(next)`、`name(next)` 大多数控件都支持，且 getter 无参返回当前状态；`onChange(handler)` 或 `change(handler)` 注册变化回调。
+
+**值位传可写句柄 = 自动双向绑定**：`vInput({ value: name })`、`vTextarea({ value: draft })`、`vSelect({ value: selected })`、`vSlider({ value: progress })`（日期/时间用 `vTimer`，起止区间用 `vTimerRange`）输入即写回句柄，
+句柄变即刷控件；两侧都比较值是否已相同，所以不会回声、也不会顶光标。`onInput` / `onChange` 与内置回写
+**共存**（同一事件名多 handler），需要 `Number()` / trim 这类转换就加自己的 handler，不用替掉内置的。
+程序化写控件（`editor.value(next)`、`form.values({...})` 回填）同样会回写句柄——句柄是唯一真源。

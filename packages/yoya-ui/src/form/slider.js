@@ -1,7 +1,12 @@
-import { registerChildFactories, vText } from '@yoyaflow/yoya-core/internal/core/node.js';
+import {
+  applyPropValue,
+  registerChildFactories,
+  vText
+} from '@yoyaflow/yoya-core/internal/core/node.js';
 import { vNode } from '@yoyaflow/yoya-core/internal/core/v-node.js';
 import { HtmlElementNode, div, input as inputTag, span } from '@yoyaflow/yoya-core/html';
 import { createComponentShortcut, isPlainObject, themeValue } from '../components/shared.js';
+import { bindControlValue } from './controls/shared.js';
 
 /**
  * 滑动条（形态 B，票 15 §4）：视图根是外壳 `div` + 原生 range 输入 + 数值标签。
@@ -17,7 +22,7 @@ import { createComponentShortcut, isPlainObject, themeValue } from '../component
  * @genui.prop max
  * @genui.prop min
  * @genui.prop step
- * @genui.prop value to=command:value read=command:value live=false
+ * @genui.prop value to=command:value read=command:value live=true
  * @genui.expose value command=value
  */
 export function VSlider() {
@@ -33,6 +38,9 @@ export function VSlider() {
       value: 0,
       vertical: false
     };
+
+    // 值位传可写句柄时的双向绑定（由 setupObject 装配）：命令面写值也要回写句柄
+    let bound = null;
 
     const input = inputTag({ vn: 'VSliderInput' })
       .attr({
@@ -72,11 +80,18 @@ export function VSlider() {
 
     const setValue = (next, emit) => {
       const value = Number(next);
-
-      state.value = Number.isFinite(value)
+      const normalized = Number.isFinite(value)
         ? clampNumber(value, state.min, state.max, state.step)
         : state.min;
+
+      if (Object.is(state.value, normalized)) {
+        bound?.setHandle(normalized);
+        return;
+      }
+
+      state.value = normalized;
       sync();
+      bound?.setHandle(normalized);
 
       if (emit) {
         state.changeHandlers.forEach((handler) => handler(state.value, self.node()));
@@ -237,6 +252,11 @@ export function VSlider() {
         ...elementConfig
       } = setup;
 
+      bound =
+        value !== undefined
+          ? bindControlValue({ host: node, field: input, handle: value, parse: Number })
+          : null;
+
       if (Object.keys(elementConfig).length > 0) {
         node.setup(elementConfig);
       }
@@ -251,7 +271,7 @@ export function VSlider() {
         api.step(step);
       }
       if (value !== undefined) {
-        api.value(value);
+        applyPropValue(node, value, (next) => api.value(next));
       }
       if (showValue !== undefined) {
         api.showValue(showValue);
@@ -284,7 +304,7 @@ export function VSlider() {
 
 /**
  * @genui 滑杆（A2UI Slider 映射）
- * @genui.contract props.min/max/step/value
+ * @genui.contract props.value: 传句柄（$bind / @:/path）→ 拖动即写回数字；传普通值 = 只读快照；写入按 min/max/step 收敛
  * @genui.use 数值区间选择
  * @genui.notFor 精确文本输入（用 vInput）
  * @genui.example {"type":"vSlider","props":{"value":{"$bind":"/progress"}}}

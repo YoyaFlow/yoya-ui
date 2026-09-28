@@ -99,7 +99,8 @@ describe('VMessageManager', () => {
     expect(manager.destroy()).toBe(manager);
     vi.advanceTimersByTime(1000);
 
-    expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function), undefined);
+    // 销毁时按 DOM 类型退订共用派发函数（不再逐条带 options 的适配器）
+    expect(removeEventListener).toHaveBeenCalledWith('click', expect.any(Function));
     expect(document.querySelector('[vn~="VMessageContainer"]')).toBeNull();
     expect(manager.show('已销毁', { duration: 0 })).toBe(null);
     expect(manager.success('已销毁', { duration: 0 })).toBe(null);

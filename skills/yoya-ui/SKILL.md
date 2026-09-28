@@ -126,7 +126,7 @@ div((root) => {
 - [references/forms.md](references/forms.md)：vForm/vFormItem、收集校验、自定义控件
 - [references/theming.md](references/theming.md)：主题 token、类名契约、样式定制
 - [references/ssr-i18n.md](references/ssr-i18n.md)：SSR/hydrate、每请求 i18n、路由配合
-- [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、事件单槽
+- [references/state.md](references/state.md)：Signals（`ref` / `computed` / 值位置传句柄）、由信号驱动的可重建区域、keyed 列表协调、条件挂载、子树错误边界、引擎替换、fragment 与 keyed 子节点、多 handler 事件与句柄双向绑定
 - [references/access-context.md](references/access-context.md)：权限（read/write、scope、SPA/SSR 注入、admin 接线）与跨组件共享（provide/inject、withContext、installContext）、无障碍原语
 - [references/devtools.md](references/devtools.md)：DevTools（Beta）调试入口与事件契约
 - [references/compile.md](references/compile.md)：编译路径（Beta）——构建期插件接入、两条通道、契约与边界

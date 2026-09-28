@@ -306,11 +306,19 @@ export class ViewNode {
   /** Declares access control: bare default read, "w.xxx" write, "r.xxx" read. */
   access(spec: AccessSpec): this;
 
-  /** Registers an event listener, bound immediately or at render time. */
+  /**
+   * Registers an event listener, bound immediately or at render time. One node keeps **every**
+   * handler registered for an event name and fires them in registration order (a component's
+   * built-in handler and the caller's coexist); re-registering the same `(name, handler)` pair
+   * updates its options instead of firing twice.
+   *
+   * Use ordinary DOM/custom event names. Dotted names are reserved for future keyed-event work
+   * and are **not part of the current public contract**.
+   */
   on(eventName: string, handler: EventHandler, options?: EventOptions): this;
 
-  /** Removes the listener (and its DOM adapter) for an event name. */
-  off(eventName: string): this;
+  /** Removes the handlers registered for an event name; with a handler reference, only that one. */
+  off(eventName: string, handler?: EventHandler): this;
 
   /** Inserts a keyed child before another keyed child; null beforeKey appends. */
   insertBefore(
@@ -736,6 +744,12 @@ export function computed<T>(compute: () => T): Readonly<SignalHandle<T>>;
 
 /** True for yoya signal handles (plain `{ value }` objects are not signals). */
 export function isSignal(value: unknown): value is SignalHandle<unknown>;
+
+/**
+ * Whether the handle is writable (`computed` derivatives are read-only). Controls use it to
+ * decide whether a handle in a value position can take a two-way write-back.
+ */
+export function isWritableSignal(value: unknown): value is SignalHandle<unknown>;
 
 /**
  * Coerces a value to a signal handle: handles pass through unchanged, plain values are
