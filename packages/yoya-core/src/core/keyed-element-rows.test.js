@@ -28,7 +28,8 @@ const rowElement = (id, label) => {
 const mountKeyed = (rows, build, options) => {
   const host = tbody((body) => {
     body.attr('id', 'tbody');
-    body.keyed(rows, build, options);
+    // 行身份必须声明：这些用例的行都带业务 id，按 id 认行（原来的"行引用兜底"已删除）
+    body.keyed(rows, build, { key: 'id', ...options });
   });
   const element = host.renderDom();
   return { element, host };
@@ -124,7 +125,7 @@ describe('keyed() with element rows (ticket 15)', () => {
       el.textContent = row.label;
       return { el, destroy() {} };
     };
-    const host = tbody((body) => body.keyed(rows, build));
+    const host = tbody((body) => body.keyed(rows, build, { key: 'id' }));
     const element = host.renderDom();
     expect(element.children).toHaveLength(1000);
 
@@ -196,7 +197,7 @@ describe('keyed() with element rows (ticket 15)', () => {
     const rows = ref([{ id: 1, label: 'a' }]);
     const build = (row) => ({ el: rowElement(row.id, row.label), destroy: vi.fn() });
     const host = tbody((body) => {
-      body.keyed(rows, build);
+      body.keyed(rows, build, { key: 'id' });
       body.tr((line) => line.attr('data-id', 'tail'));
     });
     const element = host.renderDom();
@@ -213,8 +214,8 @@ describe('keyed() with element rows (ticket 15)', () => {
     const first = ref([{ id: 1, label: 'a' }]);
     const second = ref([{ id: 2, label: 'b' }]);
     const host = tbody((body) => {
-      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }));
-      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }));
+      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }), { key: 'id' });
+      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }), { key: 'id' });
     });
     const element = host.renderDom();
 
@@ -231,8 +232,8 @@ describe('keyed() with element rows (ticket 15)', () => {
     const first = ref([]);
     const second = ref([]);
     const host = tbody((body) => {
-      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }));
-      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }));
+      body.keyed(first, (row) => ({ el: rowElement(`a${row.id}`, row.label), destroy: vi.fn() }), { key: 'id' });
+      body.keyed(second, (row) => ({ el: rowElement(`b${row.id}`, row.label), destroy: vi.fn() }), { key: 'id' });
       body.tr((line) => line.attr('data-id', 'tail'));
     });
     const element = host.renderDom();
@@ -257,7 +258,7 @@ describe('keyed() with element rows (ticket 15)', () => {
       { id: 2, label: 'b' }
     ]);
     const host = tbody((body) => {
-      body.keyed(rows, (row) => ({ el: rowElement(row.id, row.label), destroy: vi.fn() }));
+      body.keyed(rows, (row) => ({ el: rowElement(row.id, row.label), destroy: vi.fn() }), { key: 'id' });
     });
     const element = host.renderDom();
 
@@ -272,10 +273,14 @@ describe('keyed() with element rows (ticket 15)', () => {
       { id: 2, label: 'b' }
     ]);
     const host = tbody((body) => {
-      body.keyed(rows, (row) => ({
-        el: rowElement(row.id, row.label),
-        destroy: () => destroyed.push(row.id)
-      }));
+      body.keyed(
+        rows,
+        (row) => ({
+          el: rowElement(row.id, row.label),
+          destroy: () => destroyed.push(row.id)
+        }),
+        { key: 'id' }
+      );
     });
     host.renderDom();
 
@@ -289,10 +294,14 @@ describe('keyed() with element rows (ticket 15)', () => {
     const rows = ref([{ id: 1, label: 'a' }]);
     const host = div((page) => {
       page.rebuildable();
-      page.keyed(rows, (row) => ({
-        el: rowElement(row.id, row.label),
-        destroy: () => destroyed.push(row.id)
-      }));
+      page.keyed(
+        rows,
+        (row) => ({
+          el: rowElement(row.id, row.label),
+          destroy: () => destroyed.push(row.id)
+        }),
+        { key: 'id' }
+      );
     });
     const element = host.renderDom();
 

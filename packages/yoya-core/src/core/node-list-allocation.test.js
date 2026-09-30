@@ -81,7 +81,8 @@ describe('node-level list first write', () => {
     const rows = ref(['a']);
     const list = div((el) => {
       el.rebuildable();
-      el.keyed(rows, (row) => div(row));
+      // 行身份必须声明：这里行是字符串，显式按值认行
+      el.keyed(rows, (row) => div(row), { key: (row) => row });
     });
     list.renderDom();
 

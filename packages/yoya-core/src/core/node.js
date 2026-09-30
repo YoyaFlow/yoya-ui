@@ -2,7 +2,7 @@
 import { getFocusableElements } from './a11y.js';
 import { currentAccess, parseAccessSpec, withAccess } from './access.js';
 import { snapshotContext, withContext, withProviderScope } from './context.js';
-import { isSignal, ref } from './signals/handle.js';
+import { asSignal, isSignal, ref } from './signals/handle.js';
 import { optionKindOf } from './setup-keys.js';
 import {
   COMPONENT_HOOK_NAMES,
@@ -1487,6 +1487,60 @@ function isKeyedOptions(value) {
 }
 
 /**
+ * 行字段取值：`'id'` 直取，`'a/b'` 按 genui 同口径的路径分段取。
+ * core 不反向依赖 genui 的路径工具，所以这里只实现"取"这一半（写回不归 keyed）。
+ */
+function readRowField(row, path) {
+  const text = String(path);
+
+  if (!text.includes('/')) {
+    return row === null || row === undefined ? undefined : row[text];
+  }
+
+  return text
+    .split('/')
+    .filter(Boolean)
+    .reduce((current, key) => (current === null || current === undefined ? undefined : current[key]), row);
+}
+
+/**
+ * `options.key` → keyOf。**行身份必须声明**，不给就抛——不猜。
+ *
+ * 为什么不再用"行引用"兜底：整批重取会换引用、重排会换位置，兜底出来的身份
+ * 会**静默变化**（行状态错位、事件委托错行），比报错贵得多。
+ *
+ * 接受四种写法：
+ * - 字段名：`'id'`（支持 `'a/b'` 嵌套）
+ * - 字段名数组（复合）：`['tenant', 'id']` —— 按取值序列化比较，不做字符串拼接（避免 `a#b` 歧义）
+ * - `'index'`：显式声明"位置即身份"（只该用于不增删不排序的静态列表）
+ * - 函数：`(row, index) => …`
+ */
+function keyOfFrom(options) {
+  const key = options?.key;
+
+  if (key === undefined) {
+    throw new TypeError(
+      'keyed() 必须声明行身份：keyed(source, keyFn, build)，或给 options.key（字段名 / 字段名数组 / "index" / 函数）',
+    );
+  }
+  if (typeof key === 'function') {
+    return key;
+  }
+  if (key === 'index') {
+    return (row, index) => index;
+  }
+  if (Array.isArray(key)) {
+    const fields = key.map((field) => String(field));
+    return (row) => JSON.stringify(fields.map((field) => readRowField(row, field) ?? null));
+  }
+  if (typeof key === 'string') {
+    return (row) => readRowField(row, key);
+  }
+
+  throw new TypeError('keyed() options.key 需要字段名 / 字段名数组 / "index" / 函数');
+}
+
+/**
  * 元素行：编译产物 `element` 通道的行是 `{ el, destroy }`——只有 DOM，没有节点对象。
  * 它不进视图树，`keyed` 直接拿它在父元素上对账（票 15 / R5-b，与 Svelte 的 keyed each 同构）。
  */
@@ -2643,7 +2697,7 @@ export class ViewNode {
   }
 
   /**
-   * keyed 子项绑定：source 是 ref/computed 句柄，或 keySet 容器。
+   * keyed 子项绑定：source 是句柄（ref / computed）、keySet 容器，或普通数组（包成常量句柄）。
    * 同 key 且行引用未变时复用节点（build 不重跑）；行引用变化原位换新；
    * 顺序变化 insertBefore 保身份。keyFn 缺省时用行引用身份做 key。
    *
@@ -2662,16 +2716,37 @@ export class ViewNode {
     const sourceIsKeySet = isKeySet(source);
     const withKeyFn = typeof maybeBuild === 'function';
     const build = withKeyFn ? maybeBuild : keyOrBuild;
-    // keySet 源缺省用容器自己的身份：元素是 KeyItem，键取自 item.data（不缓存 key，只有一个真源）。
+    const options = withKeyFn ? maybeOptions : maybeBuild;
+    // 行身份的三条来源：
+    // ① keySet 源 → 容器自己的 keyOf（同 key 同 api 的前提）；
+    // ② keyFn 位置参 → 调用方显式声明；
+    // ③ options.key → 字段名 / 字段名数组（复合）/ 'index' / 函数（见 keyOfFrom）。
+    // 都没有时仍是**行引用身份**——但它同时是编译器代码生成依赖的形态（两参 keyed），
+    // 所以"必须声明"这一步要等编译器一起改，别在这里单方面收紧。
     const keyFn = withKeyFn
       ? keyOrBuild
       : sourceIsKeySet
         ? (item) => source.keyOf(item.data)
-        : null;
-    const options = withKeyFn ? maybeOptions : maybeBuild;
+        : options?.key === undefined
+          ? null
+          : keyOfFrom(options);
 
-    if (!isSignal(source) && !sourceIsKeySet) {
-      throw new TypeError('keyed() requires a signal handle or a keySet as its source');
+    /**
+     * 普通数组也收：包成常量句柄（R9「给值 = 快照、给句柄 = 活值」的同一口径，
+     * 归一化用 `asSignal`，与组件入口一致）。keySet 与句柄原样透传，不重复包装。
+     * 其余类型当场报错——静默成空列表比报错贵。
+     */
+    const rowHandle =
+      sourceIsKeySet || isSignal(source)
+        ? source
+        : Array.isArray(source)
+          ? asSignal(source)
+          : null;
+
+    if (rowHandle === null) {
+      throw new TypeError(
+        'keyed() 的 source 需要句柄（ref / computed）、keySet 或普通数组',
+      );
     }
     if (typeof build !== 'function') {
       throw new TypeError('keyed() requires a build function');
@@ -2706,7 +2781,7 @@ export class ViewNode {
       this,
       'keyed',
       null,
-      () => source.value,
+      () => rowHandle.value,
       (rows) => {
         syncKeyedSegment(this, segment, rows);
       }

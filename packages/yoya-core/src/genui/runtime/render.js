@@ -438,8 +438,20 @@ function buildOptions(node, ctx, bindings = null, entry = null, callbackProps = 
         return;
       }
 
-      // `live: true` = 组件自己吃活值句柄（直传）；否则落当次值，由数据订阅负责更新
-      options[mapping.name] = mapping.live === true ? resolved : deepSnapshot(resolved);
+      /**
+       * **绑定位直传句柄**（默认口径，R9）：`@:/` / `$template` / `$call` 求出来的本来就是
+       * 句柄（data cell / computed），直接交给组件——组件内部按 R9 用 `asSignal` 归一化即可，
+       * 不再需要"同名命令重放"才能拿到活值。`live: true` 保持等价（显式声明，语义不变）。
+       *
+       * 字面量仍然落当次值（`deepSnapshot`）；`attr` / `style` / `class` 三条元素通道走上面的分支，
+       * 那里必须落字符串快照，不受这条影响。
+       */
+      const passHandle =
+        mapping.live === true ||
+        isBindExpr(value) ||
+        isTemplateExpr(value) ||
+        isCallExpr(value);
+      options[mapping.name] = passHandle ? resolved : deepSnapshot(resolved);
     });
   }
 

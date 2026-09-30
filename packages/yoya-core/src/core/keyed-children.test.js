@@ -99,7 +99,7 @@ describe('keyed children binding', () => {
     expect(element.textContent).toBe('headitem-ytail');
   });
 
-  it('rejects duplicate row keys and non-signal sources', () => {
+  it('rejects duplicate row keys and non-collection sources', () => {
     const rows = ref([{ id: 1 }, { id: 2 }]);
     const list = ul((node) => {
       node.keyed(
@@ -113,7 +113,28 @@ describe('keyed children binding', () => {
     expect(() => {
       rows.value = [{ id: 1 }, { id: 1 }];
     }).toThrow(/duplicate/i);
-    expect(() => div().keyed([], () => li('x'))).toThrow(/signal/i);
+    // 数组现在收（包成常量句柄，与组件入口同一口径 asSignal）；非集合类型仍然当场报错
+    expect(() => div().keyed([], () => li('x'), { key: 'index' })).not.toThrow();
+    expect(() => div().keyed(42, () => li('x'), { key: 'index' })).toThrow(/句柄|keySet|数组/);
+    // 不给 keyFn 也没给 options.key 时仍是行引用身份（编译器的两参形态依赖它，暂不收紧）
+    expect(() => div().keyed([], () => li('x'))).not.toThrow();
+  });
+
+  it('accepts a plain array source (wrapped into a constant handle)', () => {
+    const list = ul((node) => {
+      node.keyed(
+        [
+          { id: 'a' },
+          { id: 'b' },
+        ],
+        (row) => row.id,
+        (row) => li(row.id)
+      );
+    });
+
+    const element = list.renderDom();
+
+    expect(element.textContent).toBe('ab');
   });
 
   it('self-heals after clearChildren', () => {
