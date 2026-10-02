@@ -33,8 +33,17 @@ export type AttrValue =
  * zero-argument reader (see AGENTS「Component Writing Rules」R9 / R6 — props 给句柄就是活值).
  * Component definitions keep the handle as-is and normalize while reading, so props stay live;
  * a plain value is the snapshot form.
+ *
+ * A prop whose domain is a JSON tree (object / array) takes `JsonSignalHandle` here — it is a
+ * `SignalHandle`, so this union already covers it, and `at('a/b')` addresses inside the value.
  */
 export type PropValue<T> = T | SignalHandle<T> | ValueReader<T>;
+
+/**
+ * Prop value union for a **JSON** position: same semantics as `PropValue<T>`, narrowed to the
+ * handle an `asSignalJson` prop holds, so authors can type a `at(path)`-drillable prop.
+ */
+export type JsonPropValue<T> = PropValue<T> | JsonSignalHandle<T>;
 
 /** Inline style values supported by style()/styles(); handle or reader makes it live. */
 export type StyleValue =
@@ -761,6 +770,24 @@ export function isWritableSignal(value: unknown): value is SignalHandle<unknown>
  */
 export function asSignal<T>(value: SignalHandle<T>): SignalHandle<T>;
 export function asSignal<T>(value: T): SignalHandle<T>;
+
+/**
+ * A JSON-capable signal handle: the same handle contract, plus relative-path addressing into
+ * the value (`at('rows/0/value')`). Paths are always relative to this handle's own value — they
+ * never fall through to the page data model.
+ */
+export interface JsonSignalHandle<T = unknown> extends SignalHandle<T> {
+  /** Handle for a relative path inside the value; the result is addressable the same way. */
+  at(path?: string): JsonSignalHandle<unknown>;
+}
+
+/**
+ * Coerces a value to a **JSON** signal handle: an existing JSON handle passes through, any other
+ * handle is wrapped over the same source (never a new one), and a plain object / array is wrapped
+ * in `ref`. Reading `at(path)` on a scalar throws — a prop whose value is not JSON uses `asSignal`.
+ */
+export function asSignalJson<T>(value: SignalHandle<T>): JsonSignalHandle<T>;
+export function asSignalJson<T>(value: T): JsonSignalHandle<T>;
 
 /** Runs `run` with coalesced notification when the engine supports batching. */
 export function batch<T>(run: () => T): T;

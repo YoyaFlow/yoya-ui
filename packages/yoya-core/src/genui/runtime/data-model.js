@@ -1,6 +1,7 @@
 import { asSignal, isSignal } from '../../index.js';
 import { currentSignals } from '../../core/signals/contract.js';
 import { SignalHandle } from '../../core/signals/handle.js';
+import { JSON_SCOPE } from '../../core/signals/json.js';
 import { ERROR_CODES, GenUIError } from '../protocol/errors.js';
 import {
   isPathPrefix,
@@ -322,5 +323,11 @@ function createModelHandle(model, path) {
     adapter.effect = (fn) => engine.effect(fn);
   }
 
-  return new SignalHandle(adapter, unit);
+  const handle = new SignalHandle(adapter, unit);
+
+  // 路径下钻的精确后端：`asSignalJson(cell).at('a/b')` 直接落到 `/base/a/b` 的 cell 上，
+  // 读写在叶子上、通知也只到相关路径（没有它就会退化成"整根替换 + 全树唤醒"）。
+  handle[JSON_SCOPE] = (relativePath) => model.cell(`${path}${normalizePath(relativePath)}`);
+
+  return handle;
 }

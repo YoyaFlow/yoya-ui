@@ -52,6 +52,7 @@ export {
   ref,
   SignalHandle
 } from './signals/handle.js';
+export { asSignalJson } from './signals/json.js';
 export { isKeySet, keySet } from './key-set.js';
 export { assertSignalsAdapter, currentSignals, installSignals } from './signals/contract.js';
 export {
