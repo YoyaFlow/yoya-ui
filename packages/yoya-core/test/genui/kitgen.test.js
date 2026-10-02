@@ -38,6 +38,12 @@ describe('kitgen 通用生成器', () => {
  * @genui.notFor 深夜模式
  * @genui.pitfall 名字为空时只显示问候
  * @genui.example {"type":"vGreeter"}
+ * @genui.scene 问候, 新人引导
+ * @genui.layer l3
+ * @genui.props {"greeting":"问候语","name":"名字"}
+ * @genui.live name；score
+ * @genui.pairs vBadge（角标）, vAvatar（头像）
+ * @genui.state 名字由外部持有，问候语是组件内默认值
  */
 export const vGreeter = createComponentShortcut(VGreeter);`;
 
@@ -47,8 +53,68 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
       whenToUse: ['早间问候', '新人引导'],
       notFor: ['深夜模式'],
       pitfalls: ['名字为空时只显示问候'],
-      example: { type: 'vGreeter' }
+      example: { type: 'vGreeter' },
+      // 选型面：场景（检索权重最高）与层（genui_catalog 的硬过滤主键），L 小写也认、归一成大写
+      scenes: ['问候', '新人引导'],
+      layer: 'L3',
+      // 契约面：签名叫不出名字的库靠它写说明；活绑定面：声明即"这几位是活绑定位"
+      props: { greeting: '问候语', name: '名字' },
+      liveProps: ['name', 'score'],
+      // 逻辑/组合面：选完还要配谁、状态归谁
+      pairs: ['vBadge（角标）', 'vAvatar（头像）'],
+      state: '名字由外部持有，问候语是组件内默认值'
     });
+  });
+
+  it('选型面标签写错要当场报（层是硬过滤主键，静默写错 = 从切片里消失）', () => {
+    const readDoc = (line) => {
+      const source = `/**\n * @genui 组件\n * ${line}\n */\nexport const vX = VX;`;
+      return () => extractGenuiDoc(source, source.indexOf('export const'));
+    };
+
+    expect(readDoc('@genui.layer L9')).toThrow(/L1–L7/);
+    expect(readDoc('@genui.props not-json')).toThrow(/合法 JSON/);
+    expect(readDoc('@genui.props ["a"]')).toThrow(/JSON 对象/);
+  });
+
+  it('体积预算：写成小作文就当场报（防"标签多 → 上下文爆"）', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'kitgen-budget-'));
+    const src = join(dir, 'src', 'basic');
+    const long = '很'.repeat(120);
+
+    await mkdir(src, { recursive: true });
+    await writeFile(
+      join(src, 'fat.js'),
+      `/**
+ * @genui ${long}
+ * @genui.pitfall ${long}
+ * @genui.props {"value":"${long}"}
+ */
+export function VFat() {}
+export const vFat = createComponentShortcut(VFat);\n`
+    );
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'fixture/fat', version: '1.0.0' }));
+
+    const configFor = (budgets) => ({
+      src: join(dir, 'src'),
+      out: join(dir, 'genui-kit.json'),
+      namespace: 'fixture/fat',
+      pkg: join(dir, 'package.json'),
+      categories: { basic: 'basic' },
+      elements: { html: false, svg: false },
+      ...(budgets ? { budgets } : {})
+    });
+
+    await expect(generateKit(configFor(), { resolveFrom: dir })).rejects.toThrow(/超预算[\s\S]*summary/);
+    // 库可以按需放宽
+    const relaxed = await generateKit(
+      configFor({ summary: 200, pitfalls: { count: 6, item: 200 }, props: { count: 24, value: 200 } }),
+      { resolveFrom: dir }
+    );
+
+    expect(relaxed.components.find((component) => component.name === 'vFat')).toBeTruthy();
+
+    await rm(dir, { recursive: true, force: true });
   });
 
   it('从 PascalCase 工厂签名解构里抽 props（rest 与默认值剔除）', () => {
@@ -68,8 +134,20 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
     expect(greeter).toMatchObject({
       category: 'basic',
       dataContract: 'greeting: 文本；name: 文本',
+      layer: 'L3',
+      liveProps: ['name', 'score'],
       needsDocs: false,
-      props: { change: '', children: '', greeting: '', name: '', score: '' },
+      pairs: ['vBadge（角标）', 'vAvatar（头像）'],
+      state: '名字由外部持有（写回页面数据域），问候语是组件内默认值',
+      // props 合并：签名给名字、JSDoc 给说明（同名时说明优先，空串不覆盖文案）
+      props: {
+        change: '',
+        children: '',
+        greeting: '问候语（缺省：你好）',
+        name: '名字（必填）',
+        score: ''
+      },
+      scenes: ['问候卡片', '新人引导'],
       summary: '问候卡片',
       whenToUse: ['早间问候', '新人引导']
     });
@@ -90,6 +168,10 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
     expect(manifest.namespace).toBe('fixture/kitgen-lib');
     expect(manifest.version).toBe('1.2.3');
     expect(manifest.runtime).toEqual({ genui: '>=0.2 <0.3' });
+    // 切片纪律写进 manifest：thin = 每步都调的小片，full = 选定一个组件后按需取
+    expect(manifest.tiers.thin).toContain('summary');
+    expect(manifest.tiers.thin).not.toContain('example');
+    expect(manifest.tiers.full).toContain('example');
     // script / iframe 被黑名单拦下，普通标签在
     expect(manifest.htmlElements).toContain('div');
     expect(manifest.htmlElements).not.toContain('script');

@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+dist/
+
+# 数据三件里可重建的两件（data/ 要进 Git：它是默认数据根）
+cache/
+versions/
+
+# 宿主过渡期目录：页面 / 清单 / 登记表还没变成文件（见 docs/project-shape-v0.md §12），
+# 契约第二刀之后它会消失 —— 所以它不是项目的真相，不进 Git
+state/
+
+# 宿主账本：索引 / 引用图 / 统计 —— 可重建，不进 Git
+.genui/index/
+.genui/references.json
+.genui/stats.json
+
+# 本机临时覆盖（**地址与凭据一律住运行时目录**，别写进这个项目）
+*.local.json

@@ -1,0 +1,25 @@
+{
+  "protocol": "yoya-genui",
+  "version": "0.2",
+  "surfaceId": "daily-report",
+  "meta": { "queries": ["orders_page"] },
+  "sources": {
+    "@:/data/orders": {
+      "action": "@actions:/orders_page",
+      "params": { "page": 1, "pageSize": 20 }
+    }
+  },
+  "root": {
+    "type": "vCard",
+    "children": [
+      { "type": "vCardHeader", "children": [{ "type": "h3", "text": "每日订单（对内报表）" }] },
+      {
+        "type": "vCardBody",
+        "children": [
+          { "type": "span", "text": "本页订单数：" },
+          { "type": "strong", "text": "@:/data/orders/rows/length" }
+        ]
+      }
+    ]
+  }
+}

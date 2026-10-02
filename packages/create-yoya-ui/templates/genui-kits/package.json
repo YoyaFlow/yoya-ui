@@ -1,0 +1,50 @@
+{
+  "name": "my-genui-kit",
+  "version": "0.1.0",
+  "description": "GenUI kit：用组件元数据（component.json → kit.json）+ 运行时实现，把自定义组件接进 GenUI 能力面。",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/index.js"
+    },
+    "./dist/yoya.kit.js": "./dist/yoya.kit.js",
+    "./kit.json": "./kit.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "components",
+    "dist",
+    "indexes",
+    "index.d.ts",
+    "kit.json",
+    "src"
+  ],
+  "scripts": {
+    "dev": "vite --config vite.playground.config.js",
+    "build": "vite build",
+    "build:playground": "vite build --config vite.playground.config.js",
+    "preview": "vite preview --config vite.playground.config.js",
+    "kit:generate": "node scripts/generate-kit.mjs",
+    "kit:check": "node scripts/generate-kit.mjs --check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run kit:check && npm run test && npm run build"
+  },
+  "peerDependencies": {
+    "@yoyaflow/yoya-core": "^0.7.0",
+    "@yoyaflow/yoya-ui": "^0.7.0"
+  },
+  "devDependencies": {
+    "@yoyaflow/yoya-core": "0.7.6",
+    "@yoyaflow/yoya-ui": "0.7.6",
+    "jsdom": "^29.1.1",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24.0.0"
+  },
+  "sideEffects": false,
+  "license": "MIT"
+}

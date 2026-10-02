@@ -1,0 +1,17 @@
+{
+  "app": "report",
+  "project": "local/genui-project",
+  "hosts": { "orders-db": "<部署方提供：例如 https://api.example.com>" },
+  "actions": { "orders_page": { "method": "GET", "path": "/orders", "params": ["page", "pageSize"] } },
+  "deps": {
+    "@yoyaflow/yoya-core": { "version": "^0.7.6", "kind": "base-library" },
+    "@yoyaflow/yoya-ui": { "version": "^0.7.6", "kind": "base-library" }
+  },
+  "breaks": [
+    {
+      "key": "orders_page",
+      "reason": "与 admin 同一个查询，但只取前 20 条（报表口径 vs 管理口径）",
+      "howToFix": "若要独立口径，在项目级 resources/queries/ 里另加一条查询并在本页 meta.queries 里声明"
+    }
+  ]
+}

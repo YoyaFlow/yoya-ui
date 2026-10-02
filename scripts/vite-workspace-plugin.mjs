@@ -15,7 +15,9 @@ const SUBPATH_OVERRIDES = {
   '@yoyaflow/yoya-core/ssr': 'packages/yoya-core/src/core/ssr.js',
   '@yoyaflow/yoya-core/devtools': 'packages/yoya-core/src/core/devtools.js',
   // 编译产物的运行期钩子（只有编译过的项目才会加载它）
-  '@yoyaflow/yoya-core/compiler-runtime': 'packages/yoya-core/src/core/compiler-runtime.js'
+  '@yoyaflow/yoya-core/compiler-runtime': 'packages/yoya-core/src/core/compiler-runtime.js',
+  // 组件库注册面是 kitgen 的**生成物**，落在包根（不在 src/ 下）
+  '@yoyaflow/yoya-ui/genui-plugin': 'packages/yoya-ui/genui-plugin.js'
 };
 
 export function workspaceSourcePlugin() {

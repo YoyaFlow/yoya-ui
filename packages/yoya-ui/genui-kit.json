@@ -7,6 +7,20 @@
     "from": "source-scan + JSDoc @genui tags",
     "notice": "工厂清单勿手改——重跑 scripts/generate-genui-kit.mjs；文档写在组件源码 JSDoc（@genui* 标签）"
   },
+  "tiers": {
+    "thin": ["name", "summary", "category", "layer", "scenes"],
+    "full": [
+      "dataContract",
+      "whenToUse",
+      "notFor",
+      "pitfalls",
+      "props",
+      "pairs",
+      "state",
+      "liveProps",
+      "example"
+    ]
+  },
   "components": [
     {
       "name": "center",

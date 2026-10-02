@@ -1,0 +1,9 @@
+{
+  "layout": [
+    "my-org/my-kit#PanelKit"
+  ],
+  "data-display": [
+    "my-org/my-kit#MetricKit",
+    "my-org/my-kit#BadgeKit"
+  ]
+}

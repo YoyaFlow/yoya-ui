@@ -265,4 +265,52 @@ describe('send/source 的能力与生命周期边界', () => {
     await Promise.resolve();
     expect(surface.data.read('/ui/pending/orders/submit')).toBe(true);
   });
+
+  it('HTTP 4xx/5xx 不当成数据写入：落到 /ui/errors 并带上响应里的原因', async () => {
+    const fetch = vi.fn(async () => ({
+      ok: false,
+      status: 400,
+      text: async () => JSON.stringify({ ok: false, code: 'param_invalid', error: '参数 "pageSize" 不能小于 5' })
+    }));
+    const genui = createGenUI({ custodians: actions, fetch });
+    const surface = genui.fromJson({
+      data: { query: { pageSize: 1 } },
+      sources: {
+        '@:/data/rows': {
+          action: '@actions:/users/check',
+          params: { pageSize: '@:/query/pageSize' }
+        }
+      },
+      root: { type: 'p', text: '@:/data/rows' }
+    });
+    const target = document.createElement('div');
+
+    surface.bindTo(target);
+
+    await vi.waitFor(() =>
+      expect(surface.data.read('/ui/errors/data/rows')).toMatch(/不能小于 5/)
+    );
+    // 目标路径没被错误体污染
+    expect(surface.data.read('/data/rows')).toBeUndefined();
+    expect(surface.data.read('/ui/pending/data/rows')).toBe(false);
+  });
+
+  it('HTTP 失败响应不是 JSON 时也能给出可读原因', async () => {
+    const fetch = vi.fn(async () => ({
+      ok: false,
+      status: 503,
+      text: async () => '数据面子进程已退出'
+    }));
+    const genui = createGenUI({ custodians: actions, fetch });
+    const surface = genui.fromJson({
+      sources: { '@:/data/rows': { action: '@actions:/users/check' } },
+      root: { type: 'p', text: '@:/data/rows' }
+    });
+
+    surface.bindTo(document.createElement('div'));
+
+    await vi.waitFor(() =>
+      expect(surface.data.read('/ui/errors/data/rows')).toMatch(/数据面子进程已退出（HTTP 503）/)
+    );
+  });
 });

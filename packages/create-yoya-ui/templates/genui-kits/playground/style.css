@@ -1,0 +1,101 @@
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  font:
+    14px/1.6 system-ui,
+    -apple-system,
+    'Segoe UI',
+    'Microsoft YaHei',
+    sans-serif;
+  margin: 0 auto;
+  max-width: 1040px;
+  padding: 24px 20px 64px;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 28px 0 12px;
+}
+
+.page-head p {
+  color: #64748b;
+  margin: 0;
+}
+
+.registry-row,
+.stage {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+}
+
+.registry-row header,
+.stage header {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.registry-row p {
+  margin: 6px 0 0;
+}
+
+.stage h3 {
+  font-size: 14px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.actions button {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  padding: 3px 8px;
+}
+
+.actions button:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.canvas {
+  margin-top: 12px;
+}
+
+.chip {
+  background: rgba(22, 119, 255, 0.08);
+  border-radius: 999px;
+  color: #1677ff;
+  font-size: 12px;
+  padding: 1px 8px;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 13px;
+}

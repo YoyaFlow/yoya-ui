@@ -77,14 +77,167 @@ export const DEFAULT_CONFIG = {
   exclude: [/\.test\./]
 };
 
+/**
+ * 文档标签 → manifest 字段。
+ *
+ * 分三档，按**消费者在读什么**排：
+ * 1. 选型面（决定"能不能被准确找到"）：summary / scene / layer / use / notFor
+ *    —— 检索权重是 场景4 > 分类3 > 摘要·适用2 > 不适用·契约1，层是**硬过滤主键**
+ *    （`genui_catalog({ layer })`），所以 scene 与 layer 必须能写在定义点上；
+ * 2. 契约面（决定"写得对不对"）：contract / props / example / pitfall
+ *    —— `props` 签名叫得出名字就零手写，叫不出（单参 props 袋的库）用 `@genui.props` 一行 JSON 补；
+ * 3. 运行期面（进插件、不进 manifest）：content / text / prop / event / expose —— 见 parseWiringTag。
+ */
 const DOC_TAG_KEYS = {
   summary: 'summary',
   contract: 'dataContract',
   use: 'whenToUse',
   notFor: 'notFor',
   pitfall: 'pitfalls',
-  example: 'example'
+  example: 'example',
+  // —— 选型面
+  scene: 'scenes',
+  layer: 'layer',
+  category: 'category',
+  // —— 契约面 / 活绑定
+  props: 'props',
+  live: 'liveProps',
+  // —— 逻辑 / 组合面（"选完还要配什么、状态放哪"）
+  pairs: 'pairs',
+  state: 'state'
 };
+
+/** 列表型文档标签：`；` 分隔（历史口径）；场景 / 活绑定 / 搭配再容一个英文逗号（关键词列表）。 */
+const LIST_DOC_KEYS = new Set([
+  'whenToUse',
+  'notFor',
+  'pitfalls',
+  'scenes',
+  'liveProps',
+  'pairs'
+]);
+const COMMA_LIST_DOC_KEYS = new Set(['scenes', 'liveProps', 'pairs']);
+/** JSON 型文档标签：`example` 是节点，`props` 是 `{ 名字: "说明" }`。 */
+const JSON_DOC_KEYS = new Set(['example', 'props']);
+
+const splitDocList = (value, comma = false) =>
+  String(value)
+    .split(comma ? /[；,]/ : '；')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const parseJsonDocTag = (tag, value, { object = false } = {}) => {
+  let parsed;
+
+  try {
+    parsed = JSON.parse(value);
+  } catch (error) {
+    throw new Error(`@genui.${tag} 必须是合法 JSON（${error.message}）：${value}`);
+  }
+
+  if (object && (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))) {
+    throw new Error(`@genui.${tag} 必须是 JSON 对象（{ "prop": "说明" }）：${value}`);
+  }
+
+  return parsed;
+};
+
+/**
+ * 层是 `genui_catalog({ layer })` 的**硬过滤主键**——写错一个字母，这个组件就从那一刀切片里
+ * 静默消失（组装期只查 L2 的人再也看不见它）。所以这里**当场报错**，不猜。
+ */
+const parseLayerTag = (tag, value) => {
+  const text = String(value).trim().toUpperCase();
+
+  if (!/^L[1-7]$/.test(text)) {
+    throw new Error(`@genui.${tag} 只认 L1–L7（收到 "${value}"）`);
+  }
+
+  return text;
+};
+
+/**
+ * 每条目录信息的**体积预算**——目录是"给模型看的"，写长了就是烧上下文。
+ *
+ * 默认值比现有库的实际水平**留了余量**（yoya-ui 现状：summary 最长 42 字、pitfalls 最长一条
+ * 44 字、example 最大 178 B、单条最大 777 B），所以它是"别写成小作文"的护栏，不是苛刻门禁。
+ * 库可以用 config.budgets 覆盖。
+ *
+ * 配套的**切片纪律**（见 manifest.tiers）：选型面字段进"每步都调"的瘦条目，契约/逻辑面只在
+ * "选定一个组件后按需取"的全量卡里；接线面（content/prop/event）根本不进 manifest。
+ */
+export const DEFAULT_BUDGETS = {
+  summary: 60,
+  scenes: { count: 4, item: 20 },
+  whenToUse: { count: 6, item: 80 },
+  notFor: { count: 6, item: 80 },
+  pitfalls: { count: 6, item: 80 },
+  pairs: { count: 6, item: 80 },
+  state: 80,
+  props: { count: 24, value: 60 },
+  exampleBytes: 800,
+  entryBytes: 6144
+};
+
+/**
+ * 超预算**当场报错**（不是警告）：这些字段是模型选型/填参的依据，写成小作文不会更准，
+ * 只会把每步调用都撑肥。报错时把"哪一条、多长、上限多少"一次说清。
+ */
+function checkBudgets(entry, budgets) {
+  const problems = [];
+  const text = (label, value, limit) => {
+    const length = String(value ?? '').length;
+
+    if (length > limit) {
+      problems.push(`${label} 太长（${length} > ${limit} 字）：${String(value).slice(0, 40)}…`);
+    }
+  };
+  const list = (key, label) => {
+    const items = entry[key] ?? [];
+    const limit = budgets[key];
+
+    if (items.length > limit.count) {
+      problems.push(`${label} 条数太多（${items.length} > ${limit.count}）——挑最常踩的几条`);
+    }
+    items.forEach((item, index) => text(`${label}[${index}]`, item, limit.item));
+  };
+
+  text('summary', entry.summary, budgets.summary);
+  list('scenes', 'scenes');
+  list('whenToUse', 'whenToUse');
+  list('notFor', 'notFor');
+  list('pitfalls', 'pitfalls');
+  list('pairs', 'pairs');
+  text('state', entry.state, budgets.state);
+
+  const props = entry.props ?? {};
+  const propNames = Object.keys(props);
+
+  if (propNames.length > budgets.props.count) {
+    problems.push(`props 个数太多（${propNames.length} > ${budgets.props.count}）——只留要让 agent 填的`);
+  }
+  propNames.forEach((name) => text(`props.${name}`, props[name], budgets.props.value));
+
+  const exampleBytes = entry.example === undefined ? 0 : Buffer.byteLength(JSON.stringify(entry.example));
+
+  if (exampleBytes > budgets.exampleBytes) {
+    problems.push(
+      `example 太大（${exampleBytes} B > ${budgets.exampleBytes} B）——example 是"最小可落页"，别抄整页`
+    );
+  }
+
+  const entryBytes = Buffer.byteLength(JSON.stringify(entry));
+
+  if (entryBytes > budgets.entryBytes) {
+    problems.push(
+      `整条目录太大（${entryBytes} B > ${budgets.entryBytes} B）——把长文挪进 docs / 示例页，目录只留选型与填参要点`
+    );
+  }
+
+  if (problems.length > 0) {
+    throw new Error(`${entry.name}：目录信息超预算——\n  - ${problems.join('\n  - ')}`);
+  }
+}
 
 const escapeRegExp = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -254,15 +407,15 @@ function parseGenuiBlock(source, index) {
       continue;
     }
 
-    doc[key] =
-      key === 'whenToUse' || key === 'notFor' || key === 'pitfalls'
-        ? value
-            .split('；')
-            .map((item) => item.trim())
-            .filter(Boolean)
-        : key === 'example'
-          ? JSON.parse(value)
-          : value;
+    if (LIST_DOC_KEYS.has(key)) {
+      doc[key] = splitDocList(value, COMMA_LIST_DOC_KEYS.has(key));
+    } else if (JSON_DOC_KEYS.has(key)) {
+      doc[key] = parseJsonDocTag(tag, value, { object: key === 'props' });
+    } else if (key === 'layer') {
+      doc[key] = parseLayerTag(tag, value);
+    } else {
+      doc[key] = value;
+    }
   }
 
   const hasDoc = Object.keys(doc).length > 0;
@@ -323,6 +476,7 @@ export function normalizeConfig(userConfig = {}, { resolveFrom = process.cwd() }
     factories: { ...DEFAULT_CONFIG.factories, ...(userConfig.factories ?? {}) },
     generated: { ...DEFAULT_CONFIG.generated, ...(userConfig.generated ?? {}) },
     elements: { ...DEFAULT_CONFIG.elements, ...(userConfig.elements ?? {}) },
+    budgets: { ...DEFAULT_BUDGETS, ...(userConfig.budgets ?? {}) },
     categories: userConfig.categories ?? DEFAULT_CONFIG.categories,
     exclude: userConfig.exclude ?? DEFAULT_CONFIG.exclude
   };
@@ -483,7 +637,15 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
         wiring[name] = componentWiring;
       }
 
-      const props = propSignatures.get(pascal) ?? doc?.props ?? null;
+      /**
+       * props 的**两份来源合并**（不是二选一）：
+       * - 签名解构给名字（yoya-ui 那种写法，零手写）；
+       * - `@genui.props` 给说明（单参 props 袋的库只能靠它，如布局/图表 kit）。
+       * 同名时 JSDoc 的说明优先——签名那份的值只是空串，拿它盖掉说明就是丢内容。
+       */
+      const signatureProps = propSignatures.get(pascal) ?? null;
+      const docProps = doc?.props ?? null;
+      const props = signatureProps || docProps ? { ...signatureProps, ...docProps } : null;
 
       return {
         name,
@@ -495,6 +657,9 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
           : { summary: '', ...(props ? { props } : {}), needsDocs: true })
       };
     });
+
+  // 目录是"给模型看的"：每条都卡体积预算（超了当场报，别把选型信息写成小作文）。
+  components.forEach((component) => checkBudgets(component, config.budgets));
 
   const html = config.elements.html
     ? await importElementModule(config.elements.html.module, config.resolveFrom).then((module) =>
@@ -514,6 +679,25 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
       version: pkg.version,
       runtime: config.runtime,
       generated: config.generated,
+      /**
+       * **切片纪律**（给消费者看的合同）：哪些字段进"每步都调"的瘦条目、哪些只在
+       * "选定一个组件后按需取"的全量卡里。加新字段时先问它是不是选型判据：
+       * 是 → thin；不是 → full。接线细节（content/prop/event）根本不进 manifest（进插件）。
+       */
+      tiers: {
+        thin: ['name', 'summary', 'category', 'layer', 'scenes'],
+        full: [
+          'dataContract',
+          'whenToUse',
+          'notFor',
+          'pitfalls',
+          'props',
+          'pairs',
+          'state',
+          'liveProps',
+          'example'
+        ]
+      },
       components,
       htmlElements: html,
       svgFactories: svg

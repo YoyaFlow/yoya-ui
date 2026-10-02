@@ -81,11 +81,46 @@ function withQuery(url, params) {
 }
 
 async function parseResponse(response) {
-  if (typeof response?.json === 'function') {
-    return response.json();
+  // HTTP 层失败（4xx/5xx）不能当成数据写进数据路径：`fetch` 只对网络错误 reject，
+  // 放过去的话错误信封会落进 sources 的目标路径，页面只剩一片空白（看起来像"没数据"）。
+  // 这里显式抛出，由 sources/send 的 catch 落到 `/ui/errors/<name>`，页面能读、能提示。
+  if (response.ok === false) {
+    throw new GenUIError(`${(await readFailureDetail(response)) || '请求失败'}（HTTP ${response.status}）`, {
+      code: ERROR_CODES.action
+    });
   }
 
-  return response;
+  if (typeof response?.json !== 'function') {
+    return response;
+  }
+
+  return response.json();
+}
+
+/** 错误响应里的可读原因：优先 JSON 的 error/message，否则截一段文本。 */
+async function readFailureDetail(response) {
+  if (typeof response.text !== 'function') {
+    return '';
+  }
+
+  try {
+    const text = await response.text();
+
+    try {
+      const parsed = JSON.parse(text);
+      const detail = parsed?.error ?? parsed?.message;
+
+      if (typeof detail === 'string' && detail.trim() !== '') {
+        return detail.trim();
+      }
+    } catch {
+      // 不是 JSON：用文本本身
+    }
+
+    return text.slice(0, 200).trim();
+  } catch {
+    return '';
+  }
 }
 
 /**

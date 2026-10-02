@@ -26,6 +26,7 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
 | [`src-layout-migration-plan.md`](src-layout-migration-plan.md)                 | src-layout / monorepo migration plan and ledger                                                       | New                           |
 | [`artifacts-plan.md`](artifacts-plan.md)                                       | Publish-face plan: what ships, under which name, for which consumer                                   | New                           |
 | [`component-authoring.md`](component-authoring.md)                             | Component library authoring guide (third-party authors)                                               | Rebuilt                       |
+| [`genui-kit.md`](genui-kit.md)                                                 | GenUI kit guide: manifest (kit.json) + runtime artifact, run scripts, host wiring, release            | New                           |
 | [`interop.md`](interop.md)                                                     | Third-party interop: hand over a real DOM element                                                     | Moved from `README.md`        |
 | [`browser-support.md`](browser-support.md)                                     | Browser baseline, degradation ledger, older-browser recipes                                           | New                           |
 | [`agents.md`](agents.md)                                                       | Reading guide for AI coding agents and evaluators                                                     | Moved from `README.md`        |
@@ -46,6 +47,8 @@ This documentation set is for yoya-ui users and component-ecosystem authors. It 
    To check whether your target browsers are in range — or when a user reports "all styling is gone" —
    read `browser-support.md` first.
 4. Read `component-authoring.md` when you want to build components for the ecosystem, and `interop.md`
-   when you are plugging an existing library in.
+   when you are plugging an existing library in. Read `genui-kit.md` when your components have to be
+   used as JSON by a model (GenUI kit, dynamic loading) — scaffold with
+   `create-yoya-ui <name> --template genui-kits`.
 5. Read `agents.md` before generating or evaluating code for this repository with an AI assistant.
 6. Read `feedback/security-review-feedback.md` before acting on a security review of this library.

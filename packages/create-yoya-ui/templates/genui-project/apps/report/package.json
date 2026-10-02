@@ -1,0 +1,15 @@
+{
+  "name": "genui-project-report",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "vite build", "preview": "vite preview" },
+  "dependencies": {
+    "@babel/parser": "^7.29.9",
+    "@yoyaflow/yoya-compiler": "file:../../../../../yoya-compiler",
+    "@yoyaflow/yoya-core": "file:../../../../../yoya-core",
+    "@yoyaflow/yoya-ui": "file:../../../../../yoya-ui"
+  },
+  "devDependencies": { "vite": "^8.3.1" },
+  "note": "第二个 UI（对内报表）。它**只吃项目级资产**（resources/ · templates/ · components/），绝不 import 别的 UI。"
+}

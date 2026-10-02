@@ -1,0 +1,14 @@
+{
+  "name": "genui-project",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "kits/*/*",
+    "apps/*"
+  ],
+  "genui": {
+    "shape": "v0"
+  },
+  "note": "项目根：kits/<owner>/<kit>/ 与 apps/<ui>/ 都是 workspace 成员。@yoyaflow/yoya-ui 与 yoya-core 是**基础库依赖**（走 npm），不是 kit —— 基础库不进 kits/。"
+}

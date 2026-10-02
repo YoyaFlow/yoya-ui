@@ -1,0 +1,21 @@
+{
+  "name": "genui-project-main",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.9",
+    "@yoyaflow/yoya-compiler": "file:../../../../../yoya-compiler",
+    "@yoyaflow/yoya-core": "file:../../../../../yoya-core",
+    "@yoyaflow/yoya-ui": "file:../../../../../yoya-ui"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1"
+  },
+  "note": "基础库（yoya-ui / yoya-core，以及它们的 peer）走 dependencies，**不是 kit**。今天三个基础库用 file: 指同目录下的 yoya-ui 仓 —— 因为 npm 上发布的 0.7.6 比本地仓旧（缺 ./genui 等导出）；重发之后改回 \"^0.7.x\"。要用组件库（kit）就加 file:../../kits/<owner>/<kit> 或发布后的包名。"
+}

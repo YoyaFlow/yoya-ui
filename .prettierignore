@@ -11,3 +11,6 @@ packages/yoya-core/src/core/signals/vendor/
 benchmark/report.html
 # 生成物：benchmark/shapes.json → scripts/benchmark-shapes.mjs（对比报告）
 benchmark/shapes-report.md
+# 生成物：create-yoya-ui 的 genui-kits 模板（scripts/generate-kit.mjs 按 JSON.stringify 写盘）
+packages/create-yoya-ui/templates/genui-kits/kit.json
+packages/create-yoya-ui/templates/genui-kits/indexes/

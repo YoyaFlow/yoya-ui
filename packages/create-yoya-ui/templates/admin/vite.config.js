@@ -7,14 +7,15 @@ import { fileURLToPath } from 'node:url';
 const localUi = fileURLToPath(new URL('../../../yoya-ui/src/index.js', import.meta.url));
 const useLocal = existsSync(localUi);
 // 子入口也要指到源码：`@yoyaflow/yoya-core/api` → `packages/yoya-core/src/api.js`（`ui.css` 单独一条，见下）
-const localSource = (path) => fileURLToPath(new URL(`../../../src/${path}`, import.meta.url));
+const localSource = (path) =>
+  fileURLToPath(new URL(`../../../yoya-ui/src/${path}`, import.meta.url));
 
 export default defineConfig({
   resolve: useLocal
     ? {
         alias: [
           { find: /^@yoyaflow\/yoya-ui\/ui\.css$/, replacement: localSource('yoya.ui.css') },
-          { find: /^@yoyaflow\/yoya-ui\/([\w.-]+)$/, replacement: localSource('yoya.$1.js') },
+          { find: /^@yoyaflow\/yoya-ui\/([\w.-]+)$/, replacement: localSource('$1.js') },
           { find: '@yoyaflow/yoya-ui', replacement: localUi }
         ]
       }

@@ -8,6 +8,12 @@ import { createComponentShortcut } from '../shared.js';
  * @genui.notFor 深夜模式
  * @genui.pitfall 名字为空时只显示问候
  * @genui.example {"type":"vGreeter","props":{"name":"小明"}}
+ * @genui.scene 问候卡片, 新人引导
+ * @genui.layer L3
+ * @genui.props {"greeting":"问候语（缺省：你好）","name":"名字（必填）"}
+ * @genui.live name；score
+ * @genui.pairs vBadge（角标）, vAvatar（头像）
+ * @genui.state 名字由外部持有（写回页面数据域），问候语是组件内默认值
  * @genui.content children
  * @genui.text greeting
  * @genui.prop name to=attr:data-name

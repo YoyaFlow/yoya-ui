@@ -1,0 +1,19 @@
+{
+  "namespace": "local",
+  "name": "orders",
+  "title": "订单",
+  "purpose": "订单主表：列表页与详情页读它；口径以这里为准（示例，可删可改）",
+  "source": {
+    "logical": "orders-db",
+    "kind": "sql",
+    "note": "只写逻辑名 —— 真实地址与凭据在运行时目录的解析表里，不进工程"
+  },
+  "fields": [
+    { "name": "id", "role": "identifier", "label": "订单号", "primary": true },
+    { "name": "customer", "role": "text", "label": "客户" },
+    { "name": "amount", "role": "amount", "label": "金额", "unit": "元" },
+    { "name": "status", "role": "enum", "label": "状态", "values": ["待付款", "已付款", "已发货", "已完成"] },
+    { "name": "owner", "role": "person", "label": "负责人" },
+    { "name": "createdAt", "role": "date", "label": "下单日" }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "protocol": "yoya-genui",
+  "version": "0.2",
+  "surfaceId": "orders-list",
+  "meta": {
+    "queries": ["orders_page"]
+  },
+  "sources": {
+    "@:/data/orders": {
+      "action": "@actions:/orders_page",
+      "params": {
+        "keyword": "@:/query/keyword",
+        "status": "@:/query/status",
+        "page": "@:/query/page",
+        "pageSize": "@:/query/pageSize"
+      }
+    }
+  },
+  "data": {
+    "query": {
+      "keyword": "",
+      "status": "",
+      "page": 1,
+      "pageSize": 10
+    }
+  },
+  "root": {
+    "type": "vCard",
+    "children": [
+      {
+        "type": "vCardHeader",
+        "children": [{ "type": "h3", "text": "订单（示例页）" }]
+      },
+      {
+        "type": "vCardBody",
+        "children": [
+          {
+            "type": "p",
+            "children": [
+              { "type": "span", "text": "已加载 " },
+              { "type": "strong", "text": "@:/data/orders/rows/length" },
+              { "type": "span", "text": " 行 · 第 " },
+              { "type": "span", "text": "@:/query/page" },
+              { "type": "span", "text": " 页 · 每页 " },
+              { "type": "span", "text": "@:/query/pageSize" },
+              { "type": "span", "text": " 条 · 关键字「" },
+              { "type": "span", "text": "@:/query/keyword" },
+              { "type": "span", "text": "」" }
+            ]
+          },
+          {
+            "type": "div",
+            "children": [
+              {
+                "type": "vInput",
+                "props": {
+                  "name": "keyword",
+                  "placeholder": "按订单号搜",
+                  "value": { "$bind": "/query/keyword" }
+                }
+              },
+              {
+                "type": "vSelect",
+                "props": {
+                  "name": "status",
+                  "placeholder": "状态",
+                  "value": { "$bind": "/query/status" },
+                  "options": [
+                    { "label": "待付款", "value": "待付款" },
+                    { "label": "已付款", "value": "已付款" },
+                    { "label": "已发货", "value": "已发货" },
+                    { "label": "已完成", "value": "已完成" }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

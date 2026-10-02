@@ -1,0 +1,61 @@
+{
+  "entry": "./impl.js",
+  "components": [
+    {
+      "shortName": "PanelKit",
+      "category": "layout",
+      "scenes": ["组件开发", "详情页", "数据看板"],
+      "summary": "面板：标题 + 说明 + 内容位（示例组件，照它改）",
+      "dataContract": "children: 节点数组（落进面板内容位）；title / description / tone: 文本与色调",
+      "whenToUse": ["要把一组内容装进一块有标题的区域", "示例：看组件怎么把 JSON 变成节点"],
+      "notFor": ["整页外壳（用 yoya-ui 的布局组件）"],
+      "props": {
+        "title": "服务概览",
+        "description": "一句话说明（可省）",
+        "tone": "neutral | info | success | warning"
+      },
+      "pitfalls": ["内容位只有一个：children 按书写顺序落进去，不要再用 slot 标记"]
+    },
+    {
+      "shortName": "MetricKit",
+      "category": "data-display",
+      "scenes": ["数据看板", "监控告警", "组件开发"],
+      "summary": "指标卡：标签 + 数值 + 单位 + 趋势（数值可绑活值）",
+      "dataContract": "label / value / unit / trend / tone；value 支持 `@:/路径` 活值引用",
+      "whenToUse": ["一行 KPI 数字", "示例：看 `live: true` 怎么让写数据即更新"],
+      "notFor": ["多列指标网格（用 yoya-ui 的 grid 包一层）"],
+      "props": {
+        "label": "今日订单",
+        "value": "128 或 \"@:/metrics/orders\"",
+        "unit": "单",
+        "trend": "up | down | flat",
+        "tone": "neutral | info | success | warning"
+      },
+      "pitfalls": [
+        "trend 取快照值（没声明 live），要跟着数据变就换成计算属性或用引用重新渲染",
+        "value 写普通值就是只读快照；要联动必须写引用"
+      ]
+    },
+    {
+      "shortName": "BadgeKit",
+      "category": "data-display",
+      "scenes": ["组件开发", "消息提醒"],
+      "summary": "徽标：包 yoya-ui 的 vBadge，计数 / 状态 / 文本可绑活值",
+      "dataContract": "count / text / status / dot / overflowCount / showZero；children 为徽标内容",
+      "whenToUse": ["消息数角标", "示例：看 kit 组件怎么包 yoya-ui 组件"],
+      "notFor": ["分类标签（用 yoya-ui 的标签类组件）"],
+      "props": {
+        "count": "5 或 \"@:/metrics/orders\"",
+        "text": "待处理",
+        "status": "success | processing | error | warning | default",
+        "dot": "true（只显示圆点）",
+        "overflowCount": "99",
+        "showZero": "false"
+      },
+      "pitfalls": [
+        "内容走 childrenProp：节点级 text 短写不生效，文本写 props.text",
+        "count 为 0 默认隐藏，要显示配 showZero: true"
+      ]
+    }
+  ]
+}

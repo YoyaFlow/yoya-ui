@@ -5,6 +5,8 @@ import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import * as yoyaRouter from '@yoyaflow/yoya-ui/router';
+import * as yoyaUiEntry from '@yoyaflow/yoya-ui/ui';
+import * as yoyaGenuiPlugin from '@yoyaflow/yoya-ui/genui-plugin';
 import * as yoyaApi from '@yoyaflow/yoya-core/api';
 import * as yoyaCore from '@yoyaflow/yoya-core';
 import * as yoyaUi from '@yoyaflow/yoya-ui';
@@ -77,9 +79,27 @@ function collectJsFiles(dir) {
   });
 }
 
+/** 模板里的 vite 配置（**递归**：多 UI 模板的配置住在 `apps/<ui>/` 下，不在模板根）。 */
+function collectViteConfigs(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === 'node_modules') {
+      return [];
+    }
+
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return collectViteConfigs(full);
+    }
+
+    return /^vite.*\.config\.js$/.test(entry.name) ? [full] : [];
+  });
+}
+
 /** 子入口 → 本仓库入口模块（`@yoyaflow/yoya-core` → `packages/yoya-core/src/index.js`）。 */
 const ENTRY_MODULES = new Map([
   ['@yoyaflow/yoya-ui', yoyaUi],
+  ['@yoyaflow/yoya-ui/ui', yoyaUiEntry],
+  ['@yoyaflow/yoya-ui/genui-plugin', yoyaGenuiPlugin],
   ['@yoyaflow/yoya-core', yoyaCore],
   ['@yoyaflow/yoya-core/api', yoyaApi],
   ['@yoyaflow/yoya-ui/router', yoyaRouter]
@@ -102,21 +122,35 @@ describe('create-yoya-ui admin template', () => {
         return;
       }
 
-      // 模板的 vite 配置：仓库内跑时把子入口指到 `packages/yoya-ui/src/yoya.<子入口>.js`
+      // 模板的 vite 配置：仓库内跑时把子入口指到 `packages/yoya-ui/src/<子入口>.js`
       // （少了别名就是 `Failed to resolve import "@yoyaflow/yoya-core/api"`，模板直接白屏）
       //
-      // 路径分隔符要**先归一化**：CI 在 Linux 上跑，写死 `\src\` 会让 indexOf 返回 -1，
-      // slice(0, -1) 会把文件名砍掉一个字符（曾报 `templates/ssr/src/client.j/vite.config.js`）。
-      const posixFile = file.replace(/\\/g, '/');
-      const templateDir = posixFile.slice(0, posixFile.indexOf('/src/'));
-      const config = readFileSync(join(templateDir, 'vite.config.js'), 'utf8');
+      // 模板根按 `templates/<模板名>/` 取（**不能用 `/src/` 切**：模板的文件不只住在 src/ 下，
+      // 比如 genui-kits 的组件与调试台在 components/ 与 playground/）；一个模板可以有多个
+      // vite 配置（库产物 / 调试台 / 每个 UI 一份），**别名出现在其中任一份即可** ——
+      // 所以这里按模板根**递归**找配置（genui-project 的配置住在 `apps/<ui>/` 下）。
+      const templateDir = join(
+        TEMPLATES,
+        file
+          .replace(/\\/g, '/')
+          .slice(TEMPLATES.replace(/\\/g, '/').length + 1)
+          .split('/')[0]
+      );
+      const configPaths = collectViteConfigs(templateDir).sort();
+      const hasSubEntryAlias = configPaths.some((path) =>
+        /find:\s*\/\^@yoyaflow\\\/yoya-ui\\\/\(\[\\w\.-\]\+\)\$\//.test(readFileSync(path, 'utf8'))
+      );
 
-      if (!/find:\s*\/\^@yoyaflow\\\/yoya-ui\\\/\(\[\\w\.-\]\+\)\$\//.test(config)) {
+      if (!hasSubEntryAlias) {
+        // 注意：这个循环体里 `relative` 是上面那个字符串（文件名相对模板），别再拿去当路径函数用
+        const found = configPaths.map((path) =>
+          path.slice(TEMPLATES.length + 1).replace(/\\/g, '/')
+        );
+
         failures.push(
-          `${relative}: 模板用了子入口 ${[...used].join(' / ')}，但 ${templateDir.replace(
-            `${TEMPLATES.replace(/\\/g, '/')}/`,
-            ''
-          )}/vite.config.js 没有子入口本地别名`
+          `${relative}: 模板用了子入口 ${[...used].join(' / ')}，但 ${
+            found.join(' / ') || '模板里没有任何 vite 配置'
+          } 没有子入口本地别名`
         );
       }
     });

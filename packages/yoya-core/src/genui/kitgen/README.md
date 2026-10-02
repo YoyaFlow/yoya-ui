@@ -31,6 +31,10 @@ yoya-kitgen --check                # CI 门禁：与源码不一致则退出码 
 yoya-kitgen --out dist/genui-kit.json
 ```
 
+> 在本仓（yoya-ui）里改的是**生成器源码** `packages/yoya-core/src/genui/kitgen/`，而 CLI / 消费方
+> 走的是 **dist**（`package.json` 的 `./genui/kitgen` 指向 `dist/`）——改完先 `npm run build:packages`
+> 再跑 `node scripts/generate-genui-kit.mjs`，否则生成物反映的还是旧代码（踩过一次）。
+
 npm script 写法：`"kit:generate": "yoya-kitgen"`。
 
 ## 组件源码里的 `@genui*` 标签
@@ -58,6 +62,60 @@ export const vGreeter = createComponentShortcut(VGreeter);
 | `@genui.notFor`   | `notFor`       | 不适用场景                 |
 | `@genui.pitfall`  | `pitfalls`     | 易踩坑                     |
 | `@genui.example`  | `example`      | 一行合法 JSON              |
+| `@genui.scene`    | `scenes`       | 用途场景词（`；`/`,` 分隔）——**检索权重最高的一维** |
+| `@genui.layer`    | `layer`        | `L1`–`L7`：在组装里的层级（`genui_catalog({ layer })` 的**硬过滤主键**） |
+| `@genui.category` | `category`     | 覆盖"目录→分类"映射（一个目录混多分类时才写） |
+| `@genui.props`    | `props`        | 一行 JSON `{ "prop": "形态｜说明" }`；签名抽不到时手写，抽得到时补文案（同名文案优先） |
+| `@genui.live`     | `liveProps`    | 活绑定位（`；`/`,` 分隔）：这几位 prop 吃数据句柄、数据变了组件自己动 |
+| `@genui.pairs`    | `pairs`        | **搭配关系**：用了它还要配谁（`；`/`,` 分隔，如 `LayoutDataTableRowKit（行模板）`） |
+| `@genui.state`    | `state`        | **状态归属**：哪些状态在组件内、哪些必须由页面持有 |
+
+写标签时按"**消费者在读什么**"分三层，别混：
+
+| 层 | 标签 | 归到哪 | 为什么 |
+| --- | --- | --- | --- |
+| 选型面 | summary / scene / layer / category / use / notFor | **thin 条目**（每一步都会调的瘦切片） | 决定"选不选它、选哪个"；它才是检索索引读的字段 |
+| 契约/逻辑面 | contract / props / example / pitfall / **pairs** / **state** / live | **full 卡**（选定一个组件后按需取） | 决定"填得对不对、还要配什么、状态放哪" |
+| 运行期面 | content / text / prop / event / expose | 插件（**不进 manifest**） | 接线细节，模型的目录里不掺 |
+
+加新字段时先问一句"它是选型判据吗"：是 → thin；不是 → full。`manifest.tiers` 把这条纪律也写进产物
+（消费者照它切片，就不怕有人把长文塞进热路径）。
+
+### 体积预算（防"文档写嗨了 → 上下文爆"）
+
+目录是**给模型看的**，每条都有上限，**超了当场报错**（不是警告）：
+
+| 字段 | 上限 |
+| --- | --- |
+| `summary` | 60 字 |
+| `scenes` | 4 条，每条 20 字 |
+| `whenToUse` / `notFor` / `pitfalls` / `pairs` | 6 条，每条 80 字 |
+| `state` | 80 字 |
+| `props` | 24 项，每项说明 60 字 |
+| `example` | 800 B（"最小可落页"，别抄整页） |
+| 单条目录 | 6 KB |
+
+默认值比现有库的实际水平留了余量（yoya-ui 现状：summary 最长 42 字、pitfalls 最长 44 字、
+example 最大 178 B、单条最大 777 B），所以它是护栏不是苛政；库可用 `config.budgets` 覆盖。
+
+**照抄模板**（写在紧邻工厂导出的 JSDoc 里）：
+
+```js
+/**
+ * @genui 可交互数据表：表头 + 勾选列 + 行模板落位
+ * @genui.scene 订单管理, 列表页, 审批台
+ * @genui.layer L2
+ * @genui.use 行内容要自定义（状态标签、金额右对齐、多个行操作）
+ * @genui.notFor 只读静态表格（用 LayoutTableKit）
+ * @genui.pairs LayoutDataTableRowKit（行模板，配 repeat）
+ * @genui.state 勾选集合放页面级（行重画会丢），组件只负责画与转发
+ * @genui.contract columns + rows(句柄) + rowKey
+ * @genui.props {"rows":"句柄｜@:/data/x/rows","selectable":"值｜true 显示勾选列"}
+ * @genui.live rows；headerChecked；empty
+ * @genui.pitfall 行是动态重画的：勾选与行操作走根节点事件委托，行内别用 vCheckbox
+ * @genui.example {"type":"your-lib#LayoutDataTableKit","props":{"columns":[{"key":"id","label":"单号"}],"rows":"@:/data/orders/rows"}}
+ */
+```
 
 **运行时标签**（接线知识，进插件、不进 manifest——给模型的目录不掺接线细节）：
 

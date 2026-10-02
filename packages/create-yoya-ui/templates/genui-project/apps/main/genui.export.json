@@ -1,0 +1,34 @@
+{
+  "app": "main",
+  "project": "local/genui-project",
+  "hosts": {
+    "orders-db": "<部署方提供：例如 https://api.example.com>"
+  },
+  "actions": {
+    "orders_page": {
+      "method": "GET",
+      "path": "/orders",
+      "params": ["keyword", "status", "page", "pageSize"]
+    }
+  },
+  "deps": {
+    "@yoyaflow/yoya-core": {
+      "version": "^0.7.6",
+      "kind": "base-library",
+      "note": "目标形态是版本范围；重发之前 package.json 里用 file: 指本地仓（发布的 0.7.6 缺 ./genui 等导出）"
+    },
+    "@yoyaflow/yoya-ui": {
+      "version": "^0.7.6",
+      "kind": "base-library",
+      "note": "同上：基础库是依赖，不是 kit —— 不进 kits/"
+    },
+    "kits": { "note": "组件库（kit）用的话放项目内 kits/<owner>/<kit>/ 并在这里声明版本与 integrity；制品不进 Git" }
+  },
+  "breaks": [
+    {
+      "key": "orders_page",
+      "reason": "本机开发用的是项目 data/orders.csv（示例数据）；生产接的是真实订单库 —— 语义一致但行数不同",
+      "howToFix": "部署方把 hosts['orders-db'] 指到真实网关；本地开发无需改页面"
+    }
+  ]
+}

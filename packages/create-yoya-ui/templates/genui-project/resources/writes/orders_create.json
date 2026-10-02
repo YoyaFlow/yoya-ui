@@ -1,0 +1,24 @@
+{
+  "title": "新建订单",
+  "kind": "insert",
+  "source": "orders",
+  "file": "orders.csv",
+  "params": {
+    "customer": { "type": "string", "label": "客户", "required": true },
+    "amount": { "type": "number", "label": "金额" },
+    "status": {
+      "type": "string",
+      "label": "状态",
+      "default": "待付款",
+      "enum": ["待付款", "已付款", "已发货", "已完成"]
+    },
+    "owner": { "type": "string", "label": "负责人" }
+  },
+  "auto": {
+    "id": { "kind": "next-id", "prefix": "SO-", "width": 4 },
+    "createdAt": { "kind": "now" }
+  },
+  "unique": ["id"],
+  "idempotency": "content",
+  "success": { "refresh": ["orders_page"], "message": "已新增" }
+}

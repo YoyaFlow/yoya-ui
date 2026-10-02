@@ -1,0 +1,24 @@
+{
+  "root": {
+    "type": "my-org/my-kit#PanelKit",
+    "props": {
+      "title": "服务概览",
+      "description": "示例数据：把 component.json / impl.js 换成你自己的组件就行",
+      "tone": "info"
+    },
+    "children": [
+      {
+        "type": "my-org/my-kit#MetricKit",
+        "props": { "label": "在线实例", "value": 12, "unit": "台", "trend": "up" }
+      },
+      {
+        "type": "my-org/my-kit#MetricKit",
+        "props": { "label": "平均延迟", "value": 42, "unit": "ms", "trend": "down" }
+      },
+      {
+        "type": "my-org/my-kit#BadgeKit",
+        "props": { "count": 5, "text": "待处理" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "data": {
+    "metrics": {
+      "orders": 128,
+      "errors": 3
+    }
+  },
+  "root": {
+    "type": "my-org/my-kit#PanelKit",
+    "props": {
+      "title": "活值：写数据模型，视图跟着走",
+      "description": "value / count 声明了 live: true，所以 `@:/路径` 过来的是句柄，不重建节点",
+      "tone": "success"
+    },
+    "children": [
+      {
+        "type": "my-org/my-kit#MetricKit",
+        "props": {
+          "label": "今日订单",
+          "value": "@:/metrics/orders",
+          "unit": "单",
+          "trend": "up"
+        }
+      },
+      {
+        "type": "my-org/my-kit#MetricKit",
+        "props": {
+          "label": "失败请求",
+          "value": "@:/metrics/errors",
+          "unit": "次",
+          "trend": "down"
+        }
+      },
+      {
+        "type": "my-org/my-kit#BadgeKit",
+        "props": { "count": "@:/metrics/errors", "status": "error" }
+      }
+    ]
+  }
+}

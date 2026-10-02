@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "note": "源清单：只写「有哪些源」（怎么取）。**地址 / 凭据引用不在这里** —— 它们住运行时目录 <runtime>/hosts/<项目>.json。",
+  "sources": {
+    "orders": {
+      "title": "订单源",
+      "kind": "sql",
+      "purpose": "订单主表所在的数据源（示例：本机是 data/orders.csv，生产是数仓表 orders）",
+      "files": ["orders.csv"]
+    }
+  }
+}

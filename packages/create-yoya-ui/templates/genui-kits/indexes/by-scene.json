@@ -1,0 +1,20 @@
+{
+  "组件开发": [
+    "my-org/my-kit#PanelKit",
+    "my-org/my-kit#MetricKit",
+    "my-org/my-kit#BadgeKit"
+  ],
+  "详情页": [
+    "my-org/my-kit#PanelKit"
+  ],
+  "数据看板": [
+    "my-org/my-kit#PanelKit",
+    "my-org/my-kit#MetricKit"
+  ],
+  "监控告警": [
+    "my-org/my-kit#MetricKit"
+  ],
+  "消息提醒": [
+    "my-org/my-kit#BadgeKit"
+  ]
+}

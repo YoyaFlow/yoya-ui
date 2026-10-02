@@ -1,0 +1,17 @@
+{
+  "source": "orders",
+  "title": "订单列表",
+  "purpose": "按关键词 / 状态筛选，带分页（页面 @actions:/orders_page 用它）",
+  "maxRows": 100,
+  "params": {
+    "keyword": { "type": "string", "label": "关键词", "default": "" },
+    "status": {
+      "type": "string",
+      "label": "状态",
+      "default": "",
+      "enum": ["待付款", "已付款", "已发货", "已完成"]
+    },
+    "page": { "type": "number", "label": "页码", "default": 1 },
+    "pageSize": { "type": "number", "label": "每页条数", "default": 10 }
+  }
+}
