@@ -35,6 +35,9 @@ export default {
     pascalPrefix: 'V',
     shortcutPrefix: 'v',
     shortcutHelpers: ['createComponentShortcut'],
+    // 归一出口：通用原语 + 表单控件族自己的入口（`applyPropValue` 与 `asSignal` 语义等价：
+    // 给句柄就登记绑定、给普通值就落位）。认出它，门禁就不必逼着组件改写。
+    normalizeHelpers: ['asSignal', 'asSignalJson', 'applyPropValue'],
     extraPatterns: [
       {
         // yoya-ui 的布局工厂形态：小写名 + (first, second, third) 三参

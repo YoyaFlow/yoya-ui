@@ -171,6 +171,8 @@ example 最大 178 B、单条最大 777 B），所以它是护栏不是苛政；
 
 默认判据是"**这个位在代码里归一了吗**"：归一了就说明组件自己会读句柄，宿主再重放一遍等于同一份值走两条通道——谁说了算不明，还多跑一轮（图表的 `setOption` 就是被这么白叫的）。所以没归一的位保持命令通道、行为不变；迁移逐位进行、只减不增（门禁基线管着）。
 
+**归一出口可配**（`factories.normalizeHelpers`，默认 `['asSignal', 'asSignalJson']`）：库内有与 `asSignal` 语义等价的入口——给句柄就登记活值绑定、给普通值就当场落位——时补进来即可。yoya-ui 的表单控件族用 `applyPropValue`，就是靠这一项被门禁认成合法归一，**组件不必为了对账改写**（票 07）。
+
 想提前看清"还有哪些位在靠重放活着"，把 surface 选项切成 `replay: 'declared'`（`genui.fromJson(schema, { replay: 'declared' })`）：此时只有值通道与显式命令通道还能拿到数据，其余位会停在构建期那份快照——那正是迁移清单。yoya-ui 的清单冻结在 `packages/yoya-ui/src/testing/baselines/genui-replay-migration.json`，门禁只减不增；默认 `auto` 时行为与旧版完全一致，可随时回滚。
 
 ## 程序化调用

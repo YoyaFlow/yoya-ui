@@ -96,7 +96,12 @@ export function analyzeComponentSource(source, factory) {
 
   const declaredValue = [...declared].filter((name) => !excluded.has(name));
   const declaredValueSet = new Set(declaredValue);
-  const scanned = scanNormalizedProps(source, factory, { declared: [...declared] });
+  // 归一出口取库自己的配置（含表单控件族的 `applyPropValue`）——门禁认的是"这一位归一了吗"，
+  // 不是"必须写成 `asSignal`"（票 07）
+  const scanned = scanNormalizedProps(source, factory, {
+    declared: [...declared],
+    helpers: kitgenConfig.factories?.normalizeHelpers
+  });
   // 内容位 / 回调位 / 命令通道位在代码面同样不参与值位对账（它们也能被读到，但不是值通道）
   const code = scanned.props.map((entry) => entry.name).filter((name) => !excluded.has(name));
   const codeSet = new Set(code);

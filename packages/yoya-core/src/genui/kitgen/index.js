@@ -65,6 +65,13 @@ export const DEFAULT_CONFIG = {
     shortcutPrefix: 'v',
     /** 快捷方式的创建助手（`const vX = helper(VX)` 也算工厂） */
     shortcutHelpers: ['createComponentShortcut'],
+    /**
+     * **归一出口**（票 07）：组件源码里把 props 位"归一到句柄"的入口名字。
+     * 扫到哪个，就算这一位走了值通道。默认是通用原语；库内有同族入口（如表单控件的
+     * `applyPropValue`，语义与 `asSignal` 等价：给句柄就登记绑定、给普通值就落位）时补进来，
+     * 不必为迁就门禁改写组件。
+     */
+    normalizeHelpers: ['asSignal', 'asSignalJson'],
     /** 额外工厂模式：[{ regex, flags?, category, nameGroup? }]，只在该 category 的目录里生效 */
     extraPatterns: []
   },
@@ -630,6 +637,19 @@ function collectBindingNames(source) {
     }
   }
 
+  // 箭头函数的参数（`(next) => …` / `next => …`）：归一出口的 setter 闭包大量用它，
+  // 漏掉就会被当成"没绑过的外来名字"，误报成"归一了却没声明"。
+  // 参数表可能是解构（`([key, optionValue]) => …`），所以整体取标识符而不是只认裸名。
+  for (const match of source.matchAll(/\(([^)]*)\)\s*=>/g)) {
+    for (const name of match[1].match(/[A-Za-z_$][\w$]*/g) ?? []) {
+      names.add(name);
+    }
+  }
+
+  for (const match of source.matchAll(/(?:^|[^\w$)(.])([A-Za-z_$][\w$]*)\s*=>/gm)) {
+    names.add(match[1]);
+  }
+
   return names;
 }
 
@@ -661,7 +681,11 @@ const IDENTIFIER_NOISE = new Set([
   'JSON'
 ]);
 
-export function scanNormalizedProps(source, factoryName, { declared = null } = {}) {
+export function scanNormalizedProps(
+  source,
+  factoryName,
+  { declared = null, helpers = ['asSignal', 'asSignalJson'] } = {}
+) {
   const names = new Set(declared ?? Object.keys(extractProps(source, factoryName) ?? {}));
   const code = stripCodeNoise(source);
   const body = findFactoryBody(code, factoryName);
@@ -672,7 +696,11 @@ export function scanNormalizedProps(source, factoryName, { declared = null } = {
 
   const found = new Map();
   const foreign = new Set();
-  const callPattern = /\basSignalJson\s*\(|\basSignal\s*\(/g;
+  // 归一出口按名字识别；`asSignalJson` 是唯一的 JSON 位出口，其余一律按普通值位算
+  const callPattern = new RegExp(
+    helpers.map((name) => `\\b${escapeRegExp(name)}\\s*\\(`).join('|'),
+    'g'
+  );
   let match;
 
   while ((match = callPattern.exec(body)) !== null) {
@@ -901,7 +929,8 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
        * manifest 描述**实际能接线的方式**，声明与代码是否对得上由门禁（票 02）对账。
        */
       const scanned = scanNormalizedProps(meta.source, factoryName, {
-        declared: props ? Object.keys(props) : null
+        declared: props ? Object.keys(props) : null,
+        helpers: config.factories.normalizeHelpers
       });
       const liveProps = uniqueList([
         ...(doc?.liveProps ?? []),

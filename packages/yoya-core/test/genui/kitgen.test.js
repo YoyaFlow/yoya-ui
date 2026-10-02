@@ -224,6 +224,26 @@ export const vMetric = createComponentShortcut(VMetric);
     });
   });
 
+  it('归一出口可配置：applyPropValue 这类同族入口算合法归一（票 07）', () => {
+    const source = `
+export function VControl({ label = null, value = null }) {
+  const node = div();
+  applyPropValue(node, label, (next) => node.label(next));
+  applyPropValue(node, value, (next) => node.value(next));
+  return node;
+}`;
+
+    expect(
+      scanNormalizedProps(source, 'VControl', {
+        declared: ['label', 'value'],
+        helpers: ['asSignal', 'asSignalJson', 'applyPropValue']
+      }).props
+    ).toEqual([
+      { name: 'label', kind: 'value' },
+      { name: 'value', kind: 'value' }
+    ]);
+  });
+
   it('归一了一个从没声明的名字 = 没声明的位（门禁要红的那一类）', () => {
     const loose = `
 export function VSloppy({ rows = null }) {
