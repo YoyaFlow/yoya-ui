@@ -138,11 +138,13 @@ export const components = {
   Anchor: {
     factory: vAnchor,
     aliases: ['vAnchor', 'VAnchor'],
-    itemBridge: { command: 'vAnchorItem', contentProp: null, itemType: 'vAnchorItem' }
+    itemBridge: { command: 'vAnchorItem', contentProp: null, itemType: 'vAnchorItem' },
+    valueProps: ['ariaLabel', 'offset', 'activeHref', 'active']
   },
   AnchorItem: {
     factory: vAnchorItem,
     aliases: ['vAnchorItem', 'VAnchorItem'],
+    valueProps: ['href', 'active'],
     textProp: 'title'
   },
   Aside: {
@@ -157,7 +159,8 @@ export const components = {
     factory: vAvatar,
     aliases: ['vAvatar', 'VAvatar'],
     childrenProp: 'children',
-    props: { alt: 'alt', shape: 'shape', size: 'size', src: 'src' }
+    props: { alt: 'alt', shape: 'shape', size: 'size', src: 'src' },
+    valueProps: ['alt', 'color', 'shape', 'size', 'src', 'status']
   },
   AvatarUpload: {
     factory: vAvatarUpload,
@@ -167,7 +170,18 @@ export const components = {
     factory: vBadge,
     aliases: ['vBadge', 'VBadge'],
     childrenProp: 'children',
-    props: { count: 'count', dot: 'dot', label: 'label', status: 'status', text: 'text' }
+    props: { count: 'count', dot: 'dot', label: 'label', status: 'status', text: 'text' },
+    valueProps: [
+      'count',
+      'overflowCount',
+      'showZero',
+      'dot',
+      'status',
+      'color',
+      'title',
+      'text',
+      'label'
+    ]
   },
   Breadcrumb: {
     factory: vBreadcrumb,
@@ -176,11 +190,13 @@ export const components = {
       command: 'vBreadcrumbItem',
       contentProp: null,
       itemType: 'vBreadcrumbItem'
-    }
+    },
+    valueProps: ['ariaLabel', 'separator']
   },
   BreadcrumbItem: {
     factory: vBreadcrumbItem,
     aliases: ['vBreadcrumbItem', 'VBreadcrumbItem'],
+    valueProps: ['href', 'to', 'active', 'current'],
     textProp: 'label'
   },
   Button: {
@@ -194,12 +210,14 @@ export const components = {
       value: 'value',
       variant: 'variant'
     },
+    valueProps: ['variant', 'type', 'size', 'disabled', 'loading', 'formType', 'value'],
     events: { click: { channel: 'dom', event: 'click' } },
     textProp: 'label'
   },
   Buttons: {
     factory: vButtons,
-    aliases: ['vButtons', 'VButtons']
+    aliases: ['vButtons', 'VButtons'],
+    valueProps: ['variant', 'size', 'selectable', 'value', 'joined', 'disabled']
   },
   Card: {
     factory: vCard,
@@ -230,7 +248,8 @@ export const components = {
   },
   Chart: {
     factory: vChart,
-    aliases: ['vChart', 'VChart']
+    aliases: ['vChart', 'VChart'],
+    valueProps: ['adapter', 'data', 'options', 'height']
   },
   Checkbox: {
     factory: vCheckbox,
@@ -256,13 +275,15 @@ export const components = {
       options: 'options',
       value: { to: 'command:value', read: 'command:value', live: false }
     },
+    valueProps: ['name', 'required', 'disabled', 'multiple', 'columns'],
     events: { change: { channel: 'callback', prop: 'change', payload: '0' } },
     expose: { value: 'value' }
   },
   Code: {
     factory: vCode,
     aliases: ['vCode', 'VCode'],
-    childrenProp: 'children'
+    childrenProp: 'children',
+    valueProps: ['language', 'copyable', 'copyLabel']
   },
   ColorPicker: {
     factory: vColorPicker,
@@ -274,7 +295,8 @@ export const components = {
   },
   ContextMenu: {
     factory: vContextMenu,
-    aliases: ['vContextMenu', 'VContextMenu']
+    aliases: ['vContextMenu', 'VContextMenu'],
+    valueProps: ['closeOnSelect']
   },
   Detail: {
     factory: vDetail,
@@ -293,6 +315,7 @@ export const components = {
       closable: 'closable',
       open: { to: 'command:open', read: 'command:isOpen', live: false }
     },
+    valueProps: ['closable'],
     events: { close: { channel: 'callback', prop: 'onClose' } }
   },
   DigitalBoard: {
@@ -306,7 +329,8 @@ export const components = {
   DropdownMenu: {
     factory: vDropdownMenu,
     aliases: ['vDropdownMenu', 'VDropdownMenu'],
-    childrenProp: 'children'
+    childrenProp: 'children',
+    valueProps: ['closeOnSelect', 'placement']
   },
   DynamicLoader: {
     factory: vDynamicLoader,
@@ -324,6 +348,7 @@ export const components = {
   FloatButton: {
     factory: vFloatButton,
     aliases: ['vFloatButton', 'VFloatButton'],
+    valueProps: ['variant', 'size', 'disabled', 'fixed', 'position'],
     textProp: 'label'
   },
   Footer: {
@@ -346,11 +371,13 @@ export const components = {
       unit: 'unit',
       value: { to: 'command:value', read: 'command:value', live: true }
     },
+    valueProps: ['value', 'max', 'unit', 'tone'],
     expose: { value: 'value' }
   },
   GlowButton: {
     factory: vGlowButton,
     aliases: ['vGlowButton', 'VGlowButton'],
+    valueProps: ['direction', 'motion', 'play', 'ripple', 'speed', 'strength'],
     textProp: 'label'
   },
   Header: {
@@ -387,7 +414,8 @@ export const components = {
   LazyImage: {
     factory: vLazyImage,
     aliases: ['vLazyImage', 'VLazyImage'],
-    props: { alt: 'alt', defer: 'defer', src: 'src' }
+    props: { alt: 'alt', defer: 'defer', src: 'src' },
+    valueProps: ['src', 'alt', 'defer']
   },
   Link: {
     factory: vLink,
@@ -403,7 +431,8 @@ export const components = {
   },
   Masonry: {
     factory: vMasonry,
-    aliases: ['vMasonry', 'VMasonry']
+    aliases: ['vMasonry', 'VMasonry'],
+    valueProps: ['columns', 'gap', 'minColumnWidth']
   },
   Menu: {
     factory: vMenu,
@@ -428,11 +457,13 @@ export const components = {
   Message: {
     factory: vMessage,
     aliases: ['vMessage', 'VMessage'],
-    childrenProp: 'children'
+    childrenProp: 'children',
+    valueProps: ['type', 'closable']
   },
   MessageContainer: {
     factory: vMessageContainer,
-    aliases: ['vMessageContainer', 'VMessageContainer']
+    aliases: ['vMessageContainer', 'VMessageContainer'],
+    valueProps: ['inline', 'placement']
   },
   MessageManager: {
     factory: vMessageManager,
@@ -440,7 +471,8 @@ export const components = {
   },
   Navbar: {
     factory: vNavbar,
-    aliases: ['vNavbar', 'VNavbar']
+    aliases: ['vNavbar', 'VNavbar'],
+    valueProps: ['ariaLabel', 'title', 'subtitle', 'sticky']
   },
   Pagination: {
     factory: vPagination,
@@ -474,6 +506,7 @@ export const components = {
       options: 'options',
       value: { to: 'command:value', read: 'command:value', live: false }
     },
+    valueProps: ['name', 'required', 'disabled'],
     events: { change: { channel: 'callback', prop: 'change', payload: '0' } },
     expose: { value: 'value' }
   },
@@ -481,11 +514,27 @@ export const components = {
     factory: vRate,
     aliases: ['vRate', 'VRate'],
     props: { max: 'max', value: { to: 'command:value', read: 'command:value', live: true } },
+    valueProps: [
+      'value',
+      'count',
+      'max',
+      'allowHalf',
+      'clearable',
+      'allowClear',
+      'character',
+      'size',
+      'name',
+      'disabled',
+      'readonly',
+      'required',
+      'error'
+    ],
     expose: { value: 'value' }
   },
   RingStat: {
     factory: vRingStat,
-    aliases: ['vRingStat', 'VRingStat']
+    aliases: ['vRingStat', 'VRingStat'],
+    valueProps: ['percent', 'size', 'strokeWidth', 'tone', 'value', 'label']
   },
   Route: {
     factory: vRoute,
@@ -505,7 +554,20 @@ export const components = {
   },
   Scroll: {
     factory: vScroll,
-    aliases: ['vScroll', 'VScroll']
+    aliases: ['vScroll', 'VScroll'],
+    valueProps: [
+      'itemHeight',
+      'overscan',
+      'threshold',
+      'page',
+      'virtual',
+      'loading',
+      'blocked',
+      'block',
+      'loop',
+      'loadingText',
+      'endText'
+    ]
   },
   Select: {
     factory: vSelect,
@@ -525,7 +587,8 @@ export const components = {
   },
   Skeleton: {
     factory: vSkeleton,
-    aliases: ['vSkeleton', 'VSkeleton']
+    aliases: ['vSkeleton', 'VSkeleton'],
+    valueProps: ['variant', 'rows', 'barHeight', 'gap', 'avatarSize', 'active', 'motion']
   },
   Slider: {
     factory: vSlider,
@@ -550,22 +613,26 @@ export const components = {
   },
   Sparkline: {
     factory: vSparkline,
-    aliases: ['vSparkline', 'VSparkline']
+    aliases: ['vSparkline', 'VSparkline'],
+    valueProps: ['data', 'fill', 'strokeWidth', 'tone']
   },
   SplitPanel: {
     factory: vSplitPanel,
-    aliases: ['vSplitPanel', 'VSplitPanel']
+    aliases: ['vSplitPanel', 'VSplitPanel'],
+    valueProps: ['direction', 'size', 'minSize']
   },
   Step: {
     factory: vStep,
     aliases: ['vStep', 'VStep'],
     props: { description: 'description', title: 'title' },
+    valueProps: ['icon', 'status'],
     textProp: 'title'
   },
   Steps: {
     factory: vSteps,
     aliases: ['vSteps', 'VSteps'],
-    itemBridge: { command: 'vStep', contentProp: 'description', itemType: 'vStep' }
+    itemBridge: { command: 'vStep', contentProp: 'description', itemType: 'vStep' },
+    valueProps: ['current', 'direction', 'size', 'status']
   },
   SubMenu: {
     factory: vSubMenu,
@@ -594,6 +661,7 @@ export const components = {
     aliases: ['vTab', 'VTab'],
     childrenProp: 'children',
     props: { disabled: 'disabled', icon: 'icon', label: 'label', value: 'value' },
+    valueProps: ['icon', 'key', 'value', 'active', 'disabled'],
     textProp: 'label'
   },
   Table: {
@@ -613,6 +681,7 @@ export const components = {
       ariaLabel: 'ariaLabel',
       orientation: 'orientation'
     },
+    valueProps: ['ariaLabel', 'orientation', 'variant', 'size', 'active'],
     events: { change: { channel: 'callback', prop: 'change' } }
   },
   TagsInput: {
@@ -655,7 +724,8 @@ export const components = {
   },
   ThemeModeSwitch: {
     factory: vThemeModeSwitch,
-    aliases: ['vThemeModeSwitch', 'VThemeModeSwitch']
+    aliases: ['vThemeModeSwitch', 'VThemeModeSwitch'],
+    valueProps: ['persist']
   },
   Three: {
     factory: vThree,
@@ -674,7 +744,8 @@ export const components = {
     factory: vTimelineItem,
     aliases: ['vTimelineItem', 'VTimelineItem'],
     childrenProp: 'content',
-    props: { status: 'status', time: 'time', title: 'title' }
+    props: { status: 'status', time: 'time', title: 'title' },
+    valueProps: ['status', 'title', 'time']
   },
   Timer: {
     factory: vTimer,
@@ -698,7 +769,8 @@ export const components = {
   Tooltip: {
     factory: vTooltip,
     aliases: ['vTooltip', 'VTooltip'],
-    childrenProp: 'children'
+    childrenProp: 'children',
+    valueProps: ['placement', 'trigger']
   },
   Tr: {
     factory: vTr,
@@ -730,7 +802,8 @@ export const components = {
   },
   TrendCard: {
     factory: vTrendCard,
-    aliases: ['vTrendCard', 'VTrendCard']
+    aliases: ['vTrendCard', 'VTrendCard'],
+    valueProps: ['title', 'value', 'unit', 'delta', 'up']
   },
   Upload: {
     factory: vUpload,

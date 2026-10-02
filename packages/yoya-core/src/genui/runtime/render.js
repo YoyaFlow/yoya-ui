@@ -424,7 +424,15 @@ function buildOptions(node, ctx, bindings = null, entry = null, callbackProps = 
       const mapping = resolvePropMapping(entry, key);
       const resolved = applyTransform(resolveValue(value, ctx), mapping.transform);
 
-      collectBinding(value, key, mapping, ctx, bindings);
+      /**
+       * **接线通道互斥**（票 03）：代码里归一过的位（构建期扫 `asSignal` / `asSignalJson`
+       * 调用点，写进注册信息的 `valueProps`）走**值通道** —— 句柄已经直传，宿主不再按同名
+       * 命令重放（否则同一份值两条通道同时生效、谁说了算不明，还多跑一轮）。
+       * 没归一的位按今天的行为走**命令通道**（构建期喂一次 + 数据变化再喂一次）。
+       */
+      if (!isValueChannel(entry, key)) {
+        collectBinding(value, key, mapping, ctx, bindings);
+      }
       // props 一律落**当次值**：句柄在 yoya-ui 各组件里的支持并不一致（有的登记绑定，
       // 有的直接当状态写，`computed` 甚至会被当只读句柄而报错），活值统一由
       // `applyLiveBindings` 的数据订阅驱动。
@@ -473,6 +481,11 @@ function buildOptions(node, ctx, bindings = null, entry = null, callbackProps = 
 
   Object.assign(options, callbackProps ?? {});
   return options;
+}
+
+/** 值通道：这一位在组件源码里被归一过（`asSignal` / `asSignalJson`），句柄直传即可。 */
+function isValueChannel(entry, key) {
+  return Array.isArray(entry?.valueProps) && entry.valueProps.includes(key);
 }
 
 /** 协议属性名 → 组件侧通道（`prop:` / `command:` / `attr:` / `style:` / `class:`）。 */

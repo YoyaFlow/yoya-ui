@@ -1,4 +1,5 @@
 import { div } from '@yoyaflow/yoya-core/html';
+import { asSignal } from '@yoyaflow/yoya-core';
 import { createComponentShortcut } from '../shared.js';
 
 /**
@@ -22,13 +23,15 @@ import { createComponentShortcut } from '../shared.js';
  * @genui.event change callback payload=0
  */
 export function VGreeter({ change, children, greeting = '你好', name, score, ...rest } = {}) {
+  // 值通道：这一位在代码里归一过（构建期扫出来写进插件的 valueProps）
+  const name$ = asSignal(name);
   const node = div({
     vn: 'VGreeter',
     ...rest,
     attrs: {
       ...(rest.attrs ?? null),
       ...(greeting !== undefined ? { 'data-greeting': greeting } : null),
-      ...(name !== undefined ? { 'data-name': name } : null),
+      ...(name !== undefined ? { 'data-name': name$ } : null),
       ...(score !== undefined ? { 'data-score': String(score) } : null)
     }
   });

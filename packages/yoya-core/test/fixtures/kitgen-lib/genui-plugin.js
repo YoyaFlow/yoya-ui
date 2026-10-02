@@ -17,6 +17,7 @@ export const components = {
       name: { to: 'attr:data-name' },
       score: { to: 'command:score', read: 'command:getScore', live: false }
     },
+    valueProps: ['name'],
     events: {
       click: { channel: 'dom', event: 'click' },
       change: { channel: 'callback', prop: 'change', payload: '0' }

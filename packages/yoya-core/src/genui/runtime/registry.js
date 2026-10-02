@@ -480,7 +480,9 @@ export function normalizeComponentDefinition(name, definition, meta = {}) {
     props: config.props ?? null,
     source: meta.source ?? LOCAL_NAMESPACE,
     textProp: config.textProp ?? (config.text ? config.text.to : null),
-    value: config.value ?? null
+    value: config.value ?? null,
+    // 接线通道（票 03）：代码里归一过的位 —— 句柄直传，宿主不按同名命令重放。
+    valueProps: Array.isArray(config.valueProps) ? config.valueProps.map(String) : null
   };
 }
 

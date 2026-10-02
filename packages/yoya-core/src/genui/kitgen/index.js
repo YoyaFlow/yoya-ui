@@ -856,10 +856,6 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
       const doc = direct?.doc ?? pascalBlock?.doc ?? null;
       const componentWiring = direct?.wiring ?? pascalBlock?.wiring ?? null;
 
-      if (componentWiring) {
-        wiring[name] = componentWiring;
-      }
-
       /**
        * props 的**两份来源合并**（不是二选一）：
        * - 签名解构给名字（yoya-ui 那种写法，零手写）；
@@ -887,6 +883,21 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
         ...(doc?.jsonProps ?? []),
         ...scanned.props.filter((entry) => entry.kind === 'json').map((entry) => entry.name)
       ]);
+
+      /**
+       * **值通道声明**（票 03）：归一调用点扫出来的位写进插件的 `valueProps`，
+       * 运行期据此跳过"同名命令重放"——同一份值不再同时走两条通道。
+       */
+      const valueProps = scanned.props.map((entry) => entry.name);
+
+      if (componentWiring || valueProps.length > 0) {
+        wiring[name] = {
+          props: {},
+          events: {},
+          ...(componentWiring ?? {}),
+          valueProps
+        };
+      }
 
       const entry = {
         name,
@@ -1134,6 +1145,10 @@ function serializeComponent(name, wiring, kind) {
 
   if (wiring && Object.keys(wiring.props).length > 0) {
     fields.push(`props: ${serializeValue(wiring.props, 4, 13)}`);
+  }
+
+  if (wiring?.valueProps?.length > 0) {
+    fields.push(`valueProps: ${serializeValue(wiring.valueProps, 4, 17)}`);
   }
 
   if (wiring && Object.keys(wiring.events).length > 0) {

@@ -420,6 +420,15 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
     expect(text).toContain("id: 'fixture/kitgen-lib@1.2.3'");
   });
 
+  it('插件带上值通道声明：归一调用点扫进 valueProps（票 03）', async () => {
+    const result = await writeKit(pluginConfig, { resolveFrom: fixtureRoot });
+    const pluginSource = result.outputs.find((o) => o.out.endsWith('genui-plugin.js'));
+    const text = await readFile(pluginSource.out, 'utf8');
+
+    // 代码里归一过的位（asSignal(name)）→ 值通道；宿主不再按同名命令重放
+    expect(text).toContain("valueProps: ['name']");
+  });
+
   it('生成物本身就是 Prettier 规范形（LF / 无二次格式化差异）', async () => {
     await writeKit(pluginConfig, { resolveFrom: fixtureRoot });
     const pluginSource = await readFile(join(fixtureRoot, 'genui-plugin.js'), 'utf8');
