@@ -48,14 +48,17 @@ function mount(factory, registration) {
   const genui = createGenUI();
   genui.registerComponent(registration.name, { factory, ...registration.extra });
 
-  const surface = genui.fromJson({
-    data: { x: 1 },
-    root: {
-      id: 'probe',
-      type: registration.name,
-      props: { value: { $bind: '/x' } }
-    }
-  });
+  const surface = genui.fromJson(
+    {
+      data: { x: 1 },
+      root: {
+        id: 'probe',
+        type: registration.name,
+        props: { value: { $bind: '/x' } }
+      }
+    },
+    registration.replay === undefined ? undefined : { replay: registration.replay }
+  );
   const target = document.createElement('div');
   surface.bindTo(target);
 
@@ -93,6 +96,37 @@ describe('值通道 / 命令通道', () => {
 
     expect(target.textContent).toBe('2');
     // 今天是「构建期先喂一次 + 数据变化再喂一次」，命令通道保持这个行为不变
+    expect(replayed).toEqual([1, 2]);
+  });
+
+  it('开关打开（replay: declared）：没声明的位不再重放', () => {
+    const { surface } = mount(CommandChannelFixture, {
+      name: 'CommandChannelFixture',
+      extra: {},
+      replay: 'declared'
+    });
+
+    // 构建期就不再喂了（这位既没归一、也没声明命令通道 —— 它拿到的就是句柄本身）
+    expect(replayed).toEqual([]);
+
+    surface.data.write('/x', 2);
+
+    // 变化也不喂：这一位就是"必须迁移"的清单条目
+    expect(replayed).toEqual([]);
+  });
+
+  it('开关打开：显式声明命令通道的位照旧重放', () => {
+    const { surface, target } = mount(CommandChannelFixture, {
+      name: 'CommandChannelFixture',
+      extra: { props: { value: { to: 'command:value', live: true } } },
+      replay: 'declared'
+    });
+
+    expect(target.textContent).toBe('1');
+
+    surface.data.write('/x', 2);
+
+    expect(target.textContent).toBe('2');
     expect(replayed).toEqual([1, 2]);
   });
 });

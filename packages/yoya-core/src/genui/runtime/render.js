@@ -70,6 +70,8 @@ export function createRenderContext(config) {
     exposureStack: options.exposureStack ?? [],
     onUnknown: options.onUnknown ?? 'placeholder',
     onNode: options.onNode ?? null,
+    // 接线通道开关（票 04）：`auto`（默认，等于旧行为）/ `declared`（只对显式命令通道重放）
+    replay: options.replay ?? 'auto',
     registry,
     scope,
     surfaceId,
@@ -430,7 +432,7 @@ function buildOptions(node, ctx, bindings = null, entry = null, callbackProps = 
        * 命令重放（否则同一份值两条通道同时生效、谁说了算不明，还多跑一轮）。
        * 没归一的位按今天的行为走**命令通道**（构建期喂一次 + 数据变化再喂一次）。
        */
-      if (!isValueChannel(entry, key)) {
+      if (shouldReplay(entry, key, mapping, ctx)) {
         collectBinding(value, key, mapping, ctx, bindings);
       }
       // props 一律落**当次值**：句柄在 yoya-ui 各组件里的支持并不一致（有的登记绑定，
@@ -486,6 +488,26 @@ function buildOptions(node, ctx, bindings = null, entry = null, callbackProps = 
 /** 值通道：这一位在组件源码里被归一过（`asSignal` / `asSignalJson`），句柄直传即可。 */
 function isValueChannel(entry, key) {
   return Array.isArray(entry?.valueProps) && entry.valueProps.includes(key);
+}
+
+/**
+ * 走不走"同名命令重放"（票 03 + 票 04）：
+ *
+ * - **值通道**（代码里归一过）→ 永不重放：句柄已经直传，重放等于同一份值走两条通道；
+ * - 开关 `replay: 'declared'` → 只重放**显式声明**了命令通道的位（`to=command:x`）；
+ *   其余没归一的位会停在构建期那份快照 —— 那正是必须迁移的清单；
+ * - 默认 `auto` → 没归一的位照旧重放，行为与旧版一致（扩展期，可回滚）。
+ */
+function shouldReplay(entry, key, mapping, ctx) {
+  if (isValueChannel(entry, key)) {
+    return false;
+  }
+
+  if (ctx.replay === 'declared') {
+    return mapping?.channel === 'command';
+  }
+
+  return true;
 }
 
 /** 协议属性名 → 组件侧通道（`prop:` / `command:` / `attr:` / `style:` / `class:`）。 */

@@ -389,6 +389,7 @@ export class GenUISurface {
         onNode,
         onUnknown: this.options.onUnknown,
         onWarn: (message) => this._warn(message),
+        replay: this.options.replay,
         track: track ?? ((dispose) => this._disposers.add(dispose))
       },
       registry: this.registry,
