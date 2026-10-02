@@ -9,6 +9,8 @@ import {
   extractGenuiWiring,
   extractProps,
   generateKit,
+  scanNormalizedProps,
+  stripCodeNoise,
   writeKit
 } from '../../src/genui/kitgen/index.js';
 
@@ -93,7 +95,10 @@ export const vGreeter = createComponentShortcut(VGreeter);`;
 export function VFat() {}
 export const vFat = createComponentShortcut(VFat);\n`
     );
-    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'fixture/fat', version: '1.0.0' }));
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'fixture/fat', version: '1.0.0' })
+    );
 
     const configFor = (budgets) => ({
       src: join(dir, 'src'),
@@ -105,10 +110,16 @@ export const vFat = createComponentShortcut(VFat);\n`
       ...(budgets ? { budgets } : {})
     });
 
-    await expect(generateKit(configFor(), { resolveFrom: dir })).rejects.toThrow(/超预算[\s\S]*summary/);
+    await expect(generateKit(configFor(), { resolveFrom: dir })).rejects.toThrow(
+      /超预算[\s\S]*summary/
+    );
     // 库可以按需放宽
     const relaxed = await generateKit(
-      configFor({ summary: 200, pitfalls: { count: 6, item: 200 }, props: { count: 24, value: 200 } }),
+      configFor({
+        summary: 200,
+        pitfalls: { count: 6, item: 200 },
+        props: { count: 24, value: 200 }
+      }),
       { resolveFrom: dir }
     );
 
@@ -182,6 +193,160 @@ export const vFat = createComponentShortcut(VFat);\n`
 
   it('缺 namespace 直接报错（防呆）', () => {
     expect(() => generateKit({ src: 'src' })).rejects.toThrow('namespace');
+  });
+});
+
+describe('kitgen 归一调用点扫描（票 02 的代码面）', () => {
+  const source = `
+// 说明里写 asSignal(rows) 不算调用点
+export function VMetric({ series, label, rows, ...rest }) {
+  const seriesState = asSignalJson(series);
+  const labelState = asSignal(label ?? '共 0 条');
+  const injected = asSignal('loading');
+  const initial = rows ?? null;
+  const contentNode = null;
+  const content = asSignal(contentNode === null ? initial : null);
+
+  return div({ vn: 'VMetric', ...rest }, (node) => node.child(vText(seriesState.at('0/value'))));
+}
+export const vMetric = createComponentShortcut(VMetric);
+`;
+
+  it('把 asSignal / asSignalJson 调用点归属到声明过的 props', () => {
+    expect(scanNormalizedProps(source, 'VMetric')).toEqual({
+      props: [
+        { name: 'series', kind: 'json' },
+        { name: 'label', kind: 'value' }
+      ],
+      // 局部量与字面量不是 props：代码面注入的实例 / 内容位不进表
+      injected: ['contentNode', 'initial'],
+      undeclared: []
+    });
+  });
+
+  it('归一了一个从没声明的名字 = 没声明的位（门禁要红的那一类）', () => {
+    const loose = `
+export function VSloppy({ rows = null }) {
+  const rowsState = asSignal(rows);
+  const strayState = asSignalJson(stray);
+  return div({ vn: 'VSloppy' });
+}
+export const vSloppy = createComponentShortcut(VSloppy);
+`;
+
+    expect(scanNormalizedProps(loose, 'VSloppy')).toEqual({
+      props: [{ name: 'rows', kind: 'value' }],
+      injected: [],
+      undeclared: ['stray']
+    });
+  });
+
+  it('同一个位既走值又走 JSON 时标 mixed（声明与实现对不上，门禁据此报红）', () => {
+    const mixed = `
+export function VMixed({ rows }) {
+  const one = asSignal(rows);
+  const two = asSignalJson(rows);
+  return div({ vn: 'VMixed' });
+}
+export const vMixed = createComponentShortcut(VMixed);
+`;
+
+    expect(scanNormalizedProps(mixed, 'VMixed').props).toEqual([{ name: 'rows', kind: 'mixed' }]);
+  });
+
+  it('多处 asSignal 选中同一批 prop（`variant ?? type`）都算值位', () => {
+    const multi = `
+export function VButtonish({ variant, type, disabled }) {
+  const variantState = asSignal(variant ?? type ?? null);
+  const disabledState = asSignal(disabled);
+  return div({ vn: 'VButtonish' });
+}
+export const vButtonish = createComponentShortcut(VButtonish);
+`;
+
+    expect(scanNormalizedProps(multi, 'VButtonish').props).toEqual([
+      { name: 'variant', kind: 'value' },
+      { name: 'type', kind: 'value' },
+      { name: 'disabled', kind: 'value' }
+    ]);
+  });
+
+  it('注释与字符串字面量里的同名标识符不算调用点', () => {
+    const noisy = `
+/** 例：asSignalJson(rows) 见文档 */
+export function VQuiet({ rows }) {
+  const hint = 'asSignalJson(rows)';
+  return div({ vn: 'VQuiet' });
+}
+export const vQuiet = createComponentShortcut(VQuiet);
+`;
+
+    expect(scanNormalizedProps(noisy, 'VQuiet').props).toEqual([]);
+    expect(stripCodeNoise(noisy)).not.toContain('asSignalJson(rows)');
+  });
+
+  it('声明了 JSON 位的组件按 asSignalJson 归一，扫描结果进 manifest 的 jsonProps', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'kitgen-json-'));
+    const src = join(dir, 'src', 'basic');
+
+    await mkdir(src, { recursive: true });
+    await writeFile(
+      join(src, 'metric.js'),
+      `import { div } from '@yoyaflow/yoya-core/html';
+import { createComponentShortcut } from '../shared.js';
+
+/**
+ * @genui 指标卡
+ * @genui.props {"series":"JSON｜[{ value }]","unit":"文本"}
+ * @genui.json series
+ */
+export function VMetric({ series, unit } = {}) {
+  const seriesState = asSignalJson(series);
+  const unitState = asSignal(unit);
+  return div({ vn: 'VMetric' });
+}
+export const vMetric = createComponentShortcut(VMetric);
+`
+    );
+    await writeFile(
+      join(dir, 'package.json'),
+      JSON.stringify({ name: 'fixture/json', version: '1.0.0' })
+    );
+
+    const manifest = await generateKit(
+      {
+        src: join(dir, 'src'),
+        out: join(dir, 'genui-kit.json'),
+        namespace: 'fixture/json',
+        pkg: join(dir, 'package.json'),
+        categories: { basic: 'basic' },
+        elements: { html: false, svg: false }
+      },
+      { resolveFrom: dir }
+    );
+    const metric = manifest.components.find((component) => component.name === 'vMetric');
+
+    // 活绑定面从扫描派生：jsonProps 是 liveProps 的子集，模型只读 manifest 就知道怎么填
+    expect(metric.jsonProps).toEqual(['series']);
+    expect(metric.liveProps).toEqual(['series', 'unit']);
+    expect(manifest.tiers.full).toContain('jsonProps');
+
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it('注入进来的位与内容位不入表（真实组件抽查：局部量作归一入参）', () => {
+    const injected = `
+export function VBadgeish({ count, ...rest }) {
+  const value = asSignal(count === '' ? null : count);
+  const contentValue = asSignal(contentNode === null ? initialContent : null);
+  return span({ vn: 'VBadgeish', ...rest });
+}
+export const vBadgeish = createComponentShortcut(VBadgeish);
+`;
+
+    expect(scanNormalizedProps(injected, 'VBadgeish').props).toEqual([
+      { name: 'count', kind: 'value' }
+    ]);
   });
 });
 

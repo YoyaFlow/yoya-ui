@@ -102,6 +102,8 @@ const DOC_TAG_KEYS = {
   // —— 契约面 / 活绑定
   props: 'props',
   live: 'liveProps',
+  // 值域是对象 / 数组的活绑定位（"JSON 位"）：只有它能按相对路径下钻（`asSignalJson`）
+  json: 'jsonProps',
   // —— 逻辑 / 组合面（"选完还要配什么、状态放哪"）
   pairs: 'pairs',
   state: 'state'
@@ -114,9 +116,10 @@ const LIST_DOC_KEYS = new Set([
   'pitfalls',
   'scenes',
   'liveProps',
+  'jsonProps',
   'pairs'
 ]);
-const COMMA_LIST_DOC_KEYS = new Set(['scenes', 'liveProps', 'pairs']);
+const COMMA_LIST_DOC_KEYS = new Set(['scenes', 'liveProps', 'jsonProps', 'pairs']);
 /** JSON 型文档标签：`example` 是节点，`props` 是 `{ 名字: "说明" }`。 */
 const JSON_DOC_KEYS = new Set(['example', 'props']);
 
@@ -126,13 +129,18 @@ const splitDocList = (value, comma = false) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+/** 保序去重（声明在前、扫描结果在后）。 */
+const uniqueList = (items) => [...new Set(items.filter(Boolean))];
+
 const parseJsonDocTag = (tag, value, { object = false } = {}) => {
   let parsed;
 
   try {
     parsed = JSON.parse(value);
   } catch (error) {
-    throw new Error(`@genui.${tag} 必须是合法 JSON（${error.message}）：${value}`);
+    throw new Error(`@genui.${tag} 必须是合法 JSON（${error.message}）：${value}`, {
+      cause: error
+    });
   }
 
   if (object && (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))) {
@@ -214,11 +222,14 @@ function checkBudgets(entry, budgets) {
   const propNames = Object.keys(props);
 
   if (propNames.length > budgets.props.count) {
-    problems.push(`props 个数太多（${propNames.length} > ${budgets.props.count}）——只留要让 agent 填的`);
+    problems.push(
+      `props 个数太多（${propNames.length} > ${budgets.props.count}）——只留要让 agent 填的`
+    );
   }
   propNames.forEach((name) => text(`props.${name}`, props[name], budgets.props.value));
 
-  const exampleBytes = entry.example === undefined ? 0 : Buffer.byteLength(JSON.stringify(entry.example));
+  const exampleBytes =
+    entry.example === undefined ? 0 : Buffer.byteLength(JSON.stringify(entry.example));
 
   if (exampleBytes > budgets.exampleBytes) {
     problems.push(
@@ -464,6 +475,218 @@ export function extractProps(source, factoryName) {
     .reduce((acc, name) => ({ ...acc, [name]: '' }), {});
 }
 
+/**
+ * 剥掉注释与字符串 / 模板字面量：扫描归一调用点时"只认代码"——
+ * 文档注释里举例写的 `asSignal(rows)`、字符串里出现的同名标识符都不算调用点。
+ * 只做长度持平的等价替换，不改变外部坐标。
+ */
+export function stripCodeNoise(source) {
+  let out = '';
+  let index = 0;
+
+  while (index < source.length) {
+    const char = source[index];
+    const next = source[index + 1];
+
+    if (char === '/' && next === '/') {
+      const end = source.indexOf('\n', index);
+      const stop = end === -1 ? source.length : end;
+      out += ' '.repeat(stop - index) + (end === -1 ? '' : '\n');
+      index = end === -1 ? source.length : end + 1;
+      continue;
+    }
+
+    if (char === '/' && next === '*') {
+      const end = source.indexOf('*/', index + 2);
+      const stop = end === -1 ? source.length : end + 2;
+      out += source.slice(index, stop).replace(/[^\n]/g, ' ');
+      index = stop;
+      continue;
+    }
+
+    if (char === '"' || char === "'" || char === '`') {
+      const quote = char;
+      let cursor = index + 1;
+      while (cursor < source.length) {
+        if (source[cursor] === '\\') {
+          cursor += 2;
+          continue;
+        }
+        if (source[cursor] === quote) {
+          cursor += 1;
+          break;
+        }
+        cursor += 1;
+      }
+      out += source.slice(index, cursor).replace(/[^\n]/g, ' ');
+      index = cursor;
+      continue;
+    }
+
+    out += char;
+    index += 1;
+  }
+
+  return out;
+}
+
+/** 从 `openIndex`（开括号位置）找到配对闭括号的下标；找不到返回 -1。 */
+function matchingIndex(source, openIndex, open, close) {
+  let depth = 0;
+
+  for (let index = openIndex; index < source.length; index += 1) {
+    const char = source[index];
+
+    if (char === open) {
+      depth += 1;
+    } else if (char === close) {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+/**
+ * `export function NAME({...} = {})` 的函数体文本；找不到返回 null。
+ *
+ * 注意先跳过**参数表**（解构本身就带一对花括号）再找函数体，否则会把 `{ a, b }` 当函数体。
+ */
+function findFactoryBody(source, factoryName) {
+  const match = source.match(new RegExp(`export function ${escapeRegExp(factoryName)}\\s*\\(`));
+
+  if (!match) {
+    return null;
+  }
+
+  const paramsStart = source.indexOf('(', match.index);
+  const paramsEnd = matchingIndex(source, paramsStart, '(', ')');
+
+  if (paramsEnd < 0) {
+    return null;
+  }
+
+  const bodyStart = source.indexOf('{', paramsEnd);
+
+  if (bodyStart < 0) {
+    return null;
+  }
+
+  const bodyEnd = matchingIndex(source, bodyStart, '{', '}');
+
+  return bodyEnd < 0 ? source.slice(bodyStart) : source.slice(bodyStart, bodyEnd + 1);
+}
+
+/** 从 `(` 起取到配对的 `)`，返回括号内的实参文本。 */
+function readCallArguments(source, openIndex) {
+  const end = matchingIndex(source, openIndex, '(', ')');
+
+  return end < 0 ? source.slice(openIndex + 1) : source.slice(openIndex + 1, end);
+}
+
+/** 模块 / 函数里出现过的绑定名（`const` / `let` / `var` / 函数声明 / 参数）——用来把
+ * "代码面注入的实例"与"没声明的位"分开。 */
+function collectBindingNames(source) {
+  const names = new Set();
+
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+([^=;]+?)=/g)) {
+    for (const name of match[1].match(/[A-Za-z_$][\w$]*/g) ?? []) {
+      names.add(name);
+    }
+  }
+
+  for (const match of source.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)?\s*\(([^)]*)\)/g)) {
+    for (const name of `${match[1] ?? ''} ${match[2]}`.match(/[A-Za-z_$][\w$]*/g) ?? []) {
+      names.add(name);
+    }
+  }
+
+  return names;
+}
+
+/**
+ * 归一调用点扫描（票 02 的"代码面"）：组件源码里每一处 `asSignal(…)` / `asSignalJson(…)`
+ * 就是一条活绑定位的声明——值域是对象 / 数组的位必须走 `asSignalJson`（只有它能下钻）。
+ *
+ * 归属规则：实参里出现的标识符**落在该工厂的 props 名单里**才算这位 prop 的归一；
+ * 落不进去的（`contentNode === null ? initial : null` 里的局部量、`asSignal('loading')`
+ * 这种字面量）是**代码面注入的实例 / 内容位**，不进表。
+ *
+ * @returns {{ props: {name: string, kind: 'value'|'json'|'mixed'}[], injected: string[], undeclared: string[] }}
+ */
+const IDENTIFIER_NOISE = new Set([
+  'null',
+  'undefined',
+  'true',
+  'false',
+  'typeof',
+  'void',
+  'new',
+  'this',
+  'Boolean',
+  'Number',
+  'String',
+  'Math',
+  'Array',
+  'Object',
+  'JSON'
+]);
+
+export function scanNormalizedProps(source, factoryName, { declared = null } = {}) {
+  const names = new Set(declared ?? Object.keys(extractProps(source, factoryName) ?? {}));
+  const code = stripCodeNoise(source);
+  const body = findFactoryBody(code, factoryName);
+
+  if (!body) {
+    return { props: [], injected: [], undeclared: [] };
+  }
+
+  const found = new Map();
+  const foreign = new Set();
+  const callPattern = /\basSignalJson\s*\(|\basSignal\s*\(/g;
+  let match;
+
+  while ((match = callPattern.exec(body)) !== null) {
+    const kind = match[0].startsWith('asSignalJson') ? 'json' : 'value';
+    // 属性访问（`positionPresets.has(…)` / `offset?.x`）里的名字是成员名，不是标识符引用
+    const args = readCallArguments(body, callPattern.lastIndex - 1).replace(
+      /\??\.[A-Za-z_$][\w$]*/g,
+      ''
+    );
+    const identifiers = [...new Set(args.match(/[A-Za-z_$][\w$]*/g) ?? [])].filter(
+      (name) => !IDENTIFIER_NOISE.has(name)
+    );
+    const hits = identifiers.filter((name) => names.has(name));
+
+    identifiers.filter((name) => !names.has(name)).forEach((name) => foreign.add(name));
+
+    for (const name of hits) {
+      const previous = found.get(name);
+
+      found.set(name, previous && previous !== kind ? 'mixed' : kind);
+    }
+  }
+
+  // 外来标识符分两类：模块 / 函数里**绑过的**是代码面注入的实例（内容节点、局部量…），
+  // 没绑过的只能是"归一了却没声明的位"——那是门禁要红的那一种。
+  const bound = collectBindingNames(code);
+  const injected = [];
+  const undeclared = [];
+
+  for (const name of foreign) {
+    (bound.has(name) ? injected : undeclared).push(name);
+  }
+
+  return {
+    props: [...found.entries()].map(([name, kind]) => ({ name, kind })),
+    injected,
+    undeclared
+  };
+}
+
 function resolveFromBase(path, base) {
   return isAbsolute(path) ? path : resolve(base, path);
 }
@@ -647,7 +870,25 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
       const docProps = doc?.props ?? null;
       const props = signatureProps || docProps ? { ...signatureProps, ...docProps } : null;
 
-      return {
+      /**
+       * **活绑定面从代码派生**（票 02）：扫描这一支工厂里的 `asSignal` / `asSignalJson`
+       * 调用点，得到"哪些位吃句柄"（liveProps）与"哪些位是 JSON 位"（jsonProps）。
+       * `@genui.live` / `@genui.json` 是作者写的声明，与扫描结果取并集——
+       * manifest 描述**实际能接线的方式**，声明与代码是否对得上由门禁（票 02）对账。
+       */
+      const scanned = scanNormalizedProps(meta.source, pascal, {
+        declared: props ? Object.keys(props) : null
+      });
+      const liveProps = uniqueList([
+        ...(doc?.liveProps ?? []),
+        ...scanned.props.map((entry) => entry.name)
+      ]);
+      const jsonProps = uniqueList([
+        ...(doc?.jsonProps ?? []),
+        ...scanned.props.filter((entry) => entry.kind === 'json').map((entry) => entry.name)
+      ]);
+
+      const entry = {
         name,
         factory: true,
         category: doc?.category ?? meta.category ?? 'basic',
@@ -656,6 +897,16 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
           ? { ...doc, ...(props ? { props } : {}), needsDocs: false }
           : { summary: '', ...(props ? { props } : {}), needsDocs: true })
       };
+
+      if (liveProps.length > 0) {
+        entry.liveProps = liveProps;
+      }
+
+      if (jsonProps.length > 0) {
+        entry.jsonProps = jsonProps;
+      }
+
+      return entry;
     });
 
   // 目录是"给模型看的"：每条都卡体积预算（超了当场报，别把选型信息写成小作文）。
@@ -695,6 +946,7 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
           'pairs',
           'state',
           'liveProps',
+          'jsonProps',
           'example'
         ]
       },

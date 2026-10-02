@@ -1,0 +1,292 @@
+{
+  "packages/yoya-ui/src/actions/button.js#VButton": {
+    "declaredOnly": [
+      "label",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/actions/buttons.js#VButtons": {
+    "declaredOnly": [
+      "change",
+      "options"
+    ]
+  },
+  "packages/yoya-ui/src/actions/context-menu.js#VContextMenu": {
+    "declaredOnly": [
+      "content",
+      "menu",
+      "menuContent",
+      "open",
+      "target",
+      "x",
+      "y"
+    ]
+  },
+  "packages/yoya-ui/src/actions/dropdown-menu.js#VDropdownMenu": {
+    "declaredOnly": [
+      "content",
+      "label",
+      "menu",
+      "menuContent",
+      "open",
+      "text",
+      "trigger"
+    ]
+  },
+  "packages/yoya-ui/src/actions/float-button.js#VFloatButton": {
+    "declaredOnly": [
+      "icon",
+      "label",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/actions/symbol-button.js#VSymbolButton": {
+    "declaredOnly": [
+      "ariaLabel",
+      "icon",
+      "title"
+    ]
+  },
+  "packages/yoya-ui/src/form/controls/checkbox.js#VCheckbox": {
+    "declaredOnly": [
+      "content",
+      "description",
+      "disabled",
+      "label",
+      "name",
+      "optionValue",
+      "required",
+      "text",
+      "value"
+    ]
+  },
+  "packages/yoya-ui/src/form/controls/checkboxes.js#VCheckboxes": {
+    "declaredOnly": [
+      "options"
+    ]
+  },
+  "packages/yoya-ui/src/form/controls/radio.js#VRadio": {
+    "declaredOnly": [
+      "content",
+      "description",
+      "disabled",
+      "label",
+      "name",
+      "optionValue",
+      "required",
+      "text",
+      "value"
+    ]
+  },
+  "packages/yoya-ui/src/form/controls/radios.js#VRadios": {
+    "declaredOnly": [
+      "options"
+    ]
+  },
+  "packages/yoya-ui/src/form/controls/switch.js#VSwitch": {
+    "declaredOnly": [
+      "content",
+      "description",
+      "disabled",
+      "label",
+      "name",
+      "optionValue",
+      "required",
+      "text",
+      "value"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/avatar.js#VAvatar": {
+    "declaredOnly": [
+      "content",
+      "icon",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/badge.js#VBadge": {
+    "declaredOnly": [
+      "content",
+      "offset"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/code.js#VCode": {
+    "declaredOnly": [
+      "content",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/table.js#VTable": {
+    "declaredOnly": [
+      "caption"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/tree-table.js#VTreeTable": {
+    "declaredOnly": [
+      "columns",
+      "expandedKeys",
+      "lazyLoad",
+      "nodes",
+      "rowKey",
+      "rowSelection"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/trend-card.js#VTrendCard": {
+    "declaredOnly": [
+      "data",
+      "tone"
+    ]
+  },
+  "packages/yoya-ui/src/data-display/vscroll.js#VScroll": {
+    "declaredOnly": [
+      "content",
+      "items",
+      "loadMore",
+      "onLoadMore",
+      "renderItem",
+      "reset"
+    ]
+  },
+  "packages/yoya-ui/src/feedback/dialog.js#VDialog": {
+    "declaredOnly": [
+      "content"
+    ]
+  },
+  "packages/yoya-ui/src/feedback/message.js#VMessage": {
+    "declaredOnly": [
+      "content",
+      "countdown",
+      "duration",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/feedback/tooltip.js#VTooltip": {
+    "declaredOnly": [
+      "content",
+      "open",
+      "target"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/anchor.js#VAnchorItem": {
+    "declaredOnly": [
+      "content",
+      "items",
+      "label",
+      "nested",
+      "text",
+      "title"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/anchor.js#VAnchor": {
+    "declaredOnly": [
+      "items",
+      "target"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/breadcrumb.js#VBreadcrumbItem": {
+    "declaredOnly": [
+      "content",
+      "label",
+      "text"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/breadcrumb.js#VBreadcrumb": {
+    "declaredOnly": [
+      "items"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/navbar.js#VNavbar": {
+    "declaredOnly": [
+      "actions",
+      "brand",
+      "content",
+      "menu",
+      "menuContent"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/steps.js#VStep": {
+    "declaredOnly": [
+      "desc",
+      "description",
+      "text",
+      "title"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/steps.js#VSteps": {
+    "declaredOnly": [
+      "items"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/tabs.js#VTab": {
+    "declaredOnly": [
+      "content",
+      "label",
+      "text",
+      "title"
+    ]
+  },
+  "packages/yoya-ui/src/navigation/tabs.js#VTabs": {
+    "declaredOnly": [
+      "items",
+      "onChange",
+      "onTabChange"
+    ]
+  },
+  "packages/yoya-ui/src/layout/split-panel.js#VSplitPanel": {
+    "declaredOnly": [
+      "first",
+      "second"
+    ]
+  },
+  "packages/yoya-ui/src/chart/echart.js#VEChart": {
+    "declaredOnly": [
+      "autoResize",
+      "devicePixelRatio",
+      "echartsLib",
+      "height",
+      "loading",
+      "loadingText",
+      "onChartReady",
+      "onChartResize",
+      "option",
+      "renderer",
+      "theme",
+      "width"
+    ]
+  },
+  "packages/yoya-ui/src/effects/glow-button.js#VGlowButton": {
+    "declaredOnly": [
+      "glow"
+    ]
+  },
+  "packages/yoya-ui/src/i18n/index.js#VLanguageSwitch": {
+    "declaredOnly": [
+      "ariaLabel",
+      "languages",
+      "locale",
+      "onChange",
+      "size",
+      "variant"
+    ]
+  },
+  "packages/yoya-ui/src/theme/theme-mode-switch.js#VThemeModeSwitch": {
+    "declaredOnly": [
+      "modes"
+    ]
+  },
+  "packages/yoya-ui/src/three/three.js#VThree": {
+    "declaredOnly": [
+      "autoRender",
+      "autoResize",
+      "camera",
+      "devicePixelRatio",
+      "height",
+      "onFrame",
+      "onReady",
+      "onResize",
+      "rendererOptions",
+      "scene",
+      "threeLib",
+      "width"
+    ]
+  }
+}

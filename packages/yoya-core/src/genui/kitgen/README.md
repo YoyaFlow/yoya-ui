@@ -54,29 +54,30 @@ export function VGreeter({ greeting, name }) {}
 export const vGreeter = createComponentShortcut(VGreeter);
 ```
 
-| 标签              | manifest 字段  | 说明                       |
-| ----------------- | -------------- | -------------------------- |
-| `@genui`          | `summary`      | 一句话选型摘要             |
-| `@genui.contract` | `dataContract` | 数据契约                   |
-| `@genui.use`      | `whenToUse`    | 适用场景（`；`分隔成数组） |
-| `@genui.notFor`   | `notFor`       | 不适用场景                 |
-| `@genui.pitfall`  | `pitfalls`     | 易踩坑                     |
-| `@genui.example`  | `example`      | 一行合法 JSON              |
-| `@genui.scene`    | `scenes`       | 用途场景词（`；`/`,` 分隔）——**检索权重最高的一维** |
-| `@genui.layer`    | `layer`        | `L1`–`L7`：在组装里的层级（`genui_catalog({ layer })` 的**硬过滤主键**） |
-| `@genui.category` | `category`     | 覆盖"目录→分类"映射（一个目录混多分类时才写） |
+| 标签              | manifest 字段  | 说明                                                                                   |
+| ----------------- | -------------- | -------------------------------------------------------------------------------------- |
+| `@genui`          | `summary`      | 一句话选型摘要                                                                         |
+| `@genui.contract` | `dataContract` | 数据契约                                                                               |
+| `@genui.use`      | `whenToUse`    | 适用场景（`；`分隔成数组）                                                             |
+| `@genui.notFor`   | `notFor`       | 不适用场景                                                                             |
+| `@genui.pitfall`  | `pitfalls`     | 易踩坑                                                                                 |
+| `@genui.example`  | `example`      | 一行合法 JSON                                                                          |
+| `@genui.scene`    | `scenes`       | 用途场景词（`；`/`,` 分隔）——**检索权重最高的一维**                                    |
+| `@genui.layer`    | `layer`        | `L1`–`L7`：在组装里的层级（`genui_catalog({ layer })` 的**硬过滤主键**）               |
+| `@genui.category` | `category`     | 覆盖"目录→分类"映射（一个目录混多分类时才写）                                          |
 | `@genui.props`    | `props`        | 一行 JSON `{ "prop": "形态｜说明" }`；签名抽不到时手写，抽得到时补文案（同名文案优先） |
-| `@genui.live`     | `liveProps`    | 活绑定位（`；`/`,` 分隔）：这几位 prop 吃数据句柄、数据变了组件自己动 |
-| `@genui.pairs`    | `pairs`        | **搭配关系**：用了它还要配谁（`；`/`,` 分隔，如 `LayoutDataTableRowKit（行模板）`） |
-| `@genui.state`    | `state`        | **状态归属**：哪些状态在组件内、哪些必须由页面持有 |
+| `@genui.live`     | `liveProps`    | 活绑定位（`；`/`,` 分隔）：这几位 prop 吃数据句柄、数据变了组件自己动                  |
+| `@genui.json`     | `jsonProps`    | **JSON 位**（值域是对象 / 数组）：用 `asSignalJson` 归一、可 `.at(路径)` 下钻          |
+| `@genui.pairs`    | `pairs`        | **搭配关系**：用了它还要配谁（`；`/`,` 分隔，如 `LayoutDataTableRowKit（行模板）`）    |
+| `@genui.state`    | `state`        | **状态归属**：哪些状态在组件内、哪些必须由页面持有                                     |
 
 写标签时按"**消费者在读什么**"分三层，别混：
 
-| 层 | 标签 | 归到哪 | 为什么 |
-| --- | --- | --- | --- |
-| 选型面 | summary / scene / layer / category / use / notFor | **thin 条目**（每一步都会调的瘦切片） | 决定"选不选它、选哪个"；它才是检索索引读的字段 |
-| 契约/逻辑面 | contract / props / example / pitfall / **pairs** / **state** / live | **full 卡**（选定一个组件后按需取） | 决定"填得对不对、还要配什么、状态放哪" |
-| 运行期面 | content / text / prop / event / expose | 插件（**不进 manifest**） | 接线细节，模型的目录里不掺 |
+| 层          | 标签                                                                       | 归到哪                                | 为什么                                         |
+| ----------- | -------------------------------------------------------------------------- | ------------------------------------- | ---------------------------------------------- |
+| 选型面      | summary / scene / layer / category / use / notFor                          | **thin 条目**（每一步都会调的瘦切片） | 决定"选不选它、选哪个"；它才是检索索引读的字段 |
+| 契约/逻辑面 | contract / props / example / pitfall / **pairs** / **state** / live / json | **full 卡**（选定一个组件后按需取）   | 决定"填得对不对、还要配什么、状态放哪"         |
+| 运行期面    | content / text / prop / event / expose                                     | 插件（**不进 manifest**）             | 接线细节，模型的目录里不掺                     |
 
 加新字段时先问一句"它是选型判据吗"：是 → thin；不是 → full。`manifest.tiers` 把这条纪律也写进产物
 （消费者照它切片，就不怕有人把长文塞进热路径）。
@@ -85,15 +86,15 @@ export const vGreeter = createComponentShortcut(VGreeter);
 
 目录是**给模型看的**，每条都有上限，**超了当场报错**（不是警告）：
 
-| 字段 | 上限 |
-| --- | --- |
-| `summary` | 60 字 |
-| `scenes` | 4 条，每条 20 字 |
-| `whenToUse` / `notFor` / `pitfalls` / `pairs` | 6 条，每条 80 字 |
-| `state` | 80 字 |
-| `props` | 24 项，每项说明 60 字 |
-| `example` | 800 B（"最小可落页"，别抄整页） |
-| 单条目录 | 6 KB |
+| 字段                                          | 上限                            |
+| --------------------------------------------- | ------------------------------- |
+| `summary`                                     | 60 字                           |
+| `scenes`                                      | 4 条，每条 20 字                |
+| `whenToUse` / `notFor` / `pitfalls` / `pairs` | 6 条，每条 80 字                |
+| `state`                                       | 80 字                           |
+| `props`                                       | 24 项，每项说明 60 字           |
+| `example`                                     | 800 B（"最小可落页"，别抄整页） |
+| 单条目录                                      | 6 KB                            |
 
 默认值比现有库的实际水平留了余量（yoya-ui 现状：summary 最长 42 字、pitfalls 最长 44 字、
 example 最大 178 B、单条最大 777 B），所以它是护栏不是苛政；库可用 `config.budgets` 覆盖。
@@ -132,6 +133,9 @@ example 最大 178 B、单条最大 777 B），所以它是护栏不是苛政；
 ```
 
 - **props 零手写**：从 `V*` 工厂签名的解构参数自动抽取（`...rest` 与默认值剔除）。
+- **活绑定面从代码派生**：再扫一遍工厂体里的归一调用点 —— `asSignal(…)` = 普通活位、
+  `asSignalJson(…)` = JSON 活位，并集出 `liveProps` / `jsonProps`；声明与代码对不对得上由
+  组件库自己的对账门禁守（yoya-ui 那份在 `packages/yoya-ui/src/testing/gates/genui-props-parity.test.js`）。
 - 没写 JSDoc 的工厂如实标 `needsDocs: true`——manifest 与运行时同真。
 
 ## config 参考

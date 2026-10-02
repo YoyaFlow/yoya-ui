@@ -18,6 +18,7 @@
       "pairs",
       "state",
       "liveProps",
+      "jsonProps",
       "example"
     ]
   },
@@ -198,7 +199,8 @@
         "offset": "",
         "target": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["ariaLabel", "offset", "activeHref", "active"]
     },
     {
       "name": "vAnchorItem",
@@ -222,7 +224,8 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["href", "active"]
     },
     {
       "name": "vAside",
@@ -275,7 +278,8 @@
         "status": "",
         "text": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["alt", "color", "shape", "size", "src", "status"]
     },
     {
       "name": "vAvatarUpload",
@@ -314,7 +318,18 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": [
+        "count",
+        "overflowCount",
+        "showZero",
+        "dot",
+        "status",
+        "color",
+        "title",
+        "text",
+        "label"
+      ]
     },
     {
       "name": "vBody",
@@ -341,7 +356,8 @@
       "pitfalls": ["最后一项自动标记 current"],
       "example": { "type": "vBreadcrumb", "items": [{ "label": "首页" }, { "label": "详情" }] },
       "props": { "ariaLabel": "", "children": "", "items": "", "separator": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["ariaLabel", "separator"]
     },
     {
       "name": "vBreadcrumbItem",
@@ -364,7 +380,8 @@
         "text": "",
         "to": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["href", "to", "active", "current"]
     },
     {
       "name": "vButton",
@@ -397,7 +414,8 @@
         "value": "",
         "variant": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["variant", "type", "size", "disabled", "loading", "formType", "value"]
     },
     {
       "name": "vButtons",
@@ -421,7 +439,8 @@
         "value": "",
         "variant": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["variant", "size", "selectable", "value", "joined", "disabled"]
     },
     {
       "name": "vCard",
@@ -514,7 +533,8 @@
       "pitfalls": ["不传 adapter 只当容器，不出图"],
       "example": { "type": "vChart", "options": {} },
       "props": { "adapter": "", "data": "", "height": "", "options": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["adapter", "data", "options", "height"]
     },
     {
       "name": "vCheckbox",
@@ -573,7 +593,8 @@
         "required": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["name", "required", "disabled", "multiple", "columns"]
     },
     {
       "name": "vCode",
@@ -593,7 +614,8 @@
         "language": "",
         "text": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["language", "copyable", "copyLabel"]
     },
     {
       "name": "vCol",
@@ -670,7 +692,8 @@
         "x": "",
         "y": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["closeOnSelect"]
     },
     {
       "name": "vDetail",
@@ -706,7 +729,8 @@
       "notFor": ["轻提示（用 vMessage）"],
       "example": { "type": "vDialog", "open": true, "children": [] },
       "props": { "children": "", "closable": "", "content": "", "onClose": "", "open": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["closable"]
     },
     {
       "name": "vDigitalBoard",
@@ -754,7 +778,8 @@
         "text": "",
         "trigger": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["closeOnSelect", "placement"]
     },
     {
       "name": "vDynamicLoader",
@@ -813,7 +838,8 @@
         "text": "",
         "variant": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["variant", "size", "disabled", "fixed", "position"]
     },
     {
       "name": "vFooter",
@@ -863,7 +889,8 @@
       "notFor": ["占比环（用 vRingStat）"],
       "example": { "type": "vGauge", "value": 72, "unit": "%" },
       "props": { "max": "", "tone": "", "unit": "", "value": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["value", "max", "unit", "tone"]
     },
     {
       "name": "vGlowButton",
@@ -884,7 +911,8 @@
         "speed": "",
         "strength": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["direction", "motion", "play", "ripple", "speed", "strength"]
     },
     {
       "name": "vHeader",
@@ -957,7 +985,8 @@
       "notFor": ["首屏关键图（直接用 img）"],
       "example": { "type": "vLazyImage", "src": "a.png", "alt": "示例图" },
       "props": { "alt": "", "defer": "", "src": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["src", "alt", "defer"]
     },
     {
       "name": "vLink",
@@ -1007,7 +1036,8 @@
       "pitfalls": ["列数固定时窄屏会挤，配 minColumnWidth 自适应"],
       "example": { "type": "vMasonry", "columns": 3, "gap": 12, "children": [] },
       "props": { "columns": "", "gap": "", "minColumnWidth": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["columns", "gap", "minColumnWidth"]
     },
     {
       "name": "vMenu",
@@ -1089,7 +1119,8 @@
         "text": "",
         "type": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["type", "closable"]
     },
     {
       "name": "vMessageContainer",
@@ -1101,7 +1132,8 @@
       "whenToUse": ["页面级消息堆叠区"],
       "example": { "type": "vMessageContainer", "placement": "top" },
       "props": { "inline": "", "placement": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["inline", "placement"]
     },
     {
       "name": "vMessageManager",
@@ -1136,7 +1168,8 @@
         "subtitle": "",
         "title": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["ariaLabel", "title", "subtitle", "sticky"]
     },
     {
       "name": "vPagination",
@@ -1214,7 +1247,8 @@
         "required": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["name", "required", "disabled"]
     },
     {
       "name": "vRate",
@@ -1241,7 +1275,22 @@
         "size": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": [
+        "value",
+        "count",
+        "max",
+        "allowHalf",
+        "clearable",
+        "allowClear",
+        "character",
+        "size",
+        "name",
+        "disabled",
+        "readonly",
+        "required",
+        "error"
+      ]
     },
     {
       "name": "vRingStat",
@@ -1261,7 +1310,8 @@
         "tone": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["percent", "size", "strokeWidth", "tone", "value", "label"]
     },
     {
       "name": "vRoute",
@@ -1354,7 +1404,20 @@
         "threshold": "",
         "virtual": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": [
+        "itemHeight",
+        "overscan",
+        "threshold",
+        "page",
+        "virtual",
+        "loading",
+        "blocked",
+        "block",
+        "loop",
+        "loadingText",
+        "endText"
+      ]
     },
     {
       "name": "vSelect",
@@ -1399,7 +1462,8 @@
         "rows": "",
         "variant": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["variant", "rows", "barHeight", "gap", "avatarSize", "active", "motion"]
     },
     {
       "name": "vSlider",
@@ -1437,7 +1501,8 @@
       "notFor": ["完整图表（用 vChart / vEchart）"],
       "example": { "type": "vSparkline", "data": [1, 3, 2, 5] },
       "props": { "data": "", "fill": "", "strokeWidth": "", "tone": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["data", "fill", "strokeWidth", "tone"]
     },
     {
       "name": "vSplitPanel",
@@ -1451,7 +1516,8 @@
       "pitfalls": ["size 支持句柄，拖拽只改这一份状态"],
       "example": { "type": "vSplitPanel", "direction": "horizontal", "size": "50%" },
       "props": { "direction": "", "first": "", "minSize": "", "second": "", "size": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["direction", "size", "minSize"]
     },
     {
       "name": "vstack",
@@ -1489,7 +1555,8 @@
         "text": "",
         "title": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["icon", "status"]
     },
     {
       "name": "vSteps",
@@ -1510,7 +1577,8 @@
         "size": "",
         "status": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["current", "direction", "size", "status"]
     },
     {
       "name": "vSubMenu",
@@ -1598,7 +1666,8 @@
         "title": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["icon", "key", "value", "active", "disabled"]
     },
     {
       "name": "vTable",
@@ -1681,7 +1750,8 @@
         "size": "",
         "variant": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["ariaLabel", "orientation", "variant", "size", "active"]
     },
     {
       "name": "vTagsInput",
@@ -1776,7 +1846,8 @@
       "whenToUse": ["应用顶栏的主题切换"],
       "example": { "type": "vThemeModeSwitch" },
       "props": { "modes": "", "persist": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["persist"]
     },
     {
       "name": "vThree",
@@ -1828,7 +1899,8 @@
       "whenToUse": ["配 vTimeline 的单条事件"],
       "example": { "type": "vTimelineItem", "title": "创建", "time": "09:00" },
       "props": { "content": "", "status": "", "time": "", "title": "" },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["status", "title", "time"]
     },
     {
       "name": "vTimer",
@@ -1872,7 +1944,8 @@
         "target": "",
         "trigger": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["placement", "trigger"]
     },
     {
       "name": "vTr",
@@ -1982,7 +2055,8 @@
         "up": "",
         "value": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["title", "value", "unit", "delta", "up"]
     },
     {
       "name": "vUpload",

@@ -14,3 +14,5 @@ benchmark/shapes-report.md
 # 生成物：create-yoya-ui 的 genui-kits 模板（scripts/generate-kit.mjs 按 JSON.stringify 写盘）
 packages/create-yoya-ui/templates/genui-kits/kit.json
 packages/create-yoya-ui/templates/genui-kits/indexes/
+# 生成物：GenUI 接线对账的存量基线（UPDATE_GENUI_PROPS_BASELINE=1 按 JSON.stringify 重写）
+packages/yoya-ui/src/testing/baselines/genui-props-parity-baseline.json
