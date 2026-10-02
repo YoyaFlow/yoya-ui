@@ -242,15 +242,12 @@
       "autoResize",
       "devicePixelRatio",
       "echartsLib",
-      "height",
       "loading",
       "loadingText",
       "onChartReady",
       "onChartResize",
-      "option",
       "renderer",
-      "theme",
-      "width"
+      "theme"
     ]
   },
   "packages/yoya-ui/src/effects/glow-button.js#VGlowButton": {
@@ -279,14 +276,12 @@
       "autoResize",
       "camera",
       "devicePixelRatio",
-      "height",
       "onFrame",
       "onReady",
       "onResize",
       "rendererOptions",
       "scene",
-      "threeLib",
-      "width"
+      "threeLib"
     ]
   }
 }

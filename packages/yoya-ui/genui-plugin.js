@@ -338,7 +338,8 @@ export const components = {
   },
   Echart: {
     factory: vEchart,
-    aliases: ['vEchart', 'VEchart']
+    aliases: ['vEchart', 'VEchart'],
+    valueProps: ['height', 'width', 'option']
   },
   Field: {
     factory: vField,
@@ -729,7 +730,8 @@ export const components = {
   },
   Three: {
     factory: vThree,
-    aliases: ['vThree', 'VThree']
+    aliases: ['vThree', 'VThree'],
+    valueProps: ['height', 'width']
   },
   Timeline: {
     factory: vTimeline,

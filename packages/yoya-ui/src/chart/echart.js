@@ -2,7 +2,7 @@ import { registerChildFactories } from '@yoyaflow/yoya-core/internal/core/node.j
 import { HtmlElementNode, div } from '@yoyaflow/yoya-core/html';
 import { bindWindowEvent } from '@yoyaflow/yoya-core/internal/core/document-events.js';
 import { vNode } from '@yoyaflow/yoya-core/internal/core/v-node.js';
-import { ref } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
+import { asSignal } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
 import { createComponentShortcut, delegateNodeCommands } from '../components/shared.js';
 
 /**
@@ -32,10 +32,11 @@ export function VEChart({
   width,
   ...rest
 } = {}) {
-  // 尺寸是**状态**（命令写、视图跟）：句柄进 `style` 才是随状态变的活值，
-  // 写死成普通值会让 `chart.height('320px')` 只改状态、DOM 停在默认值（R6 读值绑定）。
-  const heightRef = ref(height ?? '400px');
-  const widthRef = ref(width ?? '100%');
+  // 尺寸 / 选项是**活值位**：`asSignal` 让句柄原样透传（普通值才包信号），
+  // 这样"页面 `$bind` 进来"与"命令写进去"走的是同一个源（R9 / 票 05）。
+  const heightRef = asSignal(height ?? '400px');
+  const widthRef = asSignal(width ?? '100%');
+  const optionRef = asSignal(option);
   const state = {
     autoResize: autoResize === undefined ? true : Boolean(autoResize),
     chartInstance: null,
@@ -48,7 +49,6 @@ export function VEChart({
     loadingText: loadingText ?? '加载中...',
     onReadyCallbacks: [],
     onResizeCallbacks: [],
-    option: option ?? null,
     renderer: renderer === 'svg' ? 'svg' : 'canvas',
     resizeObserver: null,
     resizeUnbind: null,
@@ -140,8 +140,8 @@ export function VEChart({
           renderer: state.renderer
         });
 
-        if (state.option) {
-          state.chartInstance.setOption(state.option, true);
+        if (optionRef.value) {
+          state.chartInstance.setOption(optionRef.value, true);
         }
         if (state.loading) {
           api.loading(true, state.loadingText);
@@ -188,14 +188,11 @@ export function VEChart({
 
     api.option = (value) => {
       if (value === undefined) {
-        return state.option;
+        return optionRef.value;
       }
 
-      state.option = value || null;
-
-      if (state.chartInstance && resolveLib()) {
-        state.chartInstance.setOption(state.option, true);
-      }
+      // 只写活值源：提交由 `optionRef` 的订阅统一做（写数据即更新，不重放）
+      optionRef.value = value || null;
 
       return api;
     };
@@ -320,22 +317,24 @@ export function VEChart({
     api.whenMount = (host) => {
       state.element = host?.element?.() ?? null;
       requestAnimationFrame(() => initChart());
+      // 活值位的变化自己接：不再靠宿主按同名命令重放
+      state.optionStop = optionRef.subscribe(() => {
+        if (state.chartInstance && !state.destroyed) {
+          state.chartInstance.setOption(optionRef.value ?? null, true);
+        }
+      });
     };
 
     api.whenDestroy = () => {
       state.destroyed = true;
+      state.optionStop?.();
+      state.optionStop = null;
       disposeChart();
     };
 
     // props：库 / 尺寸 / 主题 / 渲染器 / 观察 / 选项 / 加载态 / 回调（迁移前 `_setupEchart` 的顺序）
     if (echartsLib !== undefined) {
       api.echartsLib(echartsLib);
-    }
-    if (width !== undefined) {
-      api.width(width);
-    }
-    if (height !== undefined) {
-      api.height(height);
     }
     if (autoResize !== undefined) {
       api.autoResize(autoResize);
@@ -348,9 +347,6 @@ export function VEChart({
     }
     if (onChartResize !== undefined) {
       api.onChartResize(onChartResize);
-    }
-    if (option !== undefined) {
-      api.option(option);
     }
     if (loading !== undefined) {
       api.loading(loading, state.loadingText);

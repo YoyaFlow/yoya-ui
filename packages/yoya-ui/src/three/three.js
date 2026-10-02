@@ -2,7 +2,7 @@ import { registerChildFactories } from '@yoyaflow/yoya-core/internal/core/node.j
 import { HtmlElementNode, div } from '@yoyaflow/yoya-core/html';
 import { bindWindowEvent } from '@yoyaflow/yoya-core/internal/core/document-events.js';
 import { vNode } from '@yoyaflow/yoya-core/internal/core/v-node.js';
-import { ref } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
+import { asSignal } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
 import {
   createComponentShortcut,
   delegateNodeCommands,
@@ -39,10 +39,10 @@ export function VThree({
   width,
   ...rest
 } = {}) {
-  // 尺寸是**状态**（命令写、视图跟）：句柄进 `style` 才是随状态变的活值，
-  // 写死成普通值会让 `three.height('100%')` 只改状态、DOM 停在默认值（R6 读值绑定）。
-  const heightRef = ref(height ?? '400px');
-  const widthRef = ref(width ?? '100%');
+  // 尺寸是**活值位**：`asSignal` 让句柄原样透传（普通值才包信号），
+  // 页面 `$bind` 进来与命令写进去因此走同一个源（R9 / 票 05）。
+  const heightRef = asSignal(height ?? '400px');
+  const widthRef = asSignal(width ?? '100%');
   const state = {
     autoRender: autoRender === undefined ? true : Boolean(autoRender),
     autoResize: autoResize === undefined ? true : Boolean(autoResize),
@@ -504,12 +504,6 @@ export function VThree({
     }
     if (camera !== undefined) {
       api.camera(camera);
-    }
-    if (width !== undefined) {
-      api.width(width);
-    }
-    if (height !== undefined) {
-      api.height(height);
     }
     if (rendererOptions !== undefined) {
       api.rendererOptions(rendererOptions);

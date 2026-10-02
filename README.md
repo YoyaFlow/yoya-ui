@@ -295,7 +295,7 @@ adds _on top of_ core, so the real download is core + that row.
 | `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 23.5 KB  |
 | `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
 | `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
-| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 适配器，自备 echarts）                                             | 3.3 KB   |
+| `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 适配器，自备 echarts）                                             | 3.4 KB   |
 | `@yoyaflow/yoya-ui/three`            | vThree（Three.js 适配器，自备 three）                                               | 3.8 KB   |
 | `@yoyaflow/yoya-ui/compiler-runtime` | 编译路径的运行期钩子（主入口不含）                                                  | 0.1 KB   |
 

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { div } from '../index.js';
 import { vEchart } from '../echart.js';
+import { ref } from '@yoyaflow/yoya-core/internal/core/signals/handle.js';
 
 describe('VEchart', () => {
   afterEach(() => {
@@ -93,5 +94,37 @@ describe('VEchart', () => {
     expect(instance.showLoading).toHaveBeenCalledWith(
       expect.objectContaining({ text: '加载中...' })
     );
+  });
+
+  it('option / height 传句柄就是活值：写数据即更新，不靠宿主重放', () => {
+    const instance = {
+      clear: vi.fn(),
+      dispose: vi.fn(),
+      isDisposed: vi.fn(() => false),
+      resize: vi.fn(),
+      setOption: vi.fn()
+    };
+    const lib = { init: vi.fn(() => instance) };
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback();
+      return 1;
+    });
+
+    const option = ref({ series: [{ data: [1] }] });
+    const height = ref('300px');
+
+    const chart = vEchart({ echartsLib: lib, height, option }).bindTo(document.body);
+    const element = document.body.querySelector('[vn~="VEChart"]');
+
+    expect(instance.setOption).toHaveBeenCalledWith({ series: [{ data: [1] }] }, true);
+    expect(element.style.height).toBe('300px');
+
+    option.value = { series: [{ data: [2] }] };
+    expect(instance.setOption).toHaveBeenLastCalledWith({ series: [{ data: [2] }] }, true);
+
+    height.value = '380px';
+    expect(element.style.height).toBe('380px');
+
+    chart.destroy();
   });
 });

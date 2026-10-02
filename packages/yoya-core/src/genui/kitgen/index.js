@@ -556,7 +556,8 @@ function matchingIndex(source, openIndex, open, close) {
  * 注意先跳过**参数表**（解构本身就带一对花括号）再找函数体，否则会把 `{ a, b }` 当函数体。
  */
 function findFactoryBody(source, factoryName) {
-  const match = source.match(new RegExp(`export function ${escapeRegExp(factoryName)}\\s*\\(`));
+  const resolved = resolveFactoryName(source, factoryName);
+  const match = source.match(new RegExp(`export function ${escapeRegExp(resolved)}\\s*\\(`));
 
   if (!match) {
     return null;
@@ -578,6 +579,31 @@ function findFactoryBody(source, factoryName) {
   const bodyEnd = matchingIndex(source, bodyStart, '{', '}');
 
   return bodyEnd < 0 ? source.slice(bodyStart) : source.slice(bodyStart, bodyEnd + 1);
+}
+
+/**
+ * 工厂的**真实名字**：快捷名派生的 PascalCase 与源码里的函数名可能只有大小写之差
+ * （`vEchart` → 派生出 `VEchart`，而函数叫 `VEChart`）。导出别名
+ * `export { VEChart as VEchart }` 是权威写法，先认它，认不出再回落派生名。
+ */
+export function resolveFactoryName(source, factoryName) {
+  if (source.includes(`export function ${factoryName}(`)) {
+    return factoryName;
+  }
+
+  const alias = source.match(
+    new RegExp(`export\\s*\\{\\s*([A-Za-z_$][\\w$]*)\\s+as\\s+${escapeRegExp(factoryName)}\\s*\\}`)
+  );
+
+  if (alias) {
+    return alias[1];
+  }
+
+  const loose = source.match(
+    new RegExp(`export function ([A-Za-z_$][\\w$]*)\\s*\\([^)]*\\)\\s*\\{`, 'i')
+  );
+
+  return loose && loose[1].toLowerCase() === factoryName.toLowerCase() ? loose[1] : factoryName;
 }
 
 /** 从 `(` 起取到配对的 `)`，返回括号内的实参文本。 */
@@ -862,7 +888,9 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
        * - `@genui.props` 给说明（单参 props 袋的库只能靠它，如布局/图表 kit）。
        * 同名时 JSDoc 的说明优先——签名那份的值只是空串，拿它盖掉说明就是丢内容。
        */
-      const signatureProps = propSignatures.get(pascal) ?? null;
+      // 工厂真实名可能只有大小写之差（`vEchart` → `VEChart`）：别名导出是权威写法
+      const factoryName = resolveFactoryName(meta.source, pascal);
+      const signatureProps = propSignatures.get(factoryName) ?? null;
       const docProps = doc?.props ?? null;
       const props = signatureProps || docProps ? { ...signatureProps, ...docProps } : null;
 
@@ -872,7 +900,7 @@ export async function generateKitArtifacts(userConfig = {}, options = {}) {
        * `@genui.live` / `@genui.json` 是作者写的声明，与扫描结果取并集——
        * manifest 描述**实际能接线的方式**，声明与代码是否对得上由门禁（票 02）对账。
        */
-      const scanned = scanNormalizedProps(meta.source, pascal, {
+      const scanned = scanNormalizedProps(meta.source, factoryName, {
         declared: props ? Object.keys(props) : null
       });
       const liveProps = uniqueList([

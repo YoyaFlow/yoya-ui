@@ -803,7 +803,22 @@
       "notFor": ["其它图表库（用 vChart + 适配器）"],
       "pitfalls": ["ECharts 本体由使用方提供"],
       "example": { "type": "vEchart" },
-      "needsDocs": false
+      "props": {
+        "autoResize": "",
+        "devicePixelRatio": "",
+        "echartsLib": "",
+        "height": "",
+        "loading": "",
+        "loadingText": "",
+        "onChartReady": "",
+        "onChartResize": "",
+        "option": "",
+        "renderer": "",
+        "theme": "",
+        "width": ""
+      },
+      "needsDocs": false,
+      "liveProps": ["height", "width", "option"]
     },
     {
       "name": "vField",
@@ -1874,7 +1889,8 @@
         "threeLib": "",
         "width": ""
       },
-      "needsDocs": false
+      "needsDocs": false,
+      "liveProps": ["height", "width"]
     },
     {
       "name": "vTimeline",
