@@ -260,9 +260,9 @@ router、主题、扩展）；`yoya-compiler` 是可选用的构建期编译器�
 
 | 入口                                 | 内容                                                                                | min+gzip |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
-| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 27.2 KB  |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 28.2 KB  |
 | `@yoyaflow/yoya-core/api`            | 请求辅助：RequestBase / Result / configureRequest                                   | 0.6 KB   |
-| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件写作规范（core 自包含）                                   | 23.5 KB  |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件写作规范（core 自包含）                                   | 23.8 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 81.0 KB  |
 | `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 73.4 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
