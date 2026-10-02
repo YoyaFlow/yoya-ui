@@ -60,7 +60,7 @@ export function VSwitch({
           style: {
             background: themeValue('color-surface', '#ffffff'),
             borderRadius: '999px',
-            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.18)',
+            boxShadow: `0 1px 2px color-mix(in srgb, ${themeValue('color-text', '#0d0d0d')} 18%, transparent)`,
             height: '16px',
             transform: 'translateX(0)',
             transition: 'transform 120ms ease',

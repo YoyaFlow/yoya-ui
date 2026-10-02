@@ -1230,7 +1230,9 @@ function syncMobileLayoutChild(layout, child) {
   if (drawerAside) {
     target.styles({
       bottom: '0',
-      boxShadow: layout._asideOpen ? '0 12px 36px rgba(15, 23, 42, 0.28)' : 'none',
+      boxShadow: layout._asideOpen
+        ? `0 12px 36px color-mix(in srgb, ${themeValue('color-text', '#0d0d0d')} 28%, transparent)`
+        : 'none',
       display: 'flex',
       flexDirection: 'column',
       height: '100dvh',
@@ -1335,8 +1337,10 @@ function syncMobileLayoutChrome(layout) {
         background: 'var(--yoya-color-surface, #ffffff)',
         border: '0',
         borderRadius: '10px',
-        boxShadow: drawerMode ? '0 2px 10px rgba(15, 23, 42, 0.18)' : 'none',
-        color: '#172033',
+        boxShadow: drawerMode
+          ? `0 2px 10px color-mix(in srgb, ${themeValue('color-text', '#0d0d0d')} 18%, transparent)`
+          : 'none',
+        color: themeValue('color-text', '#172033'),
         cursor: 'pointer',
         display: drawerMode ? 'inline-flex' : 'none',
         height: '38px',
@@ -1352,7 +1356,9 @@ function syncMobileLayoutChrome(layout) {
 
   if (backdrop) {
     backdrop.styles({
-      background: open ? 'rgba(15, 23, 42, 0.42)' : null,
+      background: open
+        ? `color-mix(in srgb, ${themeValue('color-text', '#0d0d0d')} 42%, transparent)`
+        : null,
       display: open ? 'block' : 'none',
       inset: '0',
       position: 'fixed',

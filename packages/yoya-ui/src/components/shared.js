@@ -116,7 +116,7 @@ export function buttonVariantStyles(variant) {
     danger: {
       background: themeValue('color-danger', '#dc2626'),
       borderColor: themeValue('color-danger-hover', '#b91c1c'),
-      boxShadow: '0 1px 2px rgba(185, 28, 28, 0.16)',
+      boxShadow: `0 1px 2px color-mix(in srgb, ${themeValue('color-danger', '#dc2626')} 16%, transparent)`,
       color: themeValue('color-text-inverse', '#ffffff'),
       outline: 'none',
       outlineOffset: '2px',
@@ -136,7 +136,7 @@ export function buttonVariantStyles(variant) {
     primary: {
       background: themeValue('color-primary', '#2563eb'),
       borderColor: themeValue('color-primary-hover', '#1d4ed8'),
-      boxShadow: '0 1px 2px rgba(37, 99, 235, 0.18)',
+      boxShadow: `0 1px 2px color-mix(in srgb, ${themeValue('color-primary', '#2563eb')} 18%, transparent)`,
       color: themeValue('color-text-inverse', '#ffffff'),
       outline: 'none',
       outlineOffset: '2px',
@@ -146,7 +146,7 @@ export function buttonVariantStyles(variant) {
     secondary: {
       background: themeValue('color-surface', '#ffffff'),
       borderColor: themeValue('color-border-strong', '#cbd5e1'),
-      boxShadow: '0 1px 2px rgba(15, 23, 42, 0.08)',
+      boxShadow: themeValue('shadow-sm', '0 1px 2px rgba(15, 23, 42, 0.08)'),
       color: themeValue('color-text', '#1f2937'),
       outline: 'none',
       outlineOffset: '2px',
@@ -165,7 +165,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       active: {
         background: themeValue('color-danger-active', '#991b1b'),
         borderColor: themeValue('color-danger-deep', '#7f1d1d'),
-        boxShadow: 'inset 0 1px 2px rgba(127, 29, 29, 0.24)',
+        boxShadow: `inset 0 1px 2px color-mix(in srgb, ${themeValue('color-danger', '#dc2626')} 24%, transparent)`,
         transform: 'translateY(0px)'
       },
       focus: {
@@ -174,7 +174,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       hover: {
         background: themeValue('color-danger-hover', '#b91c1c'),
         borderColor: themeValue('color-danger-active', '#991b1b'),
-        boxShadow: '0 8px 18px rgba(220, 38, 38, 0.22)',
+        boxShadow: `0 8px 18px color-mix(in srgb, ${themeValue('color-danger', '#dc2626')} 22%, transparent)`,
         transform: 'translateY(-1px)'
       }
     },
@@ -199,7 +199,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       active: {
         background: themeValue('color-primary-active', '#1e40af'),
         borderColor: themeValue('color-primary-deep', '#1e3a8a'),
-        boxShadow: 'inset 0 1px 2px rgba(30, 58, 138, 0.28)',
+        boxShadow: `inset 0 1px 2px color-mix(in srgb, ${themeValue('color-primary-hover', '#1d4ed8')} 28%, transparent)`,
         transform: 'translateY(0px)'
       },
       focus: {
@@ -208,7 +208,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       hover: {
         background: themeValue('color-primary-hover', '#1d4ed8'),
         borderColor: themeValue('color-primary-active', '#1e40af'),
-        boxShadow: '0 8px 18px rgba(37, 99, 235, 0.24)',
+        boxShadow: `0 8px 18px color-mix(in srgb, ${themeValue('color-primary', '#2563eb')} 24%, transparent)`,
         transform: 'translateY(-1px)'
       }
     },
@@ -216,7 +216,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       active: {
         background: themeValue('color-surface-active', '#eef2f7'),
         borderColor: themeValue('color-border-muted', '#94a3b8'),
-        boxShadow: 'inset 0 1px 2px rgba(15, 23, 42, 0.12)',
+        boxShadow: `inset 0 1px 2px color-mix(in srgb, ${themeValue('color-text', '#0d0d0d')} 12%, transparent)`,
         transform: 'translateY(0px)'
       },
       focus: {
@@ -225,7 +225,7 @@ export function buttonInteractionStyles(variant, interaction = 'rest') {
       hover: {
         background: themeValue('color-surface-hover', '#f8fafc'),
         borderColor: themeValue('color-border-muted', '#94a3b8'),
-        boxShadow: '0 8px 18px rgba(15, 23, 42, 0.10)',
+        boxShadow: themeValue('shadow-md', '0 8px 18px rgba(15, 23, 42, 0.10)'),
         transform: 'translateY(-1px)'
       }
     }
