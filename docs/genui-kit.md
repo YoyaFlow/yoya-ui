@@ -230,6 +230,38 @@ All reactivity lives in the data model; the kit only decides which props accept 
 - derivation, validation and visibility are page-level schema concerns (`computed` / `validate` /
   conditional rendering) — keep them out of kit components.
 
+### 7.1 Value channel and command channel
+
+A prop is wired through exactly **one** channel, decided at build time by one question: _was this prop normalized in the component's code?_
+
+| Channel     | Declared by                                                                   | At runtime                                                                                              |
+| ----------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Value**   | the component normalizes it (`asSignal` / `asSignalJson` call site)           | the live handle is handed to the component; the host does **not** replay it through a same-name command |
+| **Command** | nothing normalized (the default), or an explicit `@genui.prop x to=command:x` | the host feeds the value once at build time, and again on every data change                             |
+
+Normalize every prop the component _reads_: handles pass through unchanged, plain values are wrapped — both
+inputs work, so the component never has to ask which one it got.
+
+```js
+const height = asSignal(props.height ?? '320px');
+const series = asSignalJson(props.series ?? []); // object / array: only this one can drill
+const first = series.at('0/value'); // read, write and subscribe like any handle
+```
+
+- **destructured ⇒ normalized**: a key pulled out of `props` must appear in a normalization call site; pure
+  pass-through keys stay in `...rest` (they land on the root element and need nothing);
+- **defaults and normalization happen at read time**: `asSignal(props.option)` plus
+  `computed(() => option.value ?? {})`. `Boolean(x)` / `Number(x)` / `x ?? fallback` at build time turns a
+  handle into a constant and silently kills the live value;
+- **first value by reading, later changes via `handle.subscribe(fn)`** (it returns the unsubscribe) — there is
+  no separate `watch` alias;
+- the `@genui.prop` docs (mark JSON props with `kind=json`) and the call sites are reconciled by a gate; do not
+  hand-write a second props constant. If the library already has an equivalent normalization entry point (the
+  form controls' `applyPropValue`), register it in `normalizeHelpers` instead of rewriting components.
+
+To see which props still rely on replay, build the surface with `replay: 'declared'`: only the value channel and
+explicitly declared command channels keep receiving data, everything else freezes at its build-time snapshot.
+
 ## 8. Packaging and release
 
 ```bash

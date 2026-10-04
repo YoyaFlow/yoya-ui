@@ -762,6 +762,31 @@ Four rules:
 4. Add one positive and one `@ts-expect-error` negative case to `types/consumer.test-d.ts` (`npm run typecheck`).
 5. Keep `npm run typecheck` green.
 
+### 7.6 GenUI wiring: value channel and command channel
+
+When a component is consumed as JSON by a model (a GenUI kit), every prop travels through exactly one channel.
+The deciding question is _was this prop normalized in the component's code?_
+
+- **Value channel** — the component normalizes it (`const height = asSignal(props.height ?? '320px')`): the live
+  handle is handed over as-is and the host does **not** replay it. Object/array-valued props use
+  `asSignalJson`, which is the only one that can drill (`series.at('0/value')`);
+- **Command channel** — nothing normalized (the default), or an explicit `@genui.prop x to=command:x`: the host
+  feeds the value once at build time and again on every data change (unchanged from 0.7.x).
+
+Four rules that follow, and the two most common ways to break them:
+
+1. **destructured ⇒ normalized** — a key pulled out of `props` must appear in a normalization call site; pure
+   pass-through keys stay in `...rest`. A gate reconciles the `@genui.prop` docs against the call sites, so there
+   is no second props constant to maintain;
+2. **defaults and normalization at read time** — `asSignal(props.option)` plus `computed(() => option.value ?? {})`.
+   `Boolean(x)` / `Number(x)` / `x ?? fallback` at build time eats a handle and silently kills the live value;
+3. **first value by reading, later changes by subscribing** — `handle.subscribe(fn)` returns the unsubscribe;
+   call it in `whenDestroy`. There is no `watch` alias;
+4. **commands write data, not structure** — and a library's own equivalent normalization entry point (the form
+   controls' `applyPropValue`) is registered in `normalizeHelpers` rather than rewritten away.
+
+Full guide: [genui-kit.md](genui-kit.md) §7.1.
+
 ## 8. Registering parent shortcuts
 
 Use `registerChildFactories` to register factories on a target node class, enabling `page.vButton(...)` syntax in pages. Existing methods are not overridden by default:

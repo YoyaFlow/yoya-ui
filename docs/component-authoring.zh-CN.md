@@ -670,6 +670,28 @@ export const vStatusTag: ElementFactory<VStatusTag> & {
 4. 在 `types/consumer.test-d.ts` 补一条正例 + 一条 `@ts-expect-error` 负例；
 5. `npm run typecheck` 绿。
 
+### 7.6 GenUI 接线：值通道 / 命令通道
+
+组件被模型当 JSON 用（GenUI kit）时，每个 prop 只走**一条**通道。判据是**这一位在组件代码里归一了吗？**
+
+- **值通道** —— 组件里归一过（`const height = asSignal(props.height ?? '320px')`）：句柄原样交给组件，
+  宿主**不**再重放；值域是对象/数组的位用 `asSignalJson`，只有它能下钻（`series.at('0/value')`）；
+- **命令通道** —— 没归一（默认），或显式 `@genui.prop x to=command:x`：构建期喂一次、数据变化再喂一次
+  （与 0.7.x 一致）。
+
+由此四条写法，以及两个最常见的踩坑：
+
+1. **只解构就要归一** —— 从 `props` 解构出来的键必须出现在归一调用点里；纯透传的键留在 `...rest`。
+   `@genui.prop` 声明与调用点由门禁对账，不需要再维护第二份 props 常量；
+2. **默认值与归一化放在读的时候** —— `asSignal(props.option)` + `computed(() => option.value ?? {})`；
+   构建期写 `Boolean(x)` / `Number(x)` / `x ?? 默认值` 会把句柄吃成常量、静默丢掉联动；
+3. **首值靠读、之后的变化靠订阅** —— `handle.subscribe(fn)` 返回退订函数，在 `whenDestroy` 里调一次；
+   没有 `watch` 这类别名；
+4. **命令只写数据、不搬结构** —— 库内自有的等价归一入口（表单控件的 `applyPropValue`）在
+   `normalizeHelpers` 里登记，不必为了对账改写组件。
+
+完整指南见 [genui-kit.zh-CN.md](genui-kit.zh-CN.md) §7.1。
+
 ## 8. 注册父节点快捷方法
 
 通过 `registerChildFactories` 将工厂注册到目标节点类，页面内即可使用 `page.vButton(...)` 写法；默认不覆盖既有方法：
