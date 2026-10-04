@@ -84,6 +84,26 @@ div((root) => {
 
 `mountable()` 省略参数即默认常挂，入树后可随时再调来替换条件；绑定登记在父节点、条件存在子节点自己的值单元里。三者的细节与坑位见 references/state.md。
 
+## GenUI 接线（写组件时的唯一写法）
+
+GenUI 下组件的 props 只走两条**互斥**的通道，判据是"这一位在代码里归一了吗"：
+
+- **值通道**：代码里归一过（`asSignal` / `asSignalJson` 调用点）→ 句柄直传，**宿主不再按同名命令重放**；
+- **命令通道**：没归一的位（或显式 `@genui.prop x to=command:x`）→ 构建期喂一次 + 数据变化重放，与旧版一致。
+
+写组件按这八条：
+
+1. **props 一律归一**：`const height = asSignal(props.height ?? '320px')`。句柄原样透传、普通值包 `ref`，两种输入都成立，组件不必判断来的是哪种。
+2. **值域是对象/数组的位用 `asSignalJson`**：只有它能按相对路径下钻（`series.at('0/value')`，可读可写可订阅），路径根就是这位 props 的值，**不回落页面数据模型**。
+3. **只解构就要归一**：从 props 解构出来的键必须出现在归一调用点里；纯透传的键留在 `...rest`（它落到根元素上，不需要归一）。门禁按这条对账。
+4. **首值靠读、变化靠 `subscribe`**：`handle.subscribe(fn)` 返回退订函数，`whenDestroy` 里调一次。**不新增 `watch` 这类别名**——句柄上已经有订阅。
+5. **默认值与归一化放在读的时候**：`asSignal(props.option)` + `computed(() => option.value ?? {})`。构建期写 `Boolean(x)` / `Number(x)` / `x ?? 默认值` 会把传进来的句柄吃成常量、静默丢活值。
+6. **命令只写状态 / 只写数据**，不搬结构、不查节点；要更新视图就让句柄自己订阅。
+7. **声明写在源码旁**：`@genui.prop`（JSON 位标 `kind=json`）+ 归一调用点，两侧由门禁对账，**不另写 `VXxx_PROPS` 常量**。库内有与 `asSignal` 等价的归一入口（如表单控件的 `applyPropValue`）时在 `kitgen.config.js` 的 `factories.normalizeHelpers` 里登记，组件不用改写。
+8. **JSON 位是位置寻址**：`at('0/name')` 绑的是下标，列表重排后会指向另一行——别长期持有，行级绑定跟着行的作用域走。
+
+想提前看清"还有哪些位在靠重放活着"：`genui.fromJson(schema, { replay: 'declared' })`，此时只有值通道与显式命令通道还能拿到数据。详见 `docs/genui-kit.zh-CN.md` 与 `packages/yoya-core/src/genui/kitgen/README.md`。
+
 ## 表单
 
 `vForm` + `vFormItem` 收集与校验；控件设 `name()` 后自动进 `form.values()`；`form.validate()` 校验必填与自定义规则。详见 references/forms.md。
