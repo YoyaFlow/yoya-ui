@@ -47,7 +47,7 @@ come from a CDN.
     <title>yoya-ui counter</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.ui.css"
+      href="https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.8.0/dist/yoya.ui.css"
     />
   </head>
   <body>
@@ -59,7 +59,7 @@ come from a CDN.
         vButton,
         vCard,
         vText
-      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.7.6/dist/yoya.ui.full.min.js';
+      } from 'https://cdn.jsdelivr.net/npm/@yoyaflow/yoya-ui@0.8.0/dist/yoya.ui.full.min.js';
 
       const count = ref(0); // state is a handle: writing it updates the bound text
 
@@ -279,21 +279,21 @@ adds _on top of_ core, so the real download is core + that row.
 
 | 入口                                 | 内容                                                                                | min+gzip |
 | ------------------------------------ | ----------------------------------------------------------------------------------- | -------- |
-| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 28.2 KB  |
+| `@yoyaflow/yoya-core`                | 节点 / 信号 / HTML·SVG 原语 + i18n·access·context·a11y·theme 原语（自包含）         | 28.5 KB  |
 | `@yoyaflow/yoya-core/api`            | 请求辅助：RequestBase / Result / configureRequest                                   | 0.6 KB   |
-| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件写作规范（core 自包含）                                   | 23.8 KB  |
+| `@yoyaflow/yoya-core/tools`          | a11y / i18n / theme / 组件写作规范（core 自包含）                                   | 24.1 KB  |
 | `@yoyaflow/yoya-ui`                  | 全部组件 + layout + router / SSR（core 由 peer 提供）                               | 81.0 KB  |
-| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 73.4 KB  |
+| `@yoyaflow/yoya-ui/ui`               | 全部组件 + layout + theme（不含 router / SSR）                                      | 73.5 KB  |
 | `@yoyaflow/yoya-ui/router`           | router + SSR 原语（renderToString / renderPage / hydrate / hydrateOrMount / mount） | 9.0 KB   |
 | `@yoyaflow/yoya-ui/ssr`              | 服务端完整入口：core 原语 + html + layout + router / SSR（core 由 peer 提供）       | 15.2 KB  |
 | `@yoyaflow/yoya-ui/svg`              | SVG 工厂 + 图标集（转发到 core 主入口，同一份实现）                                 | 0.1 KB   |
 | `@yoyaflow/yoya-ui/tools`            | a11y / i18n / theme / 组件写作规范（转发到 core，peer 提供）                        | 0.1 KB   |
 | `@yoyaflow/yoya-ui/dev`              | devtools（转发到 core，peer 提供）                                                  | 0.1 KB   |
-| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.5 KB   |
+| `@yoyaflow/yoya-ui/actions`          | button / buttons / float-button / 菜单                                              | 9.6 KB   |
 | `@yoyaflow/yoya-ui/navigation`       | menu / sidebar / anchor / breadcrumb / steps / tabs                                 | 12.8 KB  |
-| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.6 KB  |
+| `@yoyaflow/yoya-ui/feedback`         | dialog / tooltip / toast / vConfirm                                                 | 12.7 KB  |
 | `@yoyaflow/yoya-ui/form`             | input / select / radio / upload / 控件族                                            | 23.5 KB  |
-| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 28.9 KB  |
+| `@yoyaflow/yoya-ui/data-display`     | table / tree / badge / progress / carousel / 看板族                                 | 29.0 KB  |
 | `@yoyaflow/yoya-ui/async`            | vDynamicLoader / lazy-image                                                         | 4.2 KB   |
 | `@yoyaflow/yoya-ui/echart`           | vEchart（ECharts 适配器，自备 echarts）                                             | 3.4 KB   |
 | `@yoyaflow/yoya-ui/three`            | vThree（Three.js 适配器，自备 three）                                               | 3.8 KB   |

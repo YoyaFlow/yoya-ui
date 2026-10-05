@@ -1,7 +1,7 @@
 {
   "$schema": "genui-kit/1",
   "namespace": "yoyaflow/yoya-ui",
-  "version": "0.7.6",
+  "version": "0.8.0",
   "runtime": { "genui": ">=0.2 <0.3" },
   "generated": {
     "from": "source-scan + JSDoc @genui tags",

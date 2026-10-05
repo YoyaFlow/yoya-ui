@@ -132,7 +132,7 @@ import { vEchart } from '@yoyaflow/yoya-ui/echart';
 import { vThree } from '@yoyaflow/yoya-ui/three';
 
 export const namespace = 'yoyaflow/yoya-ui';
-export const version = '0.7.6';
+export const version = '0.8.0';
 
 export const components = {
   Anchor: {
@@ -835,7 +835,7 @@ export const repo = 'https://github.com/yoyaflow/yoya-ui.git';
 export const aliases = ['yoya-ui'];
 
 export const plugin = createPlugin({
-  id: 'yoyaflow/yoya-ui@0.7.6',
+  id: 'yoyaflow/yoya-ui@0.8.0',
   default: true,
   repo: 'https://github.com/yoyaflow/yoya-ui.git',
   aliases: ['yoya-ui'],

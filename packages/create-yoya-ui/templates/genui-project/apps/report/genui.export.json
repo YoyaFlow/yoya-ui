@@ -4,8 +4,8 @@
   "hosts": { "orders-db": "<部署方提供：例如 https://api.example.com>" },
   "actions": { "orders_page": { "method": "GET", "path": "/orders", "params": ["page", "pageSize"] } },
   "deps": {
-    "@yoyaflow/yoya-core": { "version": "^0.7.6", "kind": "base-library" },
-    "@yoyaflow/yoya-ui": { "version": "^0.7.6", "kind": "base-library" }
+    "@yoyaflow/yoya-core": { "version": "^0.8.0", "kind": "base-library" },
+    "@yoyaflow/yoya-ui": { "version": "^0.8.0", "kind": "base-library" }
   },
   "breaks": [
     {

@@ -9,7 +9,7 @@
  * import { vCard, vButton } from '@yoyaflow/yoya-ui/ui';
  *
  * export default createPlugin({
- *   id: 'yoyaflow/yoya-ui@0.7.6',
+ *   id: 'yoyaflow/yoya-ui@0.8.0',
  *   components: {
  *     vCard: { factory: vCard },
  *     vButton: { factory: vButton, props: { label: 'label' }, textProp: 'label' }

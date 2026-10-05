@@ -2,7 +2,7 @@
 //
 // 断言四件事：
 //   1) core 的源码不引用快线（yoya-uiuc / 组件域），core 的 exports 里也没有组件子入口；
-//   2) 快线把 core 声明成 peerDependency（^0.7.0），且**不**把它列进 dependencies（不许内联/自带副本）；
+//   2) 快线把 core 声明成 peerDependency（^0.8.0），且**不**把它列进 dependencies（不许内联/自带副本）；
 //   3) 组件域只在快线里实现（core 目录下不存在 layout/actions/form/… 这类组件域目录）；
 //   4) 只有契约包同时 import 两个包（业务源码不许两边都引）。
 import { parse } from '@babel/parser';

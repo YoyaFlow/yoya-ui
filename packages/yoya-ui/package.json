@@ -1,6 +1,6 @@
 {
   "name": "@yoyaflow/yoya-ui",
-  "version": "0.7.6",
+  "version": "0.8.0",
   "description": "yoya-ui (fast line): official components, layout, router, i18n, theming, charts and 3D adapters. Consumes @yoyaflow/yoya-core as a peer dependency; never bundles it.",
   "type": "module",
   "main": "./dist/ui-router.js",
@@ -143,8 +143,8 @@
     "ios_saf >= 17.5"
   ],
   "peerDependencies": {
-    "@yoyaflow/yoya-core": "^0.7.0",
-    "@yoyaflow/yoya-compiler": "^0.7.0",
+    "@yoyaflow/yoya-core": "^0.8.0",
+    "@yoyaflow/yoya-compiler": "^0.8.0",
     "@babel/parser": "^7.29.0"
   },
   "peerDependenciesMeta": {

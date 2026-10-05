@@ -32,12 +32,12 @@
     "verify": "npm run kit:check && npm run test && npm run build"
   },
   "peerDependencies": {
-    "@yoyaflow/yoya-core": "^0.7.0",
-    "@yoyaflow/yoya-ui": "^0.7.0"
+    "@yoyaflow/yoya-core": "^0.8.0",
+    "@yoyaflow/yoya-ui": "^0.8.0"
   },
   "devDependencies": {
-    "@yoyaflow/yoya-core": "0.7.6",
-    "@yoyaflow/yoya-ui": "0.7.6",
+    "@yoyaflow/yoya-core": "0.8.0",
+    "@yoyaflow/yoya-ui": "0.8.0",
     "jsdom": "^29.1.1",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"

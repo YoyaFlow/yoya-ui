@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@yoyaflow/yoya-core": "0.7.6",
-    "@yoyaflow/yoya-ui": "0.7.6"
+    "@yoyaflow/yoya-core": "0.8.0",
+    "@yoyaflow/yoya-ui": "0.8.0"
   },
   "devDependencies": {
     "vite": "^8.2.0"
