@@ -553,6 +553,14 @@ export class ElementNode extends ViewNode {
   emit(type: string, detail?: unknown, options?: EventInit | null): this;
   /** Calls a native method on the element (`showModal` / `close` / `reset` / `remove` …). */
   invoke(name: string, ...args: unknown[]): any;
+  /**
+   * Calls a method by name: the node's own methods first (component commands / structure methods),
+   * then the element-level ops and native DOM methods on the landed element. A call that needs the
+   * element while the node has not landed yet is remembered and replayed once — on the same pass
+   * `whenMount` fires. `apply(name, args)` takes the args as an array.
+   */
+  call(name: string, ...args: unknown[]): any;
+  apply(name: string, args?: unknown[]): any;
   /** Replaces all children for real (DOM included, no engine round-trip needed). */
   replaceChildren(...children: unknown[]): this;
   /** Moves the landed children to the element's end in the given order. */

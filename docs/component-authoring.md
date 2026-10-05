@@ -471,20 +471,28 @@ both at zero for library code and keeps a written allow-list for the node-type e
 is their product. Everything else goes through these ops (declared on `ViewNode`, delegated to the view root on
 component nodes, shadowable by component commands):
 
-| Need                                                                                       | Op                                                          |
-| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| landed yet?                                                                                | `node.isLanded()`                                           |
-| focus / focus the first focusable descendant                                               | `node.focus()` / `node.focusFirst()`                        |
-| containment ("close on outside click", hit testing)                                        | `node.owns(target)`                                         |
-| DOM property read/write (`value` / `checked` / `indeterminate` / `files` / scroll offsets) | `node.prop(name[, value])`                                  |
-| measure                                                                                    | `node.measure()` (offsets via `prop('offsetWidth')`)        |
-| dispatch an event user listeners receive                                                   | `node.emit(type[, detail][, options])`                      |
-| call a native method (`showModal` / `close` / `reset` / `requestSubmit` / `remove`)        | `node.invoke(name, …)`                                      |
-| swap / reorder children for real                                                           | `node.replaceChildren(…)` / `node.reorderChildren(ordered)` |
-| a real element at mount time (observers, renderer hosts, focus traps)                      | `whenMount((host) => host.element())`                       |
+| Need                                                                                          | Op                                                          |
+| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| landed yet?                                                                                   | `node.isLanded()`                                           |
+| focus / focus the first focusable descendant                                                  | `node.focus()` / `node.focusFirst()`                        |
+| containment ("close on outside click", hit testing)                                           | `node.owns(target)`                                         |
+| DOM property read/write (`value` / `checked` / `indeterminate` / `files` / scroll offsets)    | `node.prop(name[, value])`                                  |
+| measure                                                                                       | `node.measure()` (offsets via `prop('offsetWidth')`)        |
+| dispatch an event user listeners receive                                                      | `node.emit(type[, detail][, options])`                      |
+| call a native method (`showModal` / `close` / `reset` / `requestSubmit` / `remove`)           | `node.invoke(name, …)`                                      |
+| call a method by name — own methods first, then the element — **queued until the node lands** | `node.call(name, …)` / `node.apply(name, args)`             |
+| swap / reorder children for real                                                              | `node.replaceChildren(…)` / `node.reorderChildren(ordered)` |
+| a real element at mount time (observers, renderer hosts, focus traps)                         | `whenMount((host) => host.element())`                       |
 
 Two naming traps learned the hard way: `rect()` would collide with the SVG `rect` element factory (hence
 `measure()`), and `track` **is** the HTML `<track>` shortcut (hence `trackState()` for container contexts).
+
+`call()` / `apply()` are the by-name entry of the same surface (`apply` takes the args as an array,
+matching `Function.prototype` naming): a name the node itself owns runs right away, everything else goes
+to the element — and when the node has no element yet the call is remembered and replayed once, on the
+same pass `whenMount` fires. That is the "call it even though it is not mounted yet" case (a hand-written
+`isLanded()` guard plus a retry, as in `feedback/dialog.js`, collapses into one call). Component commands
+named `call` / `apply` shadow the entry like any other element-level op.
 
 ## 7.1 Slots: where content goes
 

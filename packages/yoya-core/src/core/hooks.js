@@ -63,7 +63,10 @@ export function fireWhenMount(node) {
 
   // 落地收口（票 02）：一趟落地（`bindTo` / `mount` / `hydrate`）里先登记，收口时统一触发
   // ——那时元素已经挂进文档，第三方集成可以直接测量，不必自己补 rAF。
-  if (node._whenHooks !== undefined) {
+  // `_pendingCalls` 是 `call()` 在没落地时排下的队（见 `node.js` 的 `ViewNode.call`）：同一趟收口，
+  // 这样"未落地时按名字调 DOM 方法"也在元素连通之后才真跑。
+  // 队列清空后置 null（与 `_whenHooks` 一样按假值判），所以这里查的是"还有没有排队的调用"
+  if (node._whenHooks !== undefined || node._pendingCalls) {
     if (landingQueue !== null) {
       landingQueue.add(node);
       return;
@@ -100,11 +103,24 @@ export function endLanding() {
 /** 收口与非收口共用的一次触发本体（幂等 + "确实落在树上"守卫）。 */
 function fireWhenMountNow(node) {
   const hooks = node?._whenHooks;
-  if (!hooks || hooks.mounted === true || typeof hooks.whenMount !== 'function') {
+  const pendingCalls = node?._pendingCalls;
+
+  if (
+    !pendingCalls &&
+    (!hooks || hooks.mounted === true || typeof hooks.whenMount !== 'function')
+  ) {
     return;
   }
   // 收口时节点可能已经离场（条件在落地过程中转假 / 渲染失败）：没挂上就不触发，留给下次落地
   if (!landedInTree(node)) {
+    return;
+  }
+
+  if (pendingCalls) {
+    flushPendingCalls(node);
+  }
+
+  if (!hooks || hooks.mounted === true || typeof hooks.whenMount !== 'function') {
     return;
   }
 
@@ -116,6 +132,16 @@ function fireWhenMountNow(node) {
     // 降级会引出"fallback 自己再抛错"的回环。是否降级由组件自己决定。
     reportHookError('whenMount', error);
   }
+}
+
+/**
+ * 补跑 `call()` 排下的调用（登记的先后就是执行顺序）。先摘队再跑：补跑期间又排队的进新队列、
+ * 留给下一次落地，不在这里空转。
+ */
+function flushPendingCalls(node) {
+  const pending = node._pendingCalls;
+  node._pendingCalls = null;
+  pending.forEach((entry) => node.call(entry[0], ...entry[1]));
 }
 
 /** 这个组件的 DOM 是否已经接进它的父元素（`bindTo` 的目标可以不在文档里，所以只看父链）。 */

@@ -12,7 +12,8 @@
  * 5. **量测** `rect()`（`getBoundingClientRect()`；偏移量走 `prop('offsetWidth')`）；
  * 6. **派发事件** `emit(type[, detail][, options])`（让用户监听器收到的原生 / 自定义事件）；
  * 7. **调原生方法** `invoke(name, …)`（`showModal` / `close` / `matches(':modal')` / `reset` /
- *    `requestSubmit` / `click` / 树外挂载后的 `remove`）；
+ *    `requestSubmit` / `click` / 树外挂载后的 `remove`）；**按名字调用** `call(name, …)` /
+ *    `apply(name, args)` 是它的广义形（节点自己的方法当场调，元素那一路未落地时排队、落地那趟补跑一次）；
  * 8. **换子节点** `replaceChildren(…)`（真清空 + 落新内容）/ `reorderChildren(ordered)`（按序落盘）；
  * 9. **挂载期真元素**（`ResizeObserver` / `IntersectionObserver` / 渲染器宿主 / 焦点陷阱 / `showModal`
  *    的宿主）→ `whenMount(host)` 的 `host.element()`，组件自己存句柄。

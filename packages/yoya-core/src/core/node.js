@@ -3501,6 +3501,52 @@ export class ViewNode {
   }
 
   /**
+   * 按名字调用：**本节点自己的方法**（组件命令 / 结构方法）当场调；**元素那一路**——元素级口子
+   * （`DELEGATED_ELEMENT_METHODS` 里那些）与**本节点上根本没有的名字**（原生 DOM 方法，如
+   * `showModal` / `scrollTo` / `click`）——落到自己的元素上。
+   * `apply(name, args)` 是同一个口子的数组参数版（名字对标 `Function.prototype`：`call` 收平铺参数、
+   * `apply` 收数组；语义是"按名字把函数调到该调的地方"，不是拿 `this`）。
+   *
+   * 为什么要有这条：元素级口子（`focus` / `invoke` / `prop` / `measure`…）与原生方法都要求**已落地**，
+   * 没落地时静默无事发生——调用点于是到处写 `isLanded()` 守卫，想要"落地后再办"的还得自己补
+   * （`feedback/dialog.js` 的 `scheduleOpenSync` 就是手写的这一层）。这里把两件事合成一条：
+   * **已落地当场调**（返回值即方法自己的返回值），**没落地先记在节点上**，
+   * 落地的那一趟（`whenMount` 同一趟收口，`hooks.js` 的 `fireWhenMount`）按登记顺序补跑一次。
+   * 排队那次没有返回值可回 → `undefined`；节点销毁时队列一起丢掉。
+   */
+  call(name, ...args) {
+    if (typeof name !== 'string') {
+      throw new TypeError('call(name, …) needs a method name: node.call("focus")');
+    }
+
+    const method = this[name];
+    // 元素那一路：本节点上没有这个名字，或它在元素级口子清单里（`focus` / `prop`… 未落地同样是空转）
+    const elementPath = typeof method !== 'function' || ELEMENT_SURFACE_METHODS.has(name);
+
+    if (!elementPath) {
+      return method.apply(this, args);
+    }
+
+    if (this.isLanded()) {
+      return typeof method === 'function' ? method.apply(this, args) : this.invoke(name, ...args);
+    }
+
+    (this._pendingCalls ?? (this._pendingCalls = [])).push([name, args]);
+    return undefined;
+  }
+
+  /** 数组参数版：`node.apply('setAttribute', ['data-x', '1'])` 等价于 `node.call('setAttribute', 'data-x', '1')`。 */
+  apply(name, args) {
+    if (args !== undefined && !Array.isArray(args)) {
+      throw new TypeError(
+        'apply(name, args) takes an args array: node.apply("setAttribute", [name, value])'
+      );
+    }
+
+    return this.call(name, ...(args ?? []));
+  }
+
+  /**
    * 把已落地的子节点按给定顺序搬到**自己的元素末尾**（父元素内重排是元素级机制，组件只报顺序）：
    * 清单外的子节点由 `commit()` 销毁；未落地 = 只清账不动 DOM；挂载条件转假的子节点跳过。
    */
@@ -3626,6 +3672,8 @@ export class ViewNode {
     }
     this._deleted = true;
     this._parent = null;
+    // 未落地时按名字排下的调用（`call`）随节点一起丢掉：落地不会再发生，留着就是留住实参
+    this._pendingCalls = null;
     releaseOwnBindings(this);
     releaseRegion(this);
     if (Array.isArray(this._regionRunCleanups)) {
@@ -4213,6 +4261,13 @@ const DELEGATED_ELEMENT_METHODS = [
 ];
 
 /**
+ * "元素那一路"的名字清单：`call(name, …)` 用它区分"节点自己的方法"与"要落到元素上的调用"。
+ * 就是元素级方法的同一份清单——这些口子在没落地时静默空转，所以按名字调用时要把它们记下来、
+ * 落地后补跑（见 `ViewNode.call`）。
+ */
+const ELEMENT_SURFACE_METHODS = new Set(DELEGATED_ELEMENT_METHODS);
+
+/**
  * 允许被组件命令**遮蔽**的委托方法名：`vNode` 的 api 上写 `api.name = …` 这类命名时，
  * 命令挂到组件节点上会遮住同名委托（原型方法），而不是报"命令撞节点 API"。
  * 事件与绑定类（`on` / `off` / `bindWindowEvent`…）不在此列——它们必须保持节点语义。
@@ -4231,6 +4286,11 @@ SHADOWABLE_DEFERRED_METHOD_NAMES.add('setupObject');
 // `api.rebuildable = (predicate) => { view.rebuildable(predicate); return api; }`。
 SHADOWABLE_DEFERRED_METHOD_NAMES.add('rebuildable');
 SHADOWABLE_DEFERRED_METHOD_NAMES.add('rebuild');
+
+// `call` / `apply`（按名字调用）同样可以被组件自己的同名命令遮蔽：它们只是**新加的口子**，
+// 不能把既有组件的 `api.call` / `api.apply` 判成命名冲突。
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('call');
+SHADOWABLE_DEFERRED_METHOD_NAMES.add('apply');
 
 DELEGATED_ELEMENT_METHODS.forEach((method) => {
   // 已有同名实现（例如 `textContent`）保持原样：它本来就是组件语义
@@ -5033,7 +5093,13 @@ export class ElementNode extends ViewNode {
             element.appendChild(childElement);
             // 首屏单趟建树：这里才是子节点真正落地的位置（挂载条件为假时不会走到这支）
             // 组件子节点即便自己没有钩子也可能"视图根是另一个组件"（钩子在更内层）→ 交给链转发
-            if (child._whenHooks !== undefined || typeof child.viewRoots === 'function') {
+            // `_pendingCalls`：没落地时按名字排下的调用也要在这条路径上补跑
+            // （队列清空后置 null，所以这里按假值判"还有没有排队的调用"）
+            if (
+              child._whenHooks !== undefined ||
+              child._pendingCalls ||
+              typeof child.viewRoots === 'function'
+            ) {
               fireWhenMount(child);
             }
           } else if (!childElement && child._el && child._el.parentNode === element) {

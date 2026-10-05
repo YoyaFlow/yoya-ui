@@ -141,6 +141,12 @@ Signals 的句柄与绑定、区域依赖捕获与谓词门禁、keyed / mountab
 - 视图根节点（含节点类型扩展）遵循 `renderDom` / `bindTo` / `destroy` 生命周期
 - 组件自带降级：vNode 里写 `api.whenFailed = (error, info) => 降级节点`（等价 `node.whenFailed(fn)`），`ComponentNode` 自动挂载子树错误边界（`info.phase` = build / render / event / update）；边界在出错时沿父链上溯解析（就近优先），与声明顺序 / 嵌套深度 / 运行时插入 / 搬家无关
 
+**元素级操作（碰真实 DOM 的唯一口子）**
+
+组件代码不碰 `_el`、也不调 `renderDom()`（那是**构建**入口）。要真实元素行为只有这几条：`isLanded()`（落地判定）、`focus()` / `focusFirst()`、`owns(target)`、`prop(name[, value])`（`value` / `checked` / `files` / 滚动量…）、`measure()`、`emit(type[, detail][, options])`、`invoke(name, …args)`（调原生方法）、`replaceChildren(…)` / `reorderChildren(ordered)`；挂载期的真元素（观察者、渲染器宿主、焦点陷阱）走 `whenMount((host) => host.element())`。
+
+`call(name, …args)` / `apply(name, args)`（数组参数）是同一面按名字的广义形：**本节点自己的方法当场调**（组件命令 / 结构方法），其余落到元素上；**节点还没落地时先记下、落地那一趟补跑一次**（与 `whenMount` 同一趟，元素那时已经连通），节点销毁时队列一起丢掉。于是"挂上去之后开框 / 滚到底 / 聚焦"这类事不用手写 `isLanded()` 守卫 + 自己补重试；组件自己的 `api.call` / `api.apply` 命令会遮蔽这条口子，不报命名冲突。
+
 ## 注册父节点快捷方法
 
 ```js
